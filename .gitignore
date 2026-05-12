@@ -22,6 +22,8 @@
 hs_err_pid*
 replay_pid*
 
-# Gradle
+#
+.vscode
 .gradle
 build
+bin

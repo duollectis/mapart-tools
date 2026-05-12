@@ -1,0 +1,3951 @@
+{
+    "0": [
+        {
+            "id": "minecraft:purple_candle_cake"
+        },
+        {
+            "id": "minecraft:potted_open_eyeblossom"
+        },
+        {
+            "id": "minecraft:orange_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:potted_dead_bush"
+        },
+        {
+            "id": "minecraft:piglin_head"
+        },
+        {
+            "id": "minecraft:yellow_candle_cake"
+        },
+        {
+            "id": "minecraft:copper_bars"
+        },
+        {
+            "id": "minecraft:copper_wall_torch"
+        },
+        {
+            "id": "minecraft:zombie_head"
+        },
+        {
+            "id": "minecraft:lever"
+        },
+        {
+            "id": "minecraft:air"
+        },
+        {
+            "id": "minecraft:void_air"
+        },
+        {
+            "id": "minecraft:potted_wither_rose"
+        },
+        {
+            "id": "minecraft:wither_skeleton_skull"
+        },
+        {
+            "id": "minecraft:waxed_weathered_copper_bars"
+        },
+        {
+            "id": "minecraft:creeper_wall_head"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_copper_bars"
+        },
+        {
+            "id": "minecraft:redstone_torch"
+        },
+        {
+            "id": "minecraft:light",
+            "properties": {
+                "waterlogged": "false",
+                "level": "0"
+            }
+        },
+        {
+            "id": "minecraft:soul_torch"
+        },
+        {
+            "id": "minecraft:magenta_candle_cake"
+        },
+        {
+            "id": "minecraft:dragon_wall_head"
+        },
+        {
+            "id": "minecraft:barrier",
+            "properties": {
+                "waterlogged": "false"
+            }
+        },
+        {
+            "id": "minecraft:jungle_button"
+        },
+        {
+            "id": "minecraft:ladder"
+        },
+        {
+            "id": "minecraft:candle_cake"
+        },
+        {
+            "id": "minecraft:light_gray_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:pale_oak_button"
+        },
+        {
+            "id": "minecraft:potted_orange_tulip"
+        },
+        {
+            "id": "minecraft:black_candle_cake"
+        },
+        {
+            "id": "minecraft:light_blue_candle_cake"
+        },
+        {
+            "id": "minecraft:lime_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:flower_pot"
+        },
+        {
+            "id": "minecraft:potted_dandelion"
+        },
+        {
+            "id": "minecraft:white_candle_cake"
+        },
+        {
+            "id": "minecraft:potted_pale_oak_sapling"
+        },
+        {
+            "id": "minecraft:green_candle_cake"
+        },
+        {
+            "id": "minecraft:potted_flowering_azalea_bush"
+        },
+        {
+            "id": "minecraft:comparator"
+        },
+        {
+            "id": "minecraft:orange_candle_cake"
+        },
+        {
+            "id": "minecraft:mangrove_button"
+        },
+        {
+            "id": "minecraft:warped_button"
+        },
+        {
+            "id": "minecraft:dark_oak_button"
+        },
+        {
+            "id": "minecraft:oxidized_copper_bars"
+        },
+        {
+            "id": "minecraft:exposed_copper_bars"
+        },
+        {
+            "id": "minecraft:copper_chain"
+        },
+        {
+            "id": "minecraft:dragon_head"
+        },
+        {
+            "id": "minecraft:soul_wall_torch"
+        },
+        {
+            "id": "minecraft:black_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:potted_cornflower"
+        },
+        {
+            "id": "minecraft:purple_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:player_head"
+        },
+        {
+            "id": "minecraft:player_wall_head"
+        },
+        {
+            "id": "minecraft:glass_pane"
+        },
+        {
+            "id": "minecraft:wall_torch"
+        },
+        {
+            "id": "minecraft:acacia_button"
+        },
+        {
+            "id": "minecraft:potted_cactus"
+        },
+        {
+            "id": "minecraft:potted_oxeye_daisy"
+        },
+        {
+            "id": "minecraft:activator_rail"
+        },
+        {
+            "id": "minecraft:light_blue_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:tripwire_hook"
+        },
+        {
+            "id": "minecraft:spruce_button"
+        },
+        {
+            "id": "minecraft:redstone_wall_torch"
+        },
+        {
+            "id": "minecraft:potted_crimson_roots"
+        },
+        {
+            "id": "minecraft:powered_rail"
+        },
+        {
+            "id": "minecraft:waxed_exposed_copper_chain"
+        },
+        {
+            "id": "minecraft:potted_brown_mushroom"
+        },
+        {
+            "id": "minecraft:brown_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:blue_candle_cake"
+        },
+        {
+            "id": "minecraft:bamboo_button"
+        },
+        {
+            "id": "minecraft:cherry_button"
+        },
+        {
+            "id": "minecraft:potted_closed_eyeblossom"
+        },
+        {
+            "id": "minecraft:oak_button"
+        },
+        {
+            "id": "minecraft:cake"
+        },
+        {
+            "id": "minecraft:potted_crimson_fungus"
+        },
+        {
+            "id": "minecraft:potted_azure_bluet"
+        },
+        {
+            "id": "minecraft:potted_spruce_sapling"
+        },
+        {
+            "id": "minecraft:potted_dark_oak_sapling"
+        },
+        {
+            "id": "minecraft:exposed_copper_chain"
+        },
+        {
+            "id": "minecraft:skeleton_skull"
+        },
+        {
+            "id": "minecraft:blue_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:end_rod"
+        },
+        {
+            "id": "minecraft:brown_candle_cake"
+        },
+        {
+            "id": "minecraft:gray_candle_cake"
+        },
+        {
+            "id": "minecraft:piglin_wall_head"
+        },
+        {
+            "id": "minecraft:potted_mangrove_propagule"
+        },
+        {
+            "id": "minecraft:creeper_head"
+        },
+        {
+            "id": "minecraft:red_candle_cake"
+        },
+        {
+            "id": "minecraft:polished_blackstone_button"
+        },
+        {
+            "id": "minecraft:potted_red_tulip"
+        },
+        {
+            "id": "minecraft:potted_warped_roots"
+        },
+        {
+            "id": "minecraft:glass"
+        },
+        {
+            "id": "minecraft:potted_red_mushroom"
+        },
+        {
+            "id": "minecraft:green_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:potted_allium"
+        },
+        {
+            "id": "minecraft:weathered_copper_chain"
+        },
+        {
+            "id": "minecraft:waxed_exposed_copper_bars"
+        },
+        {
+            "id": "minecraft:waxed_weathered_copper_chain"
+        },
+        {
+            "id": "minecraft:gray_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:potted_fern"
+        },
+        {
+            "id": "minecraft:white_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:pink_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:rail"
+        },
+        {
+            "id": "minecraft:zombie_wall_head"
+        },
+        {
+            "id": "minecraft:copper_torch"
+        },
+        {
+            "id": "minecraft:light_gray_candle_cake"
+        },
+        {
+            "id": "minecraft:potted_birch_sapling"
+        },
+        {
+            "id": "minecraft:test_instance_block"
+        },
+        {
+            "id": "minecraft:potted_blue_orchid"
+        },
+        {
+            "id": "minecraft:pink_candle_cake"
+        },
+        {
+            "id": "minecraft:lime_candle_cake"
+        },
+        {
+            "id": "minecraft:red_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_copper_chain"
+        },
+        {
+            "id": "minecraft:crimson_button"
+        },
+        {
+            "id": "minecraft:potted_cherry_sapling"
+        },
+        {
+            "id": "minecraft:cyan_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:weathered_copper_bars"
+        },
+        {
+            "id": "minecraft:repeater"
+        },
+        {
+            "id": "minecraft:potted_lily_of_the_valley"
+        },
+        {
+            "id": "minecraft:potted_white_tulip"
+        },
+        {
+            "id": "minecraft:structure_void"
+        },
+        {
+            "id": "minecraft:cyan_candle_cake"
+        },
+        {
+            "id": "minecraft:tripwire"
+        },
+        {
+            "id": "minecraft:potted_poppy"
+        },
+        {
+            "id": "minecraft:potted_bamboo"
+        },
+        {
+            "id": "minecraft:potted_torchflower"
+        },
+        {
+            "id": "minecraft:magenta_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:potted_warped_fungus"
+        },
+        {
+            "id": "minecraft:nether_portal"
+        },
+        {
+            "id": "minecraft:oxidized_copper_chain"
+        },
+        {
+            "id": "minecraft:waxed_copper_bars"
+        },
+        {
+            "id": "minecraft:redstone_wire"
+        },
+        {
+            "id": "minecraft:stone_button"
+        },
+        {
+            "id": "minecraft:detector_rail"
+        },
+        {
+            "id": "minecraft:cave_air"
+        },
+        {
+            "id": "minecraft:yellow_stained_glass_pane"
+        },
+        {
+            "id": "minecraft:potted_azalea_bush"
+        },
+        {
+            "id": "minecraft:skeleton_wall_skull"
+        },
+        {
+            "id": "minecraft:potted_jungle_sapling"
+        },
+        {
+            "id": "minecraft:iron_chain"
+        },
+        {
+            "id": "minecraft:birch_button"
+        },
+        {
+            "id": "minecraft:torch"
+        },
+        {
+            "id": "minecraft:waxed_copper_chain"
+        },
+        {
+            "id": "minecraft:wither_skeleton_wall_skull"
+        },
+        {
+            "id": "minecraft:potted_oak_sapling"
+        },
+        {
+            "id": "minecraft:iron_bars"
+        },
+        {
+            "id": "minecraft:potted_pink_tulip"
+        },
+        {
+            "id": "minecraft:potted_acacia_sapling"
+        }
+    ],
+    "1": [
+        {
+            "id": "minecraft:slime_block"
+        },
+        {
+            "id": "minecraft:grass_block"
+        }
+    ],
+    "2": [
+        {
+            "id": "minecraft:end_stone_bricks"
+        },
+        {
+            "id": "minecraft:sandstone_slab"
+        },
+        {
+            "id": "minecraft:birch_trapdoor"
+        },
+        {
+            "id": "minecraft:end_stone_brick_slab"
+        },
+        {
+            "id": "minecraft:stripped_birch_wood"
+        },
+        {
+            "id": "minecraft:suspicious_sand"
+        },
+        {
+            "id": "minecraft:cut_sandstone"
+        },
+        {
+            "id": "minecraft:end_stone"
+        },
+        {
+            "id": "minecraft:birch_hanging_sign"
+        },
+        {
+            "id": "minecraft:end_stone_brick_wall"
+        },
+        {
+            "id": "minecraft:birch_wood"
+        },
+        {
+            "id": "minecraft:sandstone"
+        },
+        {
+            "id": "minecraft:scaffolding"
+        },
+        {
+            "id": "minecraft:birch_pressure_plate"
+        },
+        {
+            "id": "minecraft:end_stone_brick_stairs"
+        },
+        {
+            "id": "minecraft:sandstone_wall"
+        },
+        {
+            "id": "minecraft:birch_fence"
+        },
+        {
+            "id": "minecraft:sand"
+        },
+        {
+            "id": "minecraft:birch_sign"
+        },
+        {
+            "id": "minecraft:birch_log",
+            "properties": {
+                "axis": "y"
+            }
+        },
+        {
+            "id": "minecraft:birch_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:sandstone_stairs"
+        },
+        {
+            "id": "minecraft:birch_wall_sign"
+        },
+        {
+            "id": "minecraft:glowstone"
+        },
+        {
+            "id": "minecraft:birch_stairs"
+        },
+        {
+            "id": "minecraft:smooth_sandstone_slab"
+        },
+        {
+            "id": "minecraft:birch_shelf"
+        },
+        {
+            "id": "minecraft:ochre_froglight"
+        },
+        {
+            "id": "minecraft:cut_sandstone_slab"
+        },
+        {
+            "id": "minecraft:turtle_egg"
+        },
+        {
+            "id": "minecraft:birch_door"
+        },
+        {
+            "id": "minecraft:smooth_sandstone_stairs"
+        },
+        {
+            "id": "minecraft:candle"
+        },
+        {
+            "id": "minecraft:chiseled_sandstone"
+        },
+        {
+            "id": "minecraft:birch_planks"
+        },
+        {
+            "id": "minecraft:birch_fence_gate"
+        },
+        {
+            "id": "minecraft:bone_block"
+        },
+        {
+            "id": "minecraft:stripped_birch_log"
+        },
+        {
+            "id": "minecraft:birch_slab"
+        },
+        {
+            "id": "minecraft:smooth_sandstone"
+        }
+    ],
+    "3": [
+        {
+            "id": "minecraft:gray_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:yellow_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:cobweb"
+        },
+        {
+            "id": "minecraft:light_gray_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:white_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:light_blue_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:cyan_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:lime_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:orange_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:red_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:brown_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:purple_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:pink_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:white_candle"
+        },
+        {
+            "id": "minecraft:mushroom_stem"
+        },
+        {
+            "id": "minecraft:blue_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:magenta_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:green_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:black_bed",
+            "properties": {
+                "part": "head",
+                "facing": "north",
+                "occupied": "true"
+            }
+        }
+    ],
+    "4": [
+        {
+            "id": "minecraft:fire"
+        },
+        {
+            "id": "minecraft:tnt"
+        },
+        {
+            "id": "minecraft:lava"
+        },
+        {
+            "id": "minecraft:redstone_block"
+        }
+    ],
+    "5": [
+        {
+            "id": "minecraft:blue_ice"
+        },
+        {
+            "id": "minecraft:frosted_ice"
+        },
+        {
+            "id": "minecraft:ice"
+        },
+        {
+            "id": "minecraft:packed_ice"
+        }
+    ],
+    "6": [
+        {
+            "id": "minecraft:copper_lantern"
+        },
+        {
+            "id": "minecraft:iron_block"
+        },
+        {
+            "id": "minecraft:oxidized_copper_lantern"
+        },
+        {
+            "id": "minecraft:damaged_anvil"
+        },
+        {
+            "id": "minecraft:waxed_weathered_copper_lantern"
+        },
+        {
+            "id": "minecraft:iron_door"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_copper_lantern"
+        },
+        {
+            "id": "minecraft:chipped_anvil"
+        },
+        {
+            "id": "minecraft:anvil"
+        },
+        {
+            "id": "minecraft:pale_oak_leaves"
+        },
+        {
+            "id": "minecraft:lantern"
+        },
+        {
+            "id": "minecraft:heavy_core"
+        },
+        {
+            "id": "minecraft:iron_trapdoor"
+        },
+        {
+            "id": "minecraft:grindstone"
+        },
+        {
+            "id": "minecraft:brewing_stand"
+        },
+        {
+            "id": "minecraft:waxed_copper_lantern"
+        },
+        {
+            "id": "minecraft:heavy_weighted_pressure_plate"
+        },
+        {
+            "id": "minecraft:closed_eyeblossom"
+        },
+        {
+            "id": "minecraft:weathered_copper_lantern"
+        },
+        {
+            "id": "minecraft:lodestone"
+        },
+        {
+            "id": "minecraft:soul_lantern"
+        },
+        {
+            "id": "minecraft:waxed_exposed_copper_lantern"
+        },
+        {
+            "id": "minecraft:exposed_copper_lantern"
+        },
+        {
+            "id": "minecraft:pale_oak_sapling"
+        }
+    ],
+    "7": [
+        {
+            "id": "minecraft:lily_pad"
+        },
+        {
+            "id": "minecraft:dark_oak_leaves"
+        },
+        {
+            "id": "minecraft:mangrove_leaves"
+        },
+        {
+            "id": "minecraft:torchflower_crop"
+        },
+        {
+            "id": "minecraft:spruce_leaves"
+        },
+        {
+            "id": "minecraft:spruce_sapling"
+        },
+        {
+            "id": "minecraft:short_grass"
+        },
+        {
+            "id": "minecraft:dark_oak_sapling"
+        },
+        {
+            "id": "minecraft:flowering_azalea_leaves"
+        },
+        {
+            "id": "minecraft:potatoes"
+        },
+        {
+            "id": "minecraft:bamboo_block",
+            "properties": {
+                "axis": "x"
+            }
+        },
+        {
+            "id": "minecraft:acacia_leaves"
+        },
+        {
+            "id": "minecraft:pink_petals"
+        },
+        {
+            "id": "minecraft:lily_of_the_valley"
+        },
+        {
+            "id": "minecraft:small_dripleaf"
+        },
+        {
+            "id": "minecraft:cave_vines"
+        },
+        {
+            "id": "minecraft:azalea"
+        },
+        {
+            "id": "minecraft:red_tulip"
+        },
+        {
+            "id": "minecraft:azure_bluet"
+        },
+        {
+            "id": "minecraft:beetroots"
+        },
+        {
+            "id": "minecraft:lilac"
+        },
+        {
+            "id": "minecraft:pitcher_plant"
+        },
+        {
+            "id": "minecraft:cactus"
+        },
+        {
+            "id": "minecraft:large_fern"
+        },
+        {
+            "id": "minecraft:birch_sapling"
+        },
+        {
+            "id": "minecraft:white_tulip"
+        },
+        {
+            "id": "minecraft:jungle_leaves"
+        },
+        {
+            "id": "minecraft:attached_melon_stem"
+        },
+        {
+            "id": "minecraft:sunflower"
+        },
+        {
+            "id": "minecraft:poppy"
+        },
+        {
+            "id": "minecraft:jungle_sapling"
+        },
+        {
+            "id": "minecraft:big_dripleaf"
+        },
+        {
+            "id": "minecraft:peony"
+        },
+        {
+            "id": "minecraft:big_dripleaf_stem"
+        },
+        {
+            "id": "minecraft:bush"
+        },
+        {
+            "id": "minecraft:cave_vines_plant"
+        },
+        {
+            "id": "minecraft:allium"
+        },
+        {
+            "id": "minecraft:oak_sapling"
+        },
+        {
+            "id": "minecraft:torchflower"
+        },
+        {
+            "id": "minecraft:attached_pumpkin_stem"
+        },
+        {
+            "id": "minecraft:vine"
+        },
+        {
+            "id": "minecraft:pink_tulip"
+        },
+        {
+            "id": "minecraft:flowering_azalea"
+        },
+        {
+            "id": "minecraft:sweet_berry_bush"
+        },
+        {
+            "id": "minecraft:acacia_sapling"
+        },
+        {
+            "id": "minecraft:azalea_leaves"
+        },
+        {
+            "id": "minecraft:rose_bush"
+        },
+        {
+            "id": "minecraft:dandelion"
+        },
+        {
+            "id": "minecraft:oxeye_daisy"
+        },
+        {
+            "id": "minecraft:wither_rose"
+        },
+        {
+            "id": "minecraft:carrots"
+        },
+        {
+            "id": "minecraft:wheat",
+            "properties": {
+                "age": "0"
+            }
+        },
+        {
+            "id": "minecraft:orange_tulip"
+        },
+        {
+            "id": "minecraft:pumpkin_stem"
+        },
+        {
+            "id": "minecraft:spore_blossom"
+        },
+        {
+            "id": "minecraft:pitcher_crop"
+        },
+        {
+            "id": "minecraft:birch_leaves"
+        },
+        {
+            "id": "minecraft:cocoa"
+        },
+        {
+            "id": "minecraft:mangrove_propagule"
+        },
+        {
+            "id": "minecraft:fern"
+        },
+        {
+            "id": "minecraft:blue_orchid"
+        },
+        {
+            "id": "minecraft:oak_leaves"
+        },
+        {
+            "id": "minecraft:cornflower"
+        },
+        {
+            "id": "minecraft:firefly_bush"
+        },
+        {
+            "id": "minecraft:wildflowers"
+        },
+        {
+            "id": "minecraft:melon_stem"
+        },
+        {
+            "id": "minecraft:bamboo"
+        },
+        {
+            "id": "minecraft:sugar_cane"
+        },
+        {
+            "id": "minecraft:tall_grass"
+        }
+    ],
+    "8": [
+        {
+            "id": "minecraft:white_carpet"
+        },
+        {
+            "id": "minecraft:white_stained_glass"
+        },
+        {
+            "id": "minecraft:powder_snow"
+        },
+        {
+            "id": "minecraft:white_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:white_concrete_powder"
+        },
+        {
+            "id": "minecraft:white_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:snow"
+        },
+        {
+            "id": "minecraft:white_shulker_box"
+        },
+        {
+            "id": "minecraft:white_wool"
+        },
+        {
+            "id": "minecraft:white_concrete"
+        },
+        {
+            "id": "minecraft:snow_block"
+        }
+    ],
+    "9": [
+        {
+            "id": "minecraft:infested_chiseled_stone_bricks"
+        },
+        {
+            "id": "minecraft:infested_mossy_stone_bricks"
+        },
+        {
+            "id": "minecraft:clay"
+        },
+        {
+            "id": "minecraft:infested_stone_bricks"
+        },
+        {
+            "id": "minecraft:infested_cobblestone"
+        },
+        {
+            "id": "minecraft:infested_cracked_stone_bricks"
+        },
+        {
+            "id": "minecraft:infested_stone"
+        }
+    ],
+    "10": [
+        {
+            "id": "minecraft:jungle_slab"
+        },
+        {
+            "id": "minecraft:granite_stairs"
+        },
+        {
+            "id": "minecraft:jungle_fence"
+        },
+        {
+            "id": "minecraft:dirt"
+        },
+        {
+            "id": "minecraft:jungle_log",
+            "properties": {
+                "axis": "y"
+            }
+        },
+        {
+            "id": "minecraft:jungle_pressure_plate"
+        },
+        {
+            "id": "minecraft:stripped_jungle_wood"
+        },
+        {
+            "id": "minecraft:coarse_dirt"
+        },
+        {
+            "id": "minecraft:polished_granite_stairs"
+        },
+        {
+            "id": "minecraft:brown_mushroom_block"
+        },
+        {
+            "id": "minecraft:granite_wall"
+        },
+        {
+            "id": "minecraft:farmland"
+        },
+        {
+            "id": "minecraft:jungle_door"
+        },
+        {
+            "id": "minecraft:jungle_shelf"
+        },
+        {
+            "id": "minecraft:hanging_roots"
+        },
+        {
+            "id": "minecraft:jungle_fence_gate"
+        },
+        {
+            "id": "minecraft:dirt_path"
+        },
+        {
+            "id": "minecraft:jungle_trapdoor"
+        },
+        {
+            "id": "minecraft:jungle_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:jungle_planks"
+        },
+        {
+            "id": "minecraft:jungle_stairs"
+        },
+        {
+            "id": "minecraft:polished_granite"
+        },
+        {
+            "id": "minecraft:jungle_sign"
+        },
+        {
+            "id": "minecraft:granite_slab"
+        },
+        {
+            "id": "minecraft:polished_granite_slab"
+        },
+        {
+            "id": "minecraft:jungle_hanging_sign"
+        },
+        {
+            "id": "minecraft:granite"
+        },
+        {
+            "id": "minecraft:jukebox"
+        },
+        {
+            "id": "minecraft:stripped_jungle_log"
+        },
+        {
+            "id": "minecraft:jungle_wood"
+        },
+        {
+            "id": "minecraft:packed_mud"
+        },
+        {
+            "id": "minecraft:jungle_wall_sign"
+        },
+        {
+            "id": "minecraft:rooted_dirt"
+        }
+    ],
+    "11": [
+        {
+            "id": "minecraft:trial_spawner"
+        },
+        {
+            "id": "minecraft:andesite_wall"
+        },
+        {
+            "id": "minecraft:observer"
+        },
+        {
+            "id": "minecraft:mossy_stone_bricks"
+        },
+        {
+            "id": "minecraft:smooth_stone_slab"
+        },
+        {
+            "id": "minecraft:suspicious_gravel"
+        },
+        {
+            "id": "minecraft:cobblestone_slab"
+        },
+        {
+            "id": "minecraft:pale_oak_log",
+            "properties": {
+                "axis": "x"
+            }
+        },
+        {
+            "id": "minecraft:mossy_cobblestone"
+        },
+        {
+            "id": "minecraft:acacia_log",
+            "properties": {
+                "axis": "x"
+            }
+        },
+        {
+            "id": "minecraft:gravel"
+        },
+        {
+            "id": "minecraft:piston_head"
+        },
+        {
+            "id": "minecraft:polished_andesite"
+        },
+        {
+            "id": "minecraft:water_cauldron"
+        },
+        {
+            "id": "minecraft:stone_brick_wall"
+        },
+        {
+            "id": "minecraft:smooth_stone"
+        },
+        {
+            "id": "minecraft:moving_piston"
+        },
+        {
+            "id": "minecraft:andesite_slab"
+        },
+        {
+            "id": "minecraft:polished_andesite_slab"
+        },
+        {
+            "id": "minecraft:mossy_stone_brick_stairs"
+        },
+        {
+            "id": "minecraft:diamond_ore"
+        },
+        {
+            "id": "minecraft:polished_andesite_stairs"
+        },
+        {
+            "id": "minecraft:crafter"
+        },
+        {
+            "id": "minecraft:ender_chest"
+        },
+        {
+            "id": "minecraft:smoker"
+        },
+        {
+            "id": "minecraft:stone_stairs"
+        },
+        {
+            "id": "minecraft:sticky_piston"
+        },
+        {
+            "id": "minecraft:stone_slab"
+        },
+        {
+            "id": "minecraft:bedrock"
+        },
+        {
+            "id": "minecraft:spawner"
+        },
+        {
+            "id": "minecraft:stone_brick_stairs"
+        },
+        {
+            "id": "minecraft:gold_ore"
+        },
+        {
+            "id": "minecraft:coal_ore"
+        },
+        {
+            "id": "minecraft:cobblestone"
+        },
+        {
+            "id": "minecraft:blast_furnace"
+        },
+        {
+            "id": "minecraft:lapis_ore"
+        },
+        {
+            "id": "minecraft:chiseled_stone_bricks"
+        },
+        {
+            "id": "minecraft:stone_bricks"
+        },
+        {
+            "id": "minecraft:cobblestone_stairs"
+        },
+        {
+            "id": "minecraft:stone"
+        },
+        {
+            "id": "minecraft:redstone_ore"
+        },
+        {
+            "id": "minecraft:mossy_cobblestone_wall"
+        },
+        {
+            "id": "minecraft:lava_cauldron"
+        },
+        {
+            "id": "minecraft:piston"
+        },
+        {
+            "id": "minecraft:iron_ore"
+        },
+        {
+            "id": "minecraft:furnace"
+        },
+        {
+            "id": "minecraft:powder_snow_cauldron"
+        },
+        {
+            "id": "minecraft:dropper"
+        },
+        {
+            "id": "minecraft:cauldron"
+        },
+        {
+            "id": "minecraft:dispenser"
+        },
+        {
+            "id": "minecraft:cracked_stone_bricks"
+        },
+        {
+            "id": "minecraft:andesite"
+        },
+        {
+            "id": "minecraft:mossy_cobblestone_slab"
+        },
+        {
+            "id": "minecraft:stone_pressure_plate"
+        },
+        {
+            "id": "minecraft:stonecutter"
+        },
+        {
+            "id": "minecraft:cobblestone_wall"
+        },
+        {
+            "id": "minecraft:pale_oak_wood"
+        },
+        {
+            "id": "minecraft:mossy_cobblestone_stairs"
+        },
+        {
+            "id": "minecraft:mossy_stone_brick_wall"
+        },
+        {
+            "id": "minecraft:vault"
+        },
+        {
+            "id": "minecraft:hopper"
+        },
+        {
+            "id": "minecraft:mossy_stone_brick_slab"
+        },
+        {
+            "id": "minecraft:stone_brick_slab"
+        },
+        {
+            "id": "minecraft:andesite_stairs"
+        },
+        {
+            "id": "minecraft:copper_ore"
+        },
+        {
+            "id": "minecraft:emerald_ore"
+        }
+    ],
+    "12": [
+        {
+            "id": "minecraft:kelp_plant"
+        },
+        {
+            "id": "minecraft:light",
+            "properties": {
+                "waterlogged": "true",
+                "level": "0"
+            }
+        },
+        {
+            "id": "minecraft:barrier",
+            "properties": {
+                "waterlogged": "true"
+            }
+        },
+        {
+            "id": "minecraft:frogspawn"
+        },
+        {
+            "id": "minecraft:water"
+        },
+        {
+            "id": "minecraft:kelp"
+        },
+        {
+            "id": "minecraft:seagrass"
+        },
+        {
+            "id": "minecraft:tall_seagrass"
+        },
+        {
+            "id": "minecraft:bubble_column"
+        }
+    ],
+    "13": [
+        {
+            "id": "minecraft:green_banner"
+        },
+        {
+            "id": "minecraft:loom"
+        },
+        {
+            "id": "minecraft:gray_banner"
+        },
+        {
+            "id": "minecraft:oak_hanging_sign"
+        },
+        {
+            "id": "minecraft:purple_wall_banner"
+        },
+        {
+            "id": "minecraft:blue_wall_banner"
+        },
+        {
+            "id": "minecraft:oak_planks"
+        },
+        {
+            "id": "minecraft:oak_log",
+            "properties": {
+                "axis": "y"
+            }
+        },
+        {
+            "id": "minecraft:magenta_banner"
+        },
+        {
+            "id": "minecraft:orange_banner"
+        },
+        {
+            "id": "minecraft:lime_banner"
+        },
+        {
+            "id": "minecraft:oak_wall_sign"
+        },
+        {
+            "id": "minecraft:white_banner"
+        },
+        {
+            "id": "minecraft:oak_door"
+        },
+        {
+            "id": "minecraft:cartography_table"
+        },
+        {
+            "id": "minecraft:yellow_wall_banner"
+        },
+        {
+            "id": "minecraft:stripped_oak_log"
+        },
+        {
+            "id": "minecraft:orange_wall_banner"
+        },
+        {
+            "id": "minecraft:oak_stairs"
+        },
+        {
+            "id": "minecraft:fletching_table"
+        },
+        {
+            "id": "minecraft:composter"
+        },
+        {
+            "id": "minecraft:lectern"
+        },
+        {
+            "id": "minecraft:light_gray_wall_banner"
+        },
+        {
+            "id": "minecraft:light_gray_banner"
+        },
+        {
+            "id": "minecraft:note_block"
+        },
+        {
+            "id": "minecraft:petrified_oak_slab"
+        },
+        {
+            "id": "minecraft:oak_trapdoor"
+        },
+        {
+            "id": "minecraft:dead_bush"
+        },
+        {
+            "id": "minecraft:oak_pressure_plate"
+        },
+        {
+            "id": "minecraft:oak_fence_gate"
+        },
+        {
+            "id": "minecraft:daylight_detector"
+        },
+        {
+            "id": "minecraft:black_wall_banner"
+        },
+        {
+            "id": "minecraft:beehive"
+        },
+        {
+            "id": "minecraft:pink_wall_banner"
+        },
+        {
+            "id": "minecraft:gray_wall_banner"
+        },
+        {
+            "id": "minecraft:oak_slab"
+        },
+        {
+            "id": "minecraft:red_wall_banner"
+        },
+        {
+            "id": "minecraft:crafting_table"
+        },
+        {
+            "id": "minecraft:oak_shelf"
+        },
+        {
+            "id": "minecraft:barrel"
+        },
+        {
+            "id": "minecraft:bookshelf"
+        },
+        {
+            "id": "minecraft:bamboo_sapling"
+        },
+        {
+            "id": "minecraft:lime_wall_banner"
+        },
+        {
+            "id": "minecraft:smithing_table"
+        },
+        {
+            "id": "minecraft:trapped_chest"
+        },
+        {
+            "id": "minecraft:chest"
+        },
+        {
+            "id": "minecraft:red_banner"
+        },
+        {
+            "id": "minecraft:spruce_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:light_blue_banner"
+        },
+        {
+            "id": "minecraft:green_wall_banner"
+        },
+        {
+            "id": "minecraft:light_blue_wall_banner"
+        },
+        {
+            "id": "minecraft:magenta_wall_banner"
+        },
+        {
+            "id": "minecraft:chiseled_bookshelf"
+        },
+        {
+            "id": "minecraft:cyan_wall_banner"
+        },
+        {
+            "id": "minecraft:oak_wood"
+        },
+        {
+            "id": "minecraft:brown_banner"
+        },
+        {
+            "id": "minecraft:yellow_banner"
+        },
+        {
+            "id": "minecraft:purple_banner"
+        },
+        {
+            "id": "minecraft:oak_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:brown_wall_banner"
+        },
+        {
+            "id": "minecraft:pink_banner"
+        },
+        {
+            "id": "minecraft:black_banner"
+        },
+        {
+            "id": "minecraft:white_wall_banner"
+        },
+        {
+            "id": "minecraft:cyan_banner"
+        },
+        {
+            "id": "minecraft:blue_banner"
+        },
+        {
+            "id": "minecraft:stripped_oak_wood"
+        },
+        {
+            "id": "minecraft:oak_sign"
+        },
+        {
+            "id": "minecraft:oak_fence"
+        }
+    ],
+    "14": [
+        {
+            "id": "minecraft:stripped_pale_oak_wood"
+        },
+        {
+            "id": "minecraft:diorite_stairs"
+        },
+        {
+            "id": "minecraft:chiseled_quartz_block"
+        },
+        {
+            "id": "minecraft:diorite_wall"
+        },
+        {
+            "id": "minecraft:pale_oak_wall_sign"
+        },
+        {
+            "id": "minecraft:pale_oak_log",
+            "properties": {
+                "axis": "y"
+            }
+        },
+        {
+            "id": "minecraft:pale_oak_sign"
+        },
+        {
+            "id": "minecraft:pale_oak_fence_gate"
+        },
+        {
+            "id": "minecraft:quartz_slab"
+        },
+        {
+            "id": "minecraft:pale_oak_fence"
+        },
+        {
+            "id": "minecraft:smooth_quartz_stairs"
+        },
+        {
+            "id": "minecraft:quartz_bricks"
+        },
+        {
+            "id": "minecraft:polished_diorite_stairs"
+        },
+        {
+            "id": "minecraft:smooth_quartz_slab"
+        },
+        {
+            "id": "minecraft:pale_oak_trapdoor"
+        },
+        {
+            "id": "minecraft:birch_log",
+            "properties": {
+                "axis": "x"
+            }
+        },
+        {
+            "id": "minecraft:diorite"
+        },
+        {
+            "id": "minecraft:polished_diorite_slab"
+        },
+        {
+            "id": "minecraft:pale_oak_shelf"
+        },
+        {
+            "id": "minecraft:smooth_quartz"
+        },
+        {
+            "id": "minecraft:pale_oak_door"
+        },
+        {
+            "id": "minecraft:quartz_block"
+        },
+        {
+            "id": "minecraft:stripped_pale_oak_log"
+        },
+        {
+            "id": "minecraft:sea_lantern"
+        },
+        {
+            "id": "minecraft:pale_oak_slab"
+        },
+        {
+            "id": "minecraft:pale_oak_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:pale_oak_planks"
+        },
+        {
+            "id": "minecraft:pale_oak_hanging_sign"
+        },
+        {
+            "id": "minecraft:pale_oak_stairs"
+        },
+        {
+            "id": "minecraft:polished_diorite"
+        },
+        {
+            "id": "minecraft:pale_oak_pressure_plate"
+        },
+        {
+            "id": "minecraft:quartz_pillar"
+        },
+        {
+            "id": "minecraft:target"
+        },
+        {
+            "id": "minecraft:diorite_slab"
+        },
+        {
+            "id": "minecraft:quartz_stairs"
+        }
+    ],
+    "15": [
+        {
+            "id": "minecraft:stripped_acacia_log"
+        },
+        {
+            "id": "minecraft:red_sandstone"
+        },
+        {
+            "id": "minecraft:orange_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:terracotta"
+        },
+        {
+            "id": "minecraft:copper_golem_statue"
+        },
+        {
+            "id": "minecraft:red_sandstone_stairs"
+        },
+        {
+            "id": "minecraft:carved_pumpkin"
+        },
+        {
+            "id": "minecraft:acacia_shelf"
+        },
+        {
+            "id": "minecraft:acacia_pressure_plate"
+        },
+        {
+            "id": "minecraft:acacia_log",
+            "properties": {
+                "axis": "y"
+            }
+        },
+        {
+            "id": "minecraft:copper_grate"
+        },
+        {
+            "id": "minecraft:waxed_copper_block"
+        },
+        {
+            "id": "minecraft:smooth_red_sandstone_stairs"
+        },
+        {
+            "id": "minecraft:acacia_door"
+        },
+        {
+            "id": "minecraft:acacia_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:chiseled_copper"
+        },
+        {
+            "id": "minecraft:cut_copper"
+        },
+        {
+            "id": "minecraft:acacia_wall_sign"
+        },
+        {
+            "id": "minecraft:acacia_fence"
+        },
+        {
+            "id": "minecraft:lightning_rod"
+        },
+        {
+            "id": "minecraft:orange_shulker_box"
+        },
+        {
+            "id": "minecraft:waxed_copper_golem_statue"
+        },
+        {
+            "id": "minecraft:orange_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:acacia_slab"
+        },
+        {
+            "id": "minecraft:jack_o_lantern"
+        },
+        {
+            "id": "minecraft:acacia_hanging_sign"
+        },
+        {
+            "id": "minecraft:open_eyeblossom"
+        },
+        {
+            "id": "minecraft:waxed_chiseled_copper"
+        },
+        {
+            "id": "minecraft:copper_door"
+        },
+        {
+            "id": "minecraft:copper_chest"
+        },
+        {
+            "id": "minecraft:waxed_copper_grate"
+        },
+        {
+            "id": "minecraft:waxed_cut_copper_stairs"
+        },
+        {
+            "id": "minecraft:honeycomb_block"
+        },
+        {
+            "id": "minecraft:cut_red_sandstone"
+        },
+        {
+            "id": "minecraft:red_sandstone_wall"
+        },
+        {
+            "id": "minecraft:waxed_lightning_rod"
+        },
+        {
+            "id": "minecraft:waxed_copper_door"
+        },
+        {
+            "id": "minecraft:acacia_fence_gate"
+        },
+        {
+            "id": "minecraft:red_sand"
+        },
+        {
+            "id": "minecraft:waxed_copper_bulb"
+        },
+        {
+            "id": "minecraft:cut_red_sandstone_slab"
+        },
+        {
+            "id": "minecraft:waxed_copper_chest"
+        },
+        {
+            "id": "minecraft:cut_copper_stairs"
+        },
+        {
+            "id": "minecraft:pumpkin"
+        },
+        {
+            "id": "minecraft:chiseled_red_sandstone"
+        },
+        {
+            "id": "minecraft:orange_candle"
+        },
+        {
+            "id": "minecraft:copper_block"
+        },
+        {
+            "id": "minecraft:orange_wool"
+        },
+        {
+            "id": "minecraft:red_sandstone_slab"
+        },
+        {
+            "id": "minecraft:smooth_red_sandstone"
+        },
+        {
+            "id": "minecraft:copper_bulb"
+        },
+        {
+            "id": "minecraft:copper_trapdoor"
+        },
+        {
+            "id": "minecraft:orange_stained_glass"
+        },
+        {
+            "id": "minecraft:smooth_red_sandstone_slab"
+        },
+        {
+            "id": "minecraft:waxed_cut_copper"
+        },
+        {
+            "id": "minecraft:orange_concrete_powder"
+        },
+        {
+            "id": "minecraft:waxed_copper_trapdoor"
+        },
+        {
+            "id": "minecraft:acacia_trapdoor"
+        },
+        {
+            "id": "minecraft:creaking_heart"
+        },
+        {
+            "id": "minecraft:acacia_stairs"
+        },
+        {
+            "id": "minecraft:honey_block"
+        },
+        {
+            "id": "minecraft:acacia_planks"
+        },
+        {
+            "id": "minecraft:waxed_cut_copper_slab"
+        },
+        {
+            "id": "minecraft:orange_carpet"
+        },
+        {
+            "id": "minecraft:orange_concrete"
+        },
+        {
+            "id": "minecraft:cut_copper_slab"
+        },
+        {
+            "id": "minecraft:stripped_acacia_wood"
+        },
+        {
+            "id": "minecraft:acacia_sign"
+        },
+        {
+            "id": "minecraft:raw_copper_block"
+        }
+    ],
+    "16": [
+        {
+            "id": "minecraft:purpur_stairs"
+        },
+        {
+            "id": "minecraft:magenta_carpet"
+        },
+        {
+            "id": "minecraft:magenta_concrete_powder"
+        },
+        {
+            "id": "minecraft:purpur_slab"
+        },
+        {
+            "id": "minecraft:magenta_concrete"
+        },
+        {
+            "id": "minecraft:magenta_stained_glass"
+        },
+        {
+            "id": "minecraft:magenta_wool"
+        },
+        {
+            "id": "minecraft:magenta_shulker_box"
+        },
+        {
+            "id": "minecraft:purpur_pillar"
+        },
+        {
+            "id": "minecraft:magenta_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:magenta_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:magenta_candle"
+        },
+        {
+            "id": "minecraft:purpur_block"
+        }
+    ],
+    "17": [
+        {
+            "id": "minecraft:light_blue_stained_glass"
+        },
+        {
+            "id": "minecraft:soul_fire"
+        },
+        {
+            "id": "minecraft:light_blue_carpet"
+        },
+        {
+            "id": "minecraft:light_blue_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:light_blue_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:light_blue_concrete"
+        },
+        {
+            "id": "minecraft:light_blue_wool"
+        },
+        {
+            "id": "minecraft:light_blue_candle"
+        },
+        {
+            "id": "minecraft:light_blue_shulker_box"
+        },
+        {
+            "id": "minecraft:light_blue_concrete_powder"
+        }
+    ],
+    "18": [
+        {
+            "id": "minecraft:yellow_candle"
+        },
+        {
+            "id": "minecraft:bamboo_door"
+        },
+        {
+            "id": "minecraft:yellow_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:bamboo_block",
+            "properties": {
+                "axis": "y"
+            }
+        },
+        {
+            "id": "minecraft:bamboo_planks"
+        },
+        {
+            "id": "minecraft:bamboo_fence"
+        },
+        {
+            "id": "minecraft:bamboo_mosaic_stairs"
+        },
+        {
+            "id": "minecraft:horn_coral_wall_fan"
+        },
+        {
+            "id": "minecraft:bamboo_slab"
+        },
+        {
+            "id": "minecraft:bamboo_shelf"
+        },
+        {
+            "id": "minecraft:bamboo_mosaic"
+        },
+        {
+            "id": "minecraft:horn_coral"
+        },
+        {
+            "id": "minecraft:bamboo_mosaic_slab"
+        },
+        {
+            "id": "minecraft:yellow_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:yellow_wool"
+        },
+        {
+            "id": "minecraft:bamboo_pressure_plate"
+        },
+        {
+            "id": "minecraft:short_dry_grass"
+        },
+        {
+            "id": "minecraft:bamboo_trapdoor"
+        },
+        {
+            "id": "minecraft:yellow_shulker_box"
+        },
+        {
+            "id": "minecraft:bee_nest"
+        },
+        {
+            "id": "minecraft:bamboo_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:bamboo_fence_gate"
+        },
+        {
+            "id": "minecraft:stripped_bamboo_block"
+        },
+        {
+            "id": "minecraft:wet_sponge"
+        },
+        {
+            "id": "minecraft:yellow_carpet"
+        },
+        {
+            "id": "minecraft:yellow_stained_glass"
+        },
+        {
+            "id": "minecraft:sponge"
+        },
+        {
+            "id": "minecraft:tall_dry_grass"
+        },
+        {
+            "id": "minecraft:horn_coral_block"
+        },
+        {
+            "id": "minecraft:hay_block"
+        },
+        {
+            "id": "minecraft:wheat",
+            "properties": {
+                "age": "6"
+            }
+        },
+        {
+            "id": "minecraft:horn_coral_fan"
+        },
+        {
+            "id": "minecraft:bamboo_wall_sign"
+        },
+        {
+            "id": "minecraft:yellow_concrete_powder"
+        },
+        {
+            "id": "minecraft:bamboo_sign"
+        },
+        {
+            "id": "minecraft:bamboo_hanging_sign"
+        },
+        {
+            "id": "minecraft:yellow_concrete"
+        },
+        {
+            "id": "minecraft:bamboo_stairs"
+        }
+    ],
+    "19": [
+        {
+            "id": "minecraft:lime_shulker_box"
+        },
+        {
+            "id": "minecraft:lime_carpet"
+        },
+        {
+            "id": "minecraft:lime_concrete_powder"
+        },
+        {
+            "id": "minecraft:lime_stained_glass"
+        },
+        {
+            "id": "minecraft:melon"
+        },
+        {
+            "id": "minecraft:lime_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:lime_wool"
+        },
+        {
+            "id": "minecraft:lime_concrete"
+        },
+        {
+            "id": "minecraft:lime_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:lime_candle"
+        }
+    ],
+    "20": [
+        {
+            "id": "minecraft:pink_wool"
+        },
+        {
+            "id": "minecraft:pink_concrete_powder"
+        },
+        {
+            "id": "minecraft:pink_candle"
+        },
+        {
+            "id": "minecraft:pink_stained_glass"
+        },
+        {
+            "id": "minecraft:brain_coral_fan"
+        },
+        {
+            "id": "minecraft:cactus_flower"
+        },
+        {
+            "id": "minecraft:brain_coral_wall_fan"
+        },
+        {
+            "id": "minecraft:pink_shulker_box"
+        },
+        {
+            "id": "minecraft:brain_coral_block"
+        },
+        {
+            "id": "minecraft:pink_concrete"
+        },
+        {
+            "id": "minecraft:pink_carpet"
+        },
+        {
+            "id": "minecraft:pearlescent_froglight"
+        },
+        {
+            "id": "minecraft:pink_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:pink_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:brain_coral"
+        },
+        {
+            "id": "minecraft:cherry_leaves"
+        },
+        {
+            "id": "minecraft:cherry_sapling"
+        }
+    ],
+    "21": [
+        {
+            "id": "minecraft:gray_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:dead_horn_coral_fan"
+        },
+        {
+            "id": "minecraft:dead_brain_coral"
+        },
+        {
+            "id": "minecraft:dead_fire_coral_block"
+        },
+        {
+            "id": "minecraft:dead_bubble_coral"
+        },
+        {
+            "id": "minecraft:dried_ghast"
+        },
+        {
+            "id": "minecraft:dead_brain_coral_block"
+        },
+        {
+            "id": "minecraft:dead_horn_coral_wall_fan"
+        },
+        {
+            "id": "minecraft:gray_candle"
+        },
+        {
+            "id": "minecraft:dead_brain_coral_wall_fan"
+        },
+        {
+            "id": "minecraft:dead_bubble_coral_fan"
+        },
+        {
+            "id": "minecraft:tinted_glass"
+        },
+        {
+            "id": "minecraft:dead_fire_coral_wall_fan"
+        },
+        {
+            "id": "minecraft:gray_concrete"
+        },
+        {
+            "id": "minecraft:gray_concrete_powder"
+        },
+        {
+            "id": "minecraft:dead_tube_coral"
+        },
+        {
+            "id": "minecraft:acacia_wood"
+        },
+        {
+            "id": "minecraft:dead_fire_coral_fan"
+        },
+        {
+            "id": "minecraft:dead_tube_coral_wall_fan"
+        },
+        {
+            "id": "minecraft:dead_tube_coral_fan"
+        },
+        {
+            "id": "minecraft:dead_horn_coral_block"
+        },
+        {
+            "id": "minecraft:gray_stained_glass"
+        },
+        {
+            "id": "minecraft:gray_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:dead_brain_coral_fan"
+        },
+        {
+            "id": "minecraft:gray_wool"
+        },
+        {
+            "id": "minecraft:dead_tube_coral_block"
+        },
+        {
+            "id": "minecraft:dead_fire_coral"
+        },
+        {
+            "id": "minecraft:dead_horn_coral"
+        },
+        {
+            "id": "minecraft:gray_shulker_box"
+        },
+        {
+            "id": "minecraft:gray_carpet"
+        },
+        {
+            "id": "minecraft:dead_bubble_coral_wall_fan"
+        },
+        {
+            "id": "minecraft:dead_bubble_coral_block"
+        }
+    ],
+    "22": [
+        {
+            "id": "minecraft:light_gray_shulker_box"
+        },
+        {
+            "id": "minecraft:pale_hanging_moss"
+        },
+        {
+            "id": "minecraft:pale_moss_carpet"
+        },
+        {
+            "id": "minecraft:light_gray_concrete_powder"
+        },
+        {
+            "id": "minecraft:light_gray_carpet"
+        },
+        {
+            "id": "minecraft:light_gray_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:light_gray_wool"
+        },
+        {
+            "id": "minecraft:light_gray_stained_glass"
+        },
+        {
+            "id": "minecraft:jigsaw"
+        },
+        {
+            "id": "minecraft:light_gray_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:light_gray_candle"
+        },
+        {
+            "id": "minecraft:test_block"
+        },
+        {
+            "id": "minecraft:light_gray_concrete"
+        },
+        {
+            "id": "minecraft:structure_block"
+        },
+        {
+            "id": "minecraft:pale_moss_block"
+        }
+    ],
+    "23": [
+        {
+            "id": "minecraft:calibrated_sculk_sensor"
+        },
+        {
+            "id": "minecraft:prismarine"
+        },
+        {
+            "id": "minecraft:cyan_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:cyan_wool"
+        },
+        {
+            "id": "minecraft:cyan_candle"
+        },
+        {
+            "id": "minecraft:cyan_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:twisting_vines"
+        },
+        {
+            "id": "minecraft:cyan_stained_glass"
+        },
+        {
+            "id": "minecraft:sculk_sensor"
+        },
+        {
+            "id": "minecraft:prismarine_wall"
+        },
+        {
+            "id": "minecraft:warped_roots"
+        },
+        {
+            "id": "minecraft:warped_fungus"
+        },
+        {
+            "id": "minecraft:cyan_carpet"
+        },
+        {
+            "id": "minecraft:prismarine_stairs"
+        },
+        {
+            "id": "minecraft:prismarine_slab"
+        },
+        {
+            "id": "minecraft:cyan_concrete"
+        },
+        {
+            "id": "minecraft:cyan_concrete_powder"
+        },
+        {
+            "id": "minecraft:nether_sprouts"
+        },
+        {
+            "id": "minecraft:cyan_shulker_box"
+        },
+        {
+            "id": "minecraft:twisting_vines_plant"
+        }
+    ],
+    "24": [
+        {
+            "id": "minecraft:bubble_coral_fan"
+        },
+        {
+            "id": "minecraft:bubble_coral"
+        },
+        {
+            "id": "minecraft:repeating_command_block"
+        },
+        {
+            "id": "minecraft:large_amethyst_bud"
+        },
+        {
+            "id": "minecraft:purple_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:bubble_coral_block"
+        },
+        {
+            "id": "minecraft:chorus_flower"
+        },
+        {
+            "id": "minecraft:purple_wool"
+        },
+        {
+            "id": "minecraft:purple_candle"
+        },
+        {
+            "id": "minecraft:purple_concrete"
+        },
+        {
+            "id": "minecraft:purple_concrete_powder"
+        },
+        {
+            "id": "minecraft:amethyst_block"
+        },
+        {
+            "id": "minecraft:purple_stained_glass"
+        },
+        {
+            "id": "minecraft:small_amethyst_bud"
+        },
+        {
+            "id": "minecraft:bubble_coral_wall_fan"
+        },
+        {
+            "id": "minecraft:purple_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:purple_carpet"
+        },
+        {
+            "id": "minecraft:shulker_box"
+        },
+        {
+            "id": "minecraft:budding_amethyst"
+        },
+        {
+            "id": "minecraft:amethyst_cluster"
+        },
+        {
+            "id": "minecraft:chorus_plant"
+        },
+        {
+            "id": "minecraft:mycelium"
+        },
+        {
+            "id": "minecraft:medium_amethyst_bud"
+        }
+    ],
+    "25": [
+        {
+            "id": "minecraft:tube_coral"
+        },
+        {
+            "id": "minecraft:blue_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:tube_coral_fan"
+        },
+        {
+            "id": "minecraft:blue_shulker_box"
+        },
+        {
+            "id": "minecraft:blue_carpet"
+        },
+        {
+            "id": "minecraft:blue_stained_glass"
+        },
+        {
+            "id": "minecraft:tube_coral_block"
+        },
+        {
+            "id": "minecraft:blue_concrete_powder"
+        },
+        {
+            "id": "minecraft:tube_coral_wall_fan"
+        },
+        {
+            "id": "minecraft:blue_candle"
+        },
+        {
+            "id": "minecraft:blue_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:blue_concrete"
+        },
+        {
+            "id": "minecraft:blue_wool"
+        }
+    ],
+    "26": [
+        {
+            "id": "minecraft:dark_oak_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:stripped_dark_oak_log"
+        },
+        {
+            "id": "minecraft:leaf_litter"
+        },
+        {
+            "id": "minecraft:dark_oak_door"
+        },
+        {
+            "id": "minecraft:brown_candle"
+        },
+        {
+            "id": "minecraft:dark_oak_log"
+        },
+        {
+            "id": "minecraft:brown_mushroom"
+        },
+        {
+            "id": "minecraft:dark_oak_fence_gate"
+        },
+        {
+            "id": "minecraft:dark_oak_stairs"
+        },
+        {
+            "id": "minecraft:dark_oak_hanging_sign"
+        },
+        {
+            "id": "minecraft:dark_oak_trapdoor"
+        },
+        {
+            "id": "minecraft:brown_carpet"
+        },
+        {
+            "id": "minecraft:soul_soil"
+        },
+        {
+            "id": "minecraft:stripped_dark_oak_wood"
+        },
+        {
+            "id": "minecraft:brown_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:command_block"
+        },
+        {
+            "id": "minecraft:brown_concrete_powder"
+        },
+        {
+            "id": "minecraft:dark_oak_slab"
+        },
+        {
+            "id": "minecraft:brown_stained_glass"
+        },
+        {
+            "id": "minecraft:spruce_log",
+            "properties": {
+                "axis": "x"
+            }
+        },
+        {
+            "id": "minecraft:brown_concrete"
+        },
+        {
+            "id": "minecraft:dark_oak_wood"
+        },
+        {
+            "id": "minecraft:dark_oak_wall_sign"
+        },
+        {
+            "id": "minecraft:dark_oak_fence"
+        },
+        {
+            "id": "minecraft:brown_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:brown_wool"
+        },
+        {
+            "id": "minecraft:dark_oak_shelf"
+        },
+        {
+            "id": "minecraft:dark_oak_sign"
+        },
+        {
+            "id": "minecraft:dark_oak_pressure_plate"
+        },
+        {
+            "id": "minecraft:soul_sand"
+        },
+        {
+            "id": "minecraft:brown_shulker_box"
+        },
+        {
+            "id": "minecraft:dark_oak_planks"
+        }
+    ],
+    "27": [
+        {
+            "id": "minecraft:green_carpet"
+        },
+        {
+            "id": "minecraft:end_portal_frame"
+        },
+        {
+            "id": "minecraft:chain_command_block"
+        },
+        {
+            "id": "minecraft:moss_block"
+        },
+        {
+            "id": "minecraft:green_stained_glass"
+        },
+        {
+            "id": "minecraft:green_concrete"
+        },
+        {
+            "id": "minecraft:moss_carpet"
+        },
+        {
+            "id": "minecraft:green_shulker_box"
+        },
+        {
+            "id": "minecraft:dried_kelp_block"
+        },
+        {
+            "id": "minecraft:sea_pickle"
+        },
+        {
+            "id": "minecraft:green_concrete_powder"
+        },
+        {
+            "id": "minecraft:green_candle"
+        },
+        {
+            "id": "minecraft:green_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:green_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:green_wool"
+        }
+    ],
+    "28": [
+        {
+            "id": "minecraft:mangrove_pressure_plate"
+        },
+        {
+            "id": "minecraft:mangrove_fence"
+        },
+        {
+            "id": "minecraft:fire_coral_block"
+        },
+        {
+            "id": "minecraft:stripped_mangrove_log"
+        },
+        {
+            "id": "minecraft:mangrove_wall_sign"
+        },
+        {
+            "id": "minecraft:brick_slab"
+        },
+        {
+            "id": "minecraft:shroomlight"
+        },
+        {
+            "id": "minecraft:mangrove_wood"
+        },
+        {
+            "id": "minecraft:red_shulker_box"
+        },
+        {
+            "id": "minecraft:red_concrete_powder"
+        },
+        {
+            "id": "minecraft:red_stained_glass"
+        },
+        {
+            "id": "minecraft:mangrove_sign"
+        },
+        {
+            "id": "minecraft:brick_wall"
+        },
+        {
+            "id": "minecraft:red_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:fire_coral"
+        },
+        {
+            "id": "minecraft:enchanting_table"
+        },
+        {
+            "id": "minecraft:red_carpet"
+        },
+        {
+            "id": "minecraft:mangrove_door"
+        },
+        {
+            "id": "minecraft:mangrove_fence_gate"
+        },
+        {
+            "id": "minecraft:bricks"
+        },
+        {
+            "id": "minecraft:mangrove_shelf"
+        },
+        {
+            "id": "minecraft:red_mushroom_block"
+        },
+        {
+            "id": "minecraft:brick_stairs"
+        },
+        {
+            "id": "minecraft:red_mushroom"
+        },
+        {
+            "id": "minecraft:mangrove_planks"
+        },
+        {
+            "id": "minecraft:red_wool"
+        },
+        {
+            "id": "minecraft:fire_coral_wall_fan"
+        },
+        {
+            "id": "minecraft:red_candle"
+        },
+        {
+            "id": "minecraft:mangrove_log",
+            "properties": {
+                "axis": "y"
+            }
+        },
+        {
+            "id": "minecraft:red_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:mangrove_hanging_sign"
+        },
+        {
+            "id": "minecraft:red_concrete"
+        },
+        {
+            "id": "minecraft:mangrove_slab"
+        },
+        {
+            "id": "minecraft:nether_wart"
+        },
+        {
+            "id": "minecraft:nether_wart_block"
+        },
+        {
+            "id": "minecraft:mangrove_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:fire_coral_fan"
+        },
+        {
+            "id": "minecraft:mangrove_stairs"
+        },
+        {
+            "id": "minecraft:mangrove_trapdoor"
+        },
+        {
+            "id": "minecraft:sniffer_egg"
+        },
+        {
+            "id": "minecraft:stripped_mangrove_wood"
+        }
+    ],
+    "29": [
+        {
+            "id": "minecraft:blackstone_stairs"
+        },
+        {
+            "id": "minecraft:polished_blackstone_brick_stairs"
+        },
+        {
+            "id": "minecraft:sculk"
+        },
+        {
+            "id": "minecraft:black_carpet"
+        },
+        {
+            "id": "minecraft:basalt"
+        },
+        {
+            "id": "minecraft:black_concrete"
+        },
+        {
+            "id": "minecraft:black_wool"
+        },
+        {
+            "id": "minecraft:netherite_block"
+        },
+        {
+            "id": "minecraft:polished_blackstone_wall"
+        },
+        {
+            "id": "minecraft:black_shulker_box"
+        },
+        {
+            "id": "minecraft:polished_blackstone_bricks"
+        },
+        {
+            "id": "minecraft:end_portal"
+        },
+        {
+            "id": "minecraft:polished_basalt"
+        },
+        {
+            "id": "minecraft:black_glazed_terracotta"
+        },
+        {
+            "id": "minecraft:black_candle"
+        },
+        {
+            "id": "minecraft:respawn_anchor"
+        },
+        {
+            "id": "minecraft:black_concrete_powder"
+        },
+        {
+            "id": "minecraft:polished_blackstone_brick_slab"
+        },
+        {
+            "id": "minecraft:obsidian"
+        },
+        {
+            "id": "minecraft:ancient_debris"
+        },
+        {
+            "id": "minecraft:polished_blackstone_slab"
+        },
+        {
+            "id": "minecraft:smooth_basalt"
+        },
+        {
+            "id": "minecraft:sculk_catalyst"
+        },
+        {
+            "id": "minecraft:blackstone_wall"
+        },
+        {
+            "id": "minecraft:polished_blackstone_pressure_plate"
+        },
+        {
+            "id": "minecraft:polished_blackstone_brick_wall"
+        },
+        {
+            "id": "minecraft:gilded_blackstone"
+        },
+        {
+            "id": "minecraft:cracked_polished_blackstone_bricks"
+        },
+        {
+            "id": "minecraft:end_gateway"
+        },
+        {
+            "id": "minecraft:sculk_vein"
+        },
+        {
+            "id": "minecraft:polished_blackstone"
+        },
+        {
+            "id": "minecraft:crying_obsidian"
+        },
+        {
+            "id": "minecraft:chiseled_polished_blackstone"
+        },
+        {
+            "id": "minecraft:polished_blackstone_stairs"
+        },
+        {
+            "id": "minecraft:black_stained_glass"
+        },
+        {
+            "id": "minecraft:blackstone"
+        },
+        {
+            "id": "minecraft:black_bed",
+            "properties": {
+                "part": "foot",
+                "facing": "north",
+                "occupied": "true"
+            }
+        },
+        {
+            "id": "minecraft:dragon_egg"
+        },
+        {
+            "id": "minecraft:blackstone_slab"
+        },
+        {
+            "id": "minecraft:sculk_shrieker"
+        },
+        {
+            "id": "minecraft:coal_block"
+        }
+    ],
+    "30": [
+        {
+            "id": "minecraft:light_weighted_pressure_plate"
+        },
+        {
+            "id": "minecraft:bell"
+        },
+        {
+            "id": "minecraft:raw_gold_block"
+        },
+        {
+            "id": "minecraft:gold_block"
+        }
+    ],
+    "31": [
+        {
+            "id": "minecraft:beacon"
+        },
+        {
+            "id": "minecraft:dark_prismarine_stairs"
+        },
+        {
+            "id": "minecraft:conduit"
+        },
+        {
+            "id": "minecraft:dark_prismarine_slab"
+        },
+        {
+            "id": "minecraft:diamond_block"
+        },
+        {
+            "id": "minecraft:dark_prismarine"
+        },
+        {
+            "id": "minecraft:prismarine_bricks"
+        },
+        {
+            "id": "minecraft:prismarine_brick_slab"
+        },
+        {
+            "id": "minecraft:prismarine_brick_stairs"
+        }
+    ],
+    "32": [
+        {
+            "id": "minecraft:lapis_block"
+        }
+    ],
+    "33": [
+        {
+            "id": "minecraft:emerald_block"
+        }
+    ],
+    "34": [
+        {
+            "id": "minecraft:jungle_log",
+            "properties": {
+                "axis": "x"
+            }
+        },
+        {
+            "id": "minecraft:oak_log",
+            "properties": {
+                "axis": "x"
+            }
+        },
+        {
+            "id": "minecraft:stripped_spruce_log"
+        },
+        {
+            "id": "minecraft:spruce_sign"
+        },
+        {
+            "id": "minecraft:campfire"
+        },
+        {
+            "id": "minecraft:podzol"
+        },
+        {
+            "id": "minecraft:spruce_wall_sign"
+        },
+        {
+            "id": "minecraft:mangrove_roots"
+        },
+        {
+            "id": "minecraft:spruce_door"
+        },
+        {
+            "id": "minecraft:spruce_shelf"
+        },
+        {
+            "id": "minecraft:soul_campfire"
+        },
+        {
+            "id": "minecraft:spruce_slab"
+        },
+        {
+            "id": "minecraft:spruce_hanging_sign"
+        },
+        {
+            "id": "minecraft:spruce_trapdoor"
+        },
+        {
+            "id": "minecraft:stripped_spruce_wood"
+        },
+        {
+            "id": "minecraft:spruce_fence"
+        },
+        {
+            "id": "minecraft:spruce_log",
+            "properties": {
+                "axis": "y"
+            }
+        },
+        {
+            "id": "minecraft:spruce_planks"
+        },
+        {
+            "id": "minecraft:spruce_pressure_plate"
+        },
+        {
+            "id": "minecraft:muddy_mangrove_roots"
+        },
+        {
+            "id": "minecraft:spruce_wood"
+        },
+        {
+            "id": "minecraft:mangrove_log",
+            "properties": {
+                "axis": "x"
+            }
+        },
+        {
+            "id": "minecraft:spruce_fence_gate"
+        },
+        {
+            "id": "minecraft:spruce_stairs"
+        }
+    ],
+    "35": [
+        {
+            "id": "minecraft:magma_block"
+        },
+        {
+            "id": "minecraft:red_nether_bricks"
+        },
+        {
+            "id": "minecraft:crimson_fungus"
+        },
+        {
+            "id": "minecraft:crimson_roots"
+        },
+        {
+            "id": "minecraft:weeping_vines"
+        },
+        {
+            "id": "minecraft:red_nether_brick_stairs"
+        },
+        {
+            "id": "minecraft:nether_brick_wall"
+        },
+        {
+            "id": "minecraft:nether_brick_fence"
+        },
+        {
+            "id": "minecraft:weeping_vines_plant"
+        },
+        {
+            "id": "minecraft:netherrack"
+        },
+        {
+            "id": "minecraft:nether_brick_slab"
+        },
+        {
+            "id": "minecraft:red_nether_brick_slab"
+        },
+        {
+            "id": "minecraft:nether_brick_stairs"
+        },
+        {
+            "id": "minecraft:nether_quartz_ore"
+        },
+        {
+            "id": "minecraft:nether_gold_ore"
+        },
+        {
+            "id": "minecraft:cracked_nether_bricks"
+        },
+        {
+            "id": "minecraft:nether_bricks"
+        },
+        {
+            "id": "minecraft:chiseled_nether_bricks"
+        },
+        {
+            "id": "minecraft:red_nether_brick_wall"
+        }
+    ],
+    "36": [
+        {
+            "id": "minecraft:cherry_planks"
+        },
+        {
+            "id": "minecraft:calcite"
+        },
+        {
+            "id": "minecraft:cherry_wall_sign"
+        },
+        {
+            "id": "minecraft:cherry_trapdoor"
+        },
+        {
+            "id": "minecraft:cherry_log",
+            "properties": {
+                "axis": "y"
+            }
+        },
+        {
+            "id": "minecraft:cherry_stairs"
+        },
+        {
+            "id": "minecraft:cherry_slab"
+        },
+        {
+            "id": "minecraft:cherry_pressure_plate"
+        },
+        {
+            "id": "minecraft:white_terracotta"
+        },
+        {
+            "id": "minecraft:stripped_cherry_log",
+            "properties": {
+                "axis": "y"
+            }
+        },
+        {
+            "id": "minecraft:cherry_sign"
+        },
+        {
+            "id": "minecraft:cherry_fence"
+        },
+        {
+            "id": "minecraft:cherry_door"
+        },
+        {
+            "id": "minecraft:cherry_fence_gate"
+        },
+        {
+            "id": "minecraft:cherry_shelf"
+        }
+    ],
+    "37": [
+        {
+            "id": "minecraft:resin_brick_wall"
+        },
+        {
+            "id": "minecraft:resin_block"
+        },
+        {
+            "id": "minecraft:resin_brick_slab"
+        },
+        {
+            "id": "minecraft:resin_clump"
+        },
+        {
+            "id": "minecraft:orange_terracotta"
+        },
+        {
+            "id": "minecraft:chiseled_resin_bricks"
+        },
+        {
+            "id": "minecraft:resin_brick_stairs"
+        },
+        {
+            "id": "minecraft:resin_bricks"
+        },
+        {
+            "id": "minecraft:redstone_lamp"
+        }
+    ],
+    "38": [
+        {
+            "id": "minecraft:magenta_terracotta"
+        }
+    ],
+    "39": [
+        {
+            "id": "minecraft:light_blue_terracotta"
+        }
+    ],
+    "40": [
+        {
+            "id": "minecraft:yellow_terracotta"
+        }
+    ],
+    "41": [
+        {
+            "id": "minecraft:lime_terracotta"
+        }
+    ],
+    "42": [
+        {
+            "id": "minecraft:pink_terracotta"
+        },
+        {
+            "id": "minecraft:cherry_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:stripped_cherry_log",
+            "properties": {
+                "axis": "x"
+            }
+        },
+        {
+            "id": "minecraft:cherry_hanging_sign"
+        },
+        {
+            "id": "minecraft:stripped_cherry_wood"
+        }
+    ],
+    "43": [
+        {
+            "id": "minecraft:gray_terracotta"
+        },
+        {
+            "id": "minecraft:tuff"
+        },
+        {
+            "id": "minecraft:tuff_brick_slab"
+        },
+        {
+            "id": "minecraft:chiseled_tuff_bricks"
+        },
+        {
+            "id": "minecraft:chiseled_tuff"
+        },
+        {
+            "id": "minecraft:polished_tuff_wall"
+        },
+        {
+            "id": "minecraft:tuff_stairs"
+        },
+        {
+            "id": "minecraft:cherry_log",
+            "properties": {
+                "axis": "x"
+            }
+        },
+        {
+            "id": "minecraft:polished_tuff"
+        },
+        {
+            "id": "minecraft:tuff_brick_wall"
+        },
+        {
+            "id": "minecraft:polished_tuff_slab"
+        },
+        {
+            "id": "minecraft:tuff_wall"
+        },
+        {
+            "id": "minecraft:cherry_wood"
+        },
+        {
+            "id": "minecraft:tuff_bricks"
+        },
+        {
+            "id": "minecraft:tuff_brick_stairs"
+        },
+        {
+            "id": "minecraft:tuff_slab"
+        },
+        {
+            "id": "minecraft:polished_tuff_stairs"
+        }
+    ],
+    "44": [
+        {
+            "id": "minecraft:exposed_copper_bulb"
+        },
+        {
+            "id": "minecraft:exposed_cut_copper_slab"
+        },
+        {
+            "id": "minecraft:exposed_copper_trapdoor"
+        },
+        {
+            "id": "minecraft:mud_bricks"
+        },
+        {
+            "id": "minecraft:exposed_cut_copper"
+        },
+        {
+            "id": "minecraft:waxed_exposed_copper_trapdoor"
+        },
+        {
+            "id": "minecraft:waxed_exposed_copper_door"
+        },
+        {
+            "id": "minecraft:waxed_exposed_cut_copper_stairs"
+        },
+        {
+            "id": "minecraft:waxed_exposed_chiseled_copper"
+        },
+        {
+            "id": "minecraft:waxed_exposed_lightning_rod"
+        },
+        {
+            "id": "minecraft:waxed_exposed_cut_copper_slab"
+        },
+        {
+            "id": "minecraft:mud_brick_slab"
+        },
+        {
+            "id": "minecraft:waxed_exposed_copper_bulb"
+        },
+        {
+            "id": "minecraft:waxed_exposed_copper_golem_statue"
+        },
+        {
+            "id": "minecraft:waxed_exposed_copper_chest"
+        },
+        {
+            "id": "minecraft:exposed_cut_copper_stairs"
+        },
+        {
+            "id": "minecraft:exposed_copper_chest"
+        },
+        {
+            "id": "minecraft:mud_brick_stairs"
+        },
+        {
+            "id": "minecraft:exposed_chiseled_copper"
+        },
+        {
+            "id": "minecraft:exposed_copper_golem_statue"
+        },
+        {
+            "id": "minecraft:exposed_copper"
+        },
+        {
+            "id": "minecraft:waxed_exposed_cut_copper"
+        },
+        {
+            "id": "minecraft:mud_brick_wall"
+        },
+        {
+            "id": "minecraft:waxed_exposed_copper_grate"
+        },
+        {
+            "id": "minecraft:light_gray_terracotta"
+        },
+        {
+            "id": "minecraft:exposed_copper_grate"
+        },
+        {
+            "id": "minecraft:waxed_exposed_copper"
+        },
+        {
+            "id": "minecraft:exposed_copper_door"
+        },
+        {
+            "id": "minecraft:exposed_lightning_rod"
+        }
+    ],
+    "45": [
+        {
+            "id": "minecraft:mud"
+        },
+        {
+            "id": "minecraft:cyan_terracotta"
+        }
+    ],
+    "46": [
+        {
+            "id": "minecraft:purple_terracotta"
+        },
+        {
+            "id": "minecraft:purple_shulker_box"
+        }
+    ],
+    "47": [
+        {
+            "id": "minecraft:blue_terracotta"
+        }
+    ],
+    "48": [
+        {
+            "id": "minecraft:pointed_dripstone"
+        },
+        {
+            "id": "minecraft:brown_terracotta"
+        },
+        {
+            "id": "minecraft:dripstone_block"
+        }
+    ],
+    "49": [
+        {
+            "id": "minecraft:green_terracotta"
+        }
+    ],
+    "50": [
+        {
+            "id": "minecraft:decorated_pot"
+        },
+        {
+            "id": "minecraft:red_terracotta"
+        }
+    ],
+    "51": [
+        {
+            "id": "minecraft:black_terracotta"
+        }
+    ],
+    "52": [
+        {
+            "id": "minecraft:crimson_nylium"
+        }
+    ],
+    "53": [
+        {
+            "id": "minecraft:crimson_stairs"
+        },
+        {
+            "id": "minecraft:stripped_crimson_stem"
+        },
+        {
+            "id": "minecraft:crimson_sign"
+        },
+        {
+            "id": "minecraft:crimson_hanging_sign"
+        },
+        {
+            "id": "minecraft:crimson_trapdoor"
+        },
+        {
+            "id": "minecraft:crimson_wall_sign"
+        },
+        {
+            "id": "minecraft:crimson_fence_gate"
+        },
+        {
+            "id": "minecraft:crimson_door"
+        },
+        {
+            "id": "minecraft:crimson_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:crimson_pressure_plate"
+        },
+        {
+            "id": "minecraft:crimson_slab"
+        },
+        {
+            "id": "minecraft:crimson_fence"
+        },
+        {
+            "id": "minecraft:crimson_planks"
+        },
+        {
+            "id": "minecraft:crimson_stem"
+        },
+        {
+            "id": "minecraft:crimson_shelf"
+        }
+    ],
+    "54": [
+        {
+            "id": "minecraft:stripped_crimson_hyphae"
+        },
+        {
+            "id": "minecraft:crimson_hyphae"
+        }
+    ],
+    "55": [
+        {
+            "id": "minecraft:waxed_oxidized_copper_trapdoor"
+        },
+        {
+            "id": "minecraft:warped_nylium"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_cut_copper_stairs"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_copper"
+        },
+        {
+            "id": "minecraft:oxidized_copper_trapdoor"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_copper_grate"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_cut_copper_slab"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_cut_copper"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_lightning_rod"
+        },
+        {
+            "id": "minecraft:oxidized_copper_golem_statue"
+        },
+        {
+            "id": "minecraft:oxidized_cut_copper_slab"
+        },
+        {
+            "id": "minecraft:oxidized_lightning_rod"
+        },
+        {
+            "id": "minecraft:oxidized_chiseled_copper"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_copper_bulb"
+        },
+        {
+            "id": "minecraft:oxidized_copper_bulb"
+        },
+        {
+            "id": "minecraft:oxidized_cut_copper_stairs"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_copper_chest"
+        },
+        {
+            "id": "minecraft:oxidized_copper_grate"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_copper_door"
+        },
+        {
+            "id": "minecraft:oxidized_copper"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_chiseled_copper"
+        },
+        {
+            "id": "minecraft:oxidized_copper_chest"
+        },
+        {
+            "id": "minecraft:oxidized_cut_copper"
+        },
+        {
+            "id": "minecraft:oxidized_copper_door"
+        },
+        {
+            "id": "minecraft:waxed_oxidized_copper_golem_statue"
+        }
+    ],
+    "56": [
+        {
+            "id": "minecraft:warped_slab"
+        },
+        {
+            "id": "minecraft:warped_fence"
+        },
+        {
+            "id": "minecraft:weathered_copper_grate"
+        },
+        {
+            "id": "minecraft:stripped_warped_stem"
+        },
+        {
+            "id": "minecraft:waxed_weathered_copper_trapdoor"
+        },
+        {
+            "id": "minecraft:weathered_cut_copper_stairs"
+        },
+        {
+            "id": "minecraft:warped_wall_hanging_sign"
+        },
+        {
+            "id": "minecraft:waxed_weathered_copper_bulb"
+        },
+        {
+            "id": "minecraft:weathered_copper_trapdoor"
+        },
+        {
+            "id": "minecraft:warped_planks"
+        },
+        {
+            "id": "minecraft:waxed_weathered_copper"
+        },
+        {
+            "id": "minecraft:warped_stem"
+        },
+        {
+            "id": "minecraft:waxed_weathered_cut_copper_slab"
+        },
+        {
+            "id": "minecraft:weathered_copper_door"
+        },
+        {
+            "id": "minecraft:waxed_weathered_lightning_rod"
+        },
+        {
+            "id": "minecraft:weathered_cut_copper_slab"
+        },
+        {
+            "id": "minecraft:waxed_weathered_cut_copper"
+        },
+        {
+            "id": "minecraft:weathered_lightning_rod"
+        },
+        {
+            "id": "minecraft:warped_pressure_plate"
+        },
+        {
+            "id": "minecraft:weathered_copper_chest"
+        },
+        {
+            "id": "minecraft:weathered_copper"
+        },
+        {
+            "id": "minecraft:warped_shelf"
+        },
+        {
+            "id": "minecraft:weathered_cut_copper"
+        },
+        {
+            "id": "minecraft:weathered_copper_golem_statue"
+        },
+        {
+            "id": "minecraft:waxed_weathered_chiseled_copper"
+        },
+        {
+            "id": "minecraft:warped_fence_gate"
+        },
+        {
+            "id": "minecraft:warped_sign"
+        },
+        {
+            "id": "minecraft:warped_stairs"
+        },
+        {
+            "id": "minecraft:warped_trapdoor"
+        },
+        {
+            "id": "minecraft:waxed_weathered_copper_door"
+        },
+        {
+            "id": "minecraft:waxed_weathered_copper_chest"
+        },
+        {
+            "id": "minecraft:warped_wall_sign"
+        },
+        {
+            "id": "minecraft:warped_hanging_sign"
+        },
+        {
+            "id": "minecraft:waxed_weathered_cut_copper_stairs"
+        },
+        {
+            "id": "minecraft:waxed_weathered_copper_grate"
+        },
+        {
+            "id": "minecraft:weathered_copper_bulb"
+        },
+        {
+            "id": "minecraft:weathered_chiseled_copper"
+        },
+        {
+            "id": "minecraft:warped_door"
+        },
+        {
+            "id": "minecraft:waxed_weathered_copper_golem_statue"
+        }
+    ],
+    "57": [
+        {
+            "id": "minecraft:warped_hyphae"
+        },
+        {
+            "id": "minecraft:stripped_warped_hyphae"
+        }
+    ],
+    "58": [
+        {
+            "id": "minecraft:warped_wart_block"
+        }
+    ],
+    "59": [
+        {
+            "id": "minecraft:deepslate_tiles"
+        },
+        {
+            "id": "minecraft:deepslate_tile_stairs"
+        },
+        {
+            "id": "minecraft:deepslate_copper_ore"
+        },
+        {
+            "id": "minecraft:reinforced_deepslate"
+        },
+        {
+            "id": "minecraft:polished_deepslate_wall"
+        },
+        {
+            "id": "minecraft:infested_deepslate"
+        },
+        {
+            "id": "minecraft:cracked_deepslate_tiles"
+        },
+        {
+            "id": "minecraft:polished_deepslate"
+        },
+        {
+            "id": "minecraft:deepslate_iron_ore"
+        },
+        {
+            "id": "minecraft:polished_deepslate_stairs"
+        },
+        {
+            "id": "minecraft:cobbled_deepslate_stairs"
+        },
+        {
+            "id": "minecraft:chiseled_deepslate"
+        },
+        {
+            "id": "minecraft:polished_deepslate_slab"
+        },
+        {
+            "id": "minecraft:deepslate_emerald_ore"
+        },
+        {
+            "id": "minecraft:deepslate_brick_slab"
+        },
+        {
+            "id": "minecraft:cobbled_deepslate_wall"
+        },
+        {
+            "id": "minecraft:deepslate_redstone_ore"
+        },
+        {
+            "id": "minecraft:cracked_deepslate_bricks"
+        },
+        {
+            "id": "minecraft:deepslate_lapis_ore"
+        },
+        {
+            "id": "minecraft:deepslate_brick_wall"
+        },
+        {
+            "id": "minecraft:deepslate_diamond_ore"
+        },
+        {
+            "id": "minecraft:deepslate_brick_stairs"
+        },
+        {
+            "id": "minecraft:deepslate_coal_ore"
+        },
+        {
+            "id": "minecraft:deepslate_tile_slab"
+        },
+        {
+            "id": "minecraft:cobbled_deepslate"
+        },
+        {
+            "id": "minecraft:deepslate_gold_ore"
+        },
+        {
+            "id": "minecraft:deepslate_tile_wall"
+        },
+        {
+            "id": "minecraft:deepslate_bricks"
+        },
+        {
+            "id": "minecraft:deepslate"
+        },
+        {
+            "id": "minecraft:cobbled_deepslate_slab"
+        }
+    ],
+    "60": [
+        {
+            "id": "minecraft:raw_iron_block"
+        }
+    ],
+    "61": [
+        {
+            "id": "minecraft:glow_lichen"
+        },
+        {
+            "id": "minecraft:verdant_froglight"
+        }
+    ]
+}

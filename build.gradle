@@ -1,19 +1,89 @@
-plugins {
-    id 'java'
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.guardsquare:proguard-gradle:7.6.0'
+    }
 }
 
-group = 'com.example.mapart'
+plugins {
+    id 'java'
+    id 'application'
+}
+
+def mainClassName = "org.duollectis.mapart.tools.MapartTools"
+
+group = 'org.duollectis'
 version = '1.0.0-alpha.1'
 
 repositories {
     mavenCentral()
 }
 
+application {
+    mainClass = mainClassName
+}
+
+jar {
+    manifest {
+        attributes ("Main-Class": mainClassName)
+    }
+}
+
 dependencies {
+    implementation 'com.google.code.gson:gson:2.14.0'
+    implementation 'info.picocli:picocli:4.7.7'
+
+    compileOnly 'org.projectlombok:lombok:1.18.38'
+    annotationProcessor 'org.projectlombok:lombok:1.18.38'
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+    testImplementation 'org.junit.platform:junit-platform-launcher:1.10.0'
 }
 
 test {
     useJUnitPlatform()
 }
+
+// task shrinkJar(type: proguard.gradle.ProGuardTask) {
+//     dependsOn 'jar'
+//     // Используем runtimeClasspath для включения зависимостей
+//     configurations.runtimeClasspath.each { File file ->
+//         injars file
+//     }
+//     injars jar.archiveFile.get().asFile
+//     outjars "${buildDir}/libs/proxy-tester-optimized.jar"
+//     libraryjars "${System.getProperty('java.home')}/jmods"
+
+//     dontobfuscate
+    
+//     keep 'public class proxy.tester.App { public static void main(java.lang.String[]); }'
+    
+//     keepclassmembers 'class * { @com.google.gson.annotations.SerializedName *; }'
+//     keepnames 'class * implements java.io.Serializable { *; }'
+    
+//     keepclassmembers 'enum * { *; }'
+//     keep 'class proxy.tester.ProxyInfo$Type { *; }'
+    
+//     dontwarn 'com.google.common.**'
+//     dontwarn 'com.google.gson.**'
+//     dontwarn 'sun.misc.Unsafe'
+//     dontwarn 'javax.annotation.**'
+//     dontwarn 'org.apache.commons.**'
+//     dontwarn 'com.google.errorprone.**'
+    
+//     keepattributes 'Signature,InnerClasses,EnclosingMethod,Deprecated,SourceFile,LineNumberTable,*Annotation*,EnclosingMethod,Exceptions,InnerClasses,Manifest'
+    
+//     ignorewarnings
+// }
+
+// task finalJar(type: Jar) {
+//     dependsOn shrinkJar
+//     manifest {
+//         attributes 'Main-Class': 'proxy.tester.App'
+//     }
+//     from zipTree("${buildDir}/libs/proxy-tester-optimized.jar")
+//     archiveFileName = "proxy-tester.jar"
+// }
