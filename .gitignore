@@ -27,3 +27,6 @@ replay_pid*
 .gradle
 build
 bin
+/.idea/
+/rendered/
+src/main/resources/native/libmt-ditherer.so

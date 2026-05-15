@@ -12,7 +12,16 @@ plugins {
     id 'application'
 }
 
-def mainClassName = "org.duollectis.mapart.tools.MapartTools"
+import org.gradle.internal.os.OperatingSystem
+
+// Определяем имя библиотеки в зависимости от ОС
+def libraryName = "mt-ditherer"
+
+def outputLibName = OperatingSystem.current().isWindows() ? "${libraryName}.dll" :
+        OperatingSystem.current().isMacOsX() ? "lib${libraryName}.dylib" :
+                "lib${libraryName}.so"
+
+def mainClassName = "org.duollectis.mapart.tools.app.MTBootstrap"
 
 group = 'org.duollectis'
 version = '1.0.0-alpha.1'
@@ -25,26 +34,74 @@ application {
     mainClass = mainClassName
 }
 
-jar {
-    manifest {
-        attributes ("Main-Class": mainClassName)
-    }
-}
-
 dependencies {
+    implementation fileTree(dir: 'lib', include: ['*.jar'])
+
+    implementation 'com.google.guava:guava:33.0.0-jre'
+
     implementation 'com.google.code.gson:gson:2.14.0'
     implementation 'info.picocli:picocli:4.7.7'
+    implementation 'org.jetbrains:annotations:15.0'
 
     compileOnly 'org.projectlombok:lombok:1.18.38'
     annotationProcessor 'org.projectlombok:lombok:1.18.38'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
-    testImplementation 'org.junit.platform:junit-platform-launcher:1.10.0'
 }
 
-test {
-    useJUnitPlatform()
+jar {
+    manifest {
+        attributes("Main-Class": mainClassName)
+    }
+
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(file("${buildDir}/native")) {
+        into "native" // Библиотеки будут лежать внутри JAR в папке 'native'
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    // Разрешаем использовать Preview API при сборке
+    options.compilerArgs.add('--enable-preview')
+}
+
+tasks.withType(JavaExec).configureEach {
+    // Разрешаем Preview API при запуске
+    jvmArgs += '--enable-preview'
+    // Разрешаем доступ к нативным функциям без варнингов
+    jvmArgs += '--enable-native-access=ALL-UNNAMED'
+}
+
+tasks.named('compileJava') {
+    dependsOn 'compileNative'
+}
+
+tasks.register('compileNative', Exec) {
+    def inputDir = file("src/main/cpp")
+    def outputDir = file("$buildDir/native")
+    def outputFile = file("${outputDir}/${outputLibName}")
+
+    // Gradle будет запускать задачу только если .cpp файл изменился
+    inputs.dir(inputDir)
+    outputs.file(outputFile)
+
+    doFirst {
+        if (!outputDir.exists()) outputDir.mkdirs()
+    }
+
+    def tree = fileTree(dir: inputDir, include: '**/*.cpp')
+    def filePaths = tree.files.collect { it.absolutePath }
+
+    commandLine 'g++',
+            '-shared',
+            '-fPIC',
+            '-I',
+            '-O3',
+            '-o',
+            outputFile.absolutePath
+
+    args(filePaths)
 }
 
 // task shrinkJar(type: proguard.gradle.ProGuardTask) {
@@ -58,24 +115,24 @@ test {
 //     libraryjars "${System.getProperty('java.home')}/jmods"
 
 //     dontobfuscate
-    
+
 //     keep 'public class proxy.tester.App { public static void main(java.lang.String[]); }'
-    
+
 //     keepclassmembers 'class * { @com.google.gson.annotations.SerializedName *; }'
 //     keepnames 'class * implements java.io.Serializable { *; }'
-    
+
 //     keepclassmembers 'enum * { *; }'
 //     keep 'class proxy.tester.ProxyInfo$Type { *; }'
-    
+
 //     dontwarn 'com.google.common.**'
 //     dontwarn 'com.google.gson.**'
 //     dontwarn 'sun.misc.Unsafe'
 //     dontwarn 'javax.annotation.**'
 //     dontwarn 'org.apache.commons.**'
 //     dontwarn 'com.google.errorprone.**'
-    
+
 //     keepattributes 'Signature,InnerClasses,EnclosingMethod,Deprecated,SourceFile,LineNumberTable,*Annotation*,EnclosingMethod,Exceptions,InnerClasses,Manifest'
-    
+
 //     ignorewarnings
 // }
 

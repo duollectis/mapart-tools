@@ -1,0 +1,4 @@
+minecraft:iron_block
+minecraft:cyan_carpet
+minecraft:red_carpet
+minecraft:stone

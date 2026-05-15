@@ -25,4 +25,16 @@ public class FileUtils {
 
         return c[0];
     }
+
+    public static String getNameOnly(File file) {
+        String fileName = file.getName();
+
+        int lastDotIndex = fileName.lastIndexOf('.');
+
+        if (lastDotIndex > 0) {
+            return fileName.substring(0, lastDotIndex);
+        }
+
+        return fileName;
+    }
 }

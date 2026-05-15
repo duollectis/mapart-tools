@@ -1,30 +1,30 @@
 package org.duollectis.mapart.tools.commands;
 
-import org.duollectis.mapart.tools.MapartTools;
 import picocli.CommandLine.Command;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 @Command(
-    name = "list",
-    description = "Show all available versions.")
+		name = "list",
+		description = "Show all available versions."
+)
 public class ListCommand implements Runnable {
 
-    @Override
-    public void run() {
-        if (!MapartTools.DATA_DIR.exists() && !MapartTools.DATA_DIR.mkdirs()) {
-            System.err.println("Can't create a data dir!");
-            return;
-        }
+	@Override
+	public void run() {
+		System.out.println("Available versions:");
 
-        System.out.println("Available versions:");
+		try (InputStream stream = getClass().getClassLoader().getResourceAsStream("versions/versions.txt")) {
+			assert stream != null;
+			String versions = new String(stream.readAllBytes());
 
-        String[] files = MapartTools.DATA_DIR.list();
-
-        if (files != null) {
-            for (String name : files) {
-                System.out.println(" - " + name);
-            }
-        }
-
-        return;
-    }
+			for (String ver : versions.split("\n")) {
+				System.out.println(" - " + ver);
+			}
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }
