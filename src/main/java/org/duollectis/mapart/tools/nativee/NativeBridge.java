@@ -1,7 +1,13 @@
 package org.duollectis.mapart.tools.nativee;
 
 import java.io.File;
-import java.lang.foreign.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -10,7 +16,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A utility class to bridge Java and Native (C++) code using Project Panama (FFM API).
+ * Мост между Java и нативным C++ кодом через Project Panama (FFM API).
+ * Создаёт динамический прокси для интерфейса, аннотированного {@link NativeMethod},
+ * автоматически маршалируя Java-массивы в нативную память и обратно.
  */
 @SuppressWarnings({"preview", "Since15"})
 public class NativeBridge {
@@ -26,61 +34,84 @@ public class NativeBridge {
 		this.lib = SymbolLookup.libraryLookup(lib.getPath(), arena);
 	}
 
+	/**
+	 * Создаёт прокси-обёртку для нативного интерфейса.
+	 * Каждый метод, помеченный {@link NativeMethod}, связывается с соответствующей C++ функцией.
+	 *
+	 * @param iface интерфейс-контракт нативных методов
+	 * @param <T>   тип интерфейса
+	 * @return прокси-объект, делегирующий вызовы в нативную библиотеку
+	 */
 	public <T> T create(Class<T> iface) {
 		if (!methods.isEmpty()) {
-			throw new RuntimeException("Wrapper created already!");
+			throw new RuntimeException("Обёртка уже создана!");
 		}
 
-		for (Method m : iface.getDeclaredMethods()) {
-
-			if (!m.isAnnotationPresent(NativeMethod.class)) {
-				continue;
+		for (Method method : iface.getDeclaredMethods()) {
+			if (method.isAnnotationPresent(NativeMethod.class)) {
+				registerNativeMethod(method);
 			}
-
-			String name = m.getAnnotation(NativeMethod.class).value();
-
-			if (name.isBlank()) {
-				name = m.getName();
-			}
-
-			// Определяем возвращаемый тип
-			Class<?> returnType = m.getReturnType();
-			MemoryLayout res = map(returnType);
-
-			// Определяем аргументы
-			MemoryLayout[] args = new MemoryLayout[m.getParameterCount()];
-
-			for (int i = 0; i < m.getParameterCount(); i++) {
-				args[i] = map(m.getParameterTypes()[i]);
-			}
-
-			FunctionDescriptor desc = (res == null) ? FunctionDescriptor.ofVoid(args)
-			                                        : FunctionDescriptor.of(res, args);
-
-			// Ищем функцию в C++
-			MethodHandle handle = lib
-					.find(name)
-					.map(addr -> linker.downcallHandle(addr, desc, Linker.Option.isTrivial()))
-					.orElseThrow(() -> new RuntimeException("C++ function not found: " + m.getName()));
-
-			methods.put(m.getName(), handle);
 		}
 
 		Object proxy = Proxy.newProxyInstance(
-				iface.getClassLoader(),
-				new Class[]{iface},
-				(_, method, parameters) -> handle(method, parameters)
+			iface.getClassLoader(),
+			new Class[]{iface},
+			(_, method, parameters) -> handle(method, parameters)
 		);
 
 		return (T) proxy;
 	}
 
-	private Object handle(Method method, Object[] parameters) throws Throwable {
-		if (closed) {
-			throw new RuntimeException("Native is closed!");
+	/**
+	 * Создаёт {@link NativeBridge} и сразу возвращает прокси для указанного интерфейса.
+	 *
+	 * @param wrapper класс интерфейса-обёртки
+	 * @param lib     файл нативной библиотеки
+	 * @param <T>     тип обёртки
+	 * @return готовый прокси-объект
+	 */
+	public static <T extends NativeWrapper> T create(Class<T> wrapper, File lib) {
+		return new NativeBridge(lib).create(wrapper);
+	}
+
+	private void registerNativeMethod(Method method) {
+		String nativeName = resolveNativeName(method);
+		MemoryLayout returnLayout = map(method.getReturnType());
+		MemoryLayout[] argLayouts = buildArgLayouts(method);
+
+		FunctionDescriptor descriptor = returnLayout == null
+			? FunctionDescriptor.ofVoid(argLayouts)
+			: FunctionDescriptor.of(returnLayout, argLayouts);
+
+		MethodHandle handle = lib
+			.find(nativeName)
+			.map(addr -> linker.downcallHandle(addr, descriptor, Linker.Option.isTrivial()))
+			.orElseThrow(() -> new RuntimeException("C++ функция не найдена: " + method.getName()));
+
+		methods.put(method.getName(), handle);
+	}
+
+	private String resolveNativeName(Method method) {
+		String name = method.getAnnotation(NativeMethod.class).value();
+		return name.isBlank() ? method.getName() : name;
+	}
+
+	private MemoryLayout[] buildArgLayouts(Method method) {
+		MemoryLayout[] layouts = new MemoryLayout[method.getParameterCount()];
+
+		for (int i = 0; i < method.getParameterCount(); i++) {
+			layouts[i] = map(method.getParameterTypes()[i]);
 		}
 
-		if (!method.isAnnotationPresent(NativeMethod.class) && method.getName().equals("close")) {
+		return layouts;
+	}
+
+	private Object handle(Method method, Object[] parameters) throws Throwable {
+		if (closed) {
+			throw new RuntimeException("Нативный ресурс уже закрыт!");
+		}
+
+		if (isCloseMethod(method)) {
 			arena.close();
 			closed = true;
 			return null;
@@ -89,186 +120,141 @@ public class NativeBridge {
 		MethodHandle handle = methods.get(method.getName());
 
 		if (handle == null) {
-			throw new RuntimeException("Method not found");
+			throw new RuntimeException("Метод не найден: " + method.getName());
 		}
 
-		// Нам нужно знать типы параметров метода, чтобы правильно их трансформировать
-		Object[] transformedArgs = new Object[parameters.length];
-
-		for (int i = 0; i < parameters.length; i++) {
-			Object parameter = parameters[i];
-
-			if (parameter == null) {
-				continue;
-			}
-
-			if (parameter.getClass().isArray()) {
-				// 1. Считаем общее количество элементов
-				long totalElements = getTotalElements(parameter);
-
-				// 2. Определяем базовый тип (Layout)
-				ValueLayout layout = getBaseLayout(parameter);
-
-				if (layout == null) {
-					transformedArgs[i] = parameter; // Если тип не поддерживается
-				}
-				else {
-					// 3. Выделяем память
-					MemorySegment seg = arena.allocate(totalElements * layout.byteSize());
-
-					// 4. Пакуем рекурсивно
-					packRecursive(parameter, seg, 0, layout);
-
-					transformedArgs[i] = seg;
-				}
-			}
-			else {
-				transformedArgs[i] = parameter;
-			}
-		}
-
-		// 2. Сам вызов нативного метода
+		Object[] transformedArgs = marshalArgs(parameters);
 		Object result = handle.invokeWithArguments(transformedArgs);
-
-		// 3. Копирование данных ИЗ нативной памяти обратно в Java-массивы (УНИВЕРСАЛЬНО)
-		for (int i = 0; i < parameters.length; i++) {
-			Object originalArg = parameters[i];
-			Object transformed = transformedArgs[i];
-
-			// Если это был массив и мы его превращали в MemorySegment
-			if (originalArg != null
-					&& originalArg.getClass().isArray()
-					&& transformed instanceof MemorySegment seg
-			) {
-				// Используем рекурсивную утилиту для распаковки!
-				unpackRecursive(seg, originalArg, 0);
-			}
-		}
+		unmarshalArgs(parameters, transformedArgs);
 
 		return result;
 	}
 
-	private static MemoryLayout map(Class<?> c) {
-		if (c == void.class)
-			return null;
-		if (c == int.class)
-			return ValueLayout.JAVA_INT;
-		if (c == long.class)
-			return ValueLayout.JAVA_LONG;
-		if (c == double.class)
-			return ValueLayout.JAVA_DOUBLE;
-		if (c == float.class)
-			return ValueLayout.JAVA_FLOAT;
-		if (c == byte.class)
-			return ValueLayout.JAVA_BYTE;
-		if (c == short.class)
-			return ValueLayout.JAVA_SHORT;
-		if (c == boolean.class)
-			return ValueLayout.JAVA_BOOLEAN;
+	private boolean isCloseMethod(Method method) {
+		return !method.isAnnotationPresent(NativeMethod.class) && method.getName().equals("close");
+	}
 
-		// Все, что является указателем (массивы, MemorySegment)
-		if (c == MemorySegment.class || c.isArray()) {
-			return ValueLayout.ADDRESS;
+	private Object[] marshalArgs(Object[] parameters) {
+		Object[] transformed = new Object[parameters.length];
+
+		for (int i = 0; i < parameters.length; i++) {
+			Object param = parameters[i];
+
+			if (param == null || !param.getClass().isArray()) {
+				transformed[i] = param;
+				continue;
+			}
+
+			ValueLayout layout = getBaseLayout(param);
+
+			if (layout == null) {
+				transformed[i] = param;
+				continue;
+			}
+
+			// Выделяем память и упаковываем за один рекурсивный проход
+			long byteSize = countBytes(param, layout);
+			MemorySegment segment = arena.allocate(byteSize);
+			packRecursive(param, segment, 0, layout);
+			transformed[i] = segment;
 		}
 
-		throw new RuntimeException("Unsupported type: " + c.getName());
+		return transformed;
 	}
 
-	public static <T extends NativeWrapper> T create(Class<T> wrapper, File lib) {
-		return new NativeBridge(lib).create(wrapper);
+	private void unmarshalArgs(Object[] original, Object[] transformed) {
+		for (int i = 0; i < original.length; i++) {
+			Object originalArg = original[i];
+			Object transformedArg = transformed[i];
+
+			if (originalArg != null
+				&& originalArg.getClass().isArray()
+				&& transformedArg instanceof MemorySegment segment
+			) {
+				unpackRecursive(segment, originalArg, 0);
+			}
+		}
 	}
 
-	private static long getTotalElements(Object array) {
+	private static MemoryLayout map(Class<?> type) {
+		if (type == void.class) return null;
+		if (type == int.class) return ValueLayout.JAVA_INT;
+		if (type == long.class) return ValueLayout.JAVA_LONG;
+		if (type == double.class) return ValueLayout.JAVA_DOUBLE;
+		if (type == float.class) return ValueLayout.JAVA_FLOAT;
+		if (type == byte.class) return ValueLayout.JAVA_BYTE;
+		if (type == short.class) return ValueLayout.JAVA_SHORT;
+		if (type == boolean.class) return ValueLayout.JAVA_BOOLEAN;
+		if (type == MemorySegment.class || type.isArray()) return ValueLayout.ADDRESS;
+
+		throw new RuntimeException("Неподдерживаемый тип: " + type.getName());
+	}
+
+	/**
+	 * Считает итоговый размер в байтах для упаковки многомерного массива в нативную память.
+	 * Объединяет подсчёт элементов и вычисление размера в один проход вместо двух.
+	 */
+	private static long countBytes(Object array, ValueLayout layout) {
 		if (array == null) {
 			return 0;
 		}
 
-		if (!array.getClass().isArray()) {
-			return 1;
+		if (isPrimitiveArray(array)) {
+			return segmentOf(array).byteSize();
 		}
 
-		long count = 0;
+		long total = 0;
 		int length = Array.getLength(array);
 
 		for (int i = 0; i < length; i++) {
-			Object element = Array.get(array, i);
-
-			if (element != null && element.getClass().isArray()) {
-				count += getTotalElements(element);
-
-			}
-			else {
-				count++;
-			}
+			total += countBytes(Array.get(array, i), layout);
 		}
 
-		return count;
+		return total;
 	}
 
-	// Вспомогательный метод для определения типа данных
 	private static ValueLayout getBaseLayout(Object array) {
-		Class<?> clazz = array.getClass();
-		while (clazz.isArray()) {
-			clazz = clazz.getComponentType();
+		Class<?> type = array.getClass();
+
+		while (type.isArray()) {
+			type = type.getComponentType();
 		}
-		if (clazz == double.class)
-			return ValueLayout.JAVA_DOUBLE;
-		if (clazz == float.class)
-			return ValueLayout.JAVA_FLOAT;
-		if (clazz == int.class)
-			return ValueLayout.JAVA_INT;
-		if (clazz == long.class)
-			return ValueLayout.JAVA_LONG;
-		if (clazz == byte.class)
-			return ValueLayout.JAVA_BYTE;
+
+		if (type == double.class) return ValueLayout.JAVA_DOUBLE;
+		if (type == float.class) return ValueLayout.JAVA_FLOAT;
+		if (type == int.class) return ValueLayout.JAVA_INT;
+		if (type == long.class) return ValueLayout.JAVA_LONG;
+		if (type == byte.class) return ValueLayout.JAVA_BYTE;
+
 		return null;
 	}
 
 	private static long packRecursive(Object array, MemorySegment segment, long offset, ValueLayout layout) {
-		if (array == null)
+		if (array == null) {
 			return offset;
+		}
 
-		// Если это "дно" — массив примитивов
 		if (isPrimitiveArray(array)) {
-			MemorySegment source = getSegmentFromArray(array);
+			MemorySegment source = segmentOf(array);
 			long bytes = source.byteSize();
-
 			segment.asSlice(offset, bytes).copyFrom(source);
 			return offset + bytes;
 		}
-		else {
-			// Если это массив массивов
-			int length = Array.getLength(array);
-			for (int i = 0; i < length; i++) {
-				offset = packRecursive(Array.get(array, i), segment, offset, layout);
-			}
+
+		int length = Array.getLength(array);
+
+		for (int i = 0; i < length; i++) {
+			offset = packRecursive(Array.get(array, i), segment, offset, layout);
 		}
+
 		return offset;
-	}
-
-	// Универсальное получение сегмента из массива любого типа
-	private static MemorySegment getSegmentFromArray(Object array) {
-		return switch (array) {
-			case double[] a -> MemorySegment.ofArray(a);
-			case int[] a -> MemorySegment.ofArray(a);
-			case byte[] a -> MemorySegment.ofArray(a);
-			case float[] a -> MemorySegment.ofArray(a);
-			case long[] a -> MemorySegment.ofArray(a);
-			default -> throw new IllegalArgumentException("Unsupported array type");
-		};
-	}
-
-	private static boolean isPrimitiveArray(Object array) {
-		Class<?> c = array.getClass();
-		return c.isArray() && c.getComponentType().isPrimitive();
 	}
 
 	private static long unpackRecursive(MemorySegment segment, Object array, long offset) {
 		if (isPrimitiveArray(array)) {
-			MemorySegment dest = getSegmentFromArray(array);
+			MemorySegment dest = segmentOf(array);
 			long bytes = dest.byteSize();
 			dest.copyFrom(segment.asSlice(offset, bytes));
-
 			return offset + bytes;
 		}
 
@@ -279,5 +265,21 @@ public class NativeBridge {
 		}
 
 		return offset;
+	}
+
+	private static boolean isPrimitiveArray(Object array) {
+		Class<?> type = array.getClass();
+		return type.isArray() && type.getComponentType().isPrimitive();
+	}
+
+	private static MemorySegment segmentOf(Object array) {
+		return switch (array) {
+			case double[] a -> MemorySegment.ofArray(a);
+			case int[] a -> MemorySegment.ofArray(a);
+			case byte[] a -> MemorySegment.ofArray(a);
+			case float[] a -> MemorySegment.ofArray(a);
+			case long[] a -> MemorySegment.ofArray(a);
+			default -> throw new IllegalArgumentException("Неподдерживаемый тип массива: " + array.getClass());
+		};
 	}
 }

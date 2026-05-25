@@ -1,29 +1,31 @@
 package org.duollectis.mapart.tools.utils;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class RGBUtils {
 
-	public static int scaleRGB(int color, int value) {
+	public int scaleRGB(int color, int factor) {
 		return color(
-				Math.clamp((long) red(color) * value / 255L, 0, 255),
-				Math.clamp((long) green(color) * value / 255L, 0, 255),
-				Math.clamp((long) blue(color) * value / 255L, 0, 255)
+			Math.clamp((long) red(color) * factor / 255L, 0, 255),
+			Math.clamp((long) green(color) * factor / 255L, 0, 255),
+			Math.clamp((long) blue(color) * factor / 255L, 0, 255)
 		);
 	}
 
-	public static int color(int r, int g, int b) {
-		return (r & 0xFF) << 16 | (g & 0xFF) << 8 | b & 0xFF;
+	public int color(long r, long g, long b) {
+		return ((int) r & 0xFF) << 16 | ((int) g & 0xFF) << 8 | (int) b & 0xFF;
 	}
 
-	public static int red(int color) {
+	public int red(int color) {
 		return (color >> 16) & 0xFF;
 	}
 
-	public static int green(int color) {
+	public int green(int color) {
 		return (color >> 8) & 0xFF;
 	}
 
-	public static int blue(int color) {
-		return (color) & 0xFF;
+	public int blue(int color) {
+		return color & 0xFF;
 	}
-
 }

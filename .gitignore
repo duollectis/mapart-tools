@@ -30,3 +30,7 @@ bin
 /.idea/
 /rendered/
 src/main/resources/native/libmt-ditherer.so
+settings.json
+blocks.txt
+/scripts
+

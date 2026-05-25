@@ -10,16 +10,29 @@ import org.duollectis.mapart.tools.converter.BlockData;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Schematic {
 
+	private static final String AUTHOR = "Duollectis Mapart Tools By Applee453";
+	// Версия данных 1.21.1 — чтобы Майнкрафт не ругался на несовместимость формата
+	private static final int DATA_VERSION = 3463;
+
 	@Setter
-	private int width, height, length;
+	private int width;
 
-	private final List<BlockData> palette = new ArrayList<>();
+	@Setter
+	private int height;
 
+	@Setter
+	private int length;
+
+	// Список для сохранения порядка (индекс = state в NBT)
+	private final List<BlockData> paletteList = new ArrayList<>();
+	// HashMap для O(1) поиска индекса блока в палитре
+	private final Map<BlockData, Integer> paletteIndex = new HashMap<>();
 	private final List<Block> blocks = new ArrayList<>();
 
 	public Schematic(int width, int height, int length) {
@@ -30,65 +43,77 @@ public class Schematic {
 
 	public void setBlock(int x, int y, int z, BlockData block) {
 		if (x < 0 || x >= width) {
-			throw new RuntimeException("X out of bounds! %s".formatted(x));
+			throw new RuntimeException("X выходит за границы схематики: %s".formatted(x));
 		}
 
 		if (y < 0 || y >= height) {
-			throw new RuntimeException("Y out of bounds! %s".formatted(y));
+			throw new RuntimeException("Y выходит за границы схематики: %s".formatted(y));
 		}
 
 		if (z < 0 || z >= length) {
-			throw new RuntimeException("Z out of bounds! %s".formatted(z));
+			throw new RuntimeException("Z выходит за границы схематики: %s".formatted(z));
 		}
 
-		if (!palette.contains(block)) {
-			palette.add(block);
-		}
+		// computeIfAbsent гарантирует O(1) и добавляет блок в список только при первом появлении
+		int index = paletteIndex.computeIfAbsent(block, b -> {
+			paletteList.add(b);
+			return paletteList.size() - 1;
+		});
 
-		blocks.add(new Block(palette.indexOf(block), x, y, z));
+		blocks.add(new Block(index, x, y, z));
 	}
 
 	public void save(Path path) throws Exception {
-		NbtCompound root = new NbtCompound();
-		root.putString("author", "Duollectis Mapart Tools By Applee453");
-		root.putInt("DataVersion", 3463); // Чтобы Майн не ругался на версию
+		NbtIo.writeCompressed(buildRootNbt(), path);
+	}
 
+	private NbtCompound buildRootNbt() {
+		NbtCompound root = new NbtCompound();
+		root.putString("author", AUTHOR);
+		root.putInt("DataVersion", DATA_VERSION);
+		root.put("size", buildSizeNbt());
+		root.put("palette", buildPaletteNbt());
+		root.put("blocks", buildBlocksNbt());
+		return root;
+	}
+
+	private NbtList buildSizeNbt() {
 		NbtList size = new NbtList();
-		root.put("size", size);
 		size.add(NbtInt.of(width));
 		size.add(NbtInt.of(height));
 		size.add(NbtInt.of(length));
+		return size;
+	}
 
-
-		// 2. Палитра
+	private NbtList buildPaletteNbt() {
 		NbtList nbtPalette = new NbtList();
-		root.put("palette", nbtPalette);
 
-		for (BlockData block : palette) {
-			NbtCompound b = new NbtCompound();
-			nbtPalette.add(b);
-
-			b.putString("Name", block.getId());
+		for (BlockData block : paletteList) {
+			NbtCompound entry = new NbtCompound();
+			entry.putString("Name", block.getId());
+			nbtPalette.add(entry);
 		}
 
-		NbtList _blocks = new NbtList();
-		root.put("blocks", _blocks);
+		return nbtPalette;
+	}
+
+	private NbtList buildBlocksNbt() {
+		NbtList nbtBlocks = new NbtList();
 
 		for (Block block : blocks) {
-			NbtCompound b = new NbtCompound();
-			_blocks.add(b);
+			NbtCompound entry = new NbtCompound();
+			entry.putInt("state", block.id);
 
-			b.putInt("state", block.id);
 			NbtList pos = new NbtList();
-			b.put("pos", pos);
 			pos.add(NbtInt.of(block.x));
 			pos.add(NbtInt.of(block.y));
 			pos.add(NbtInt.of(block.z));
+
+			entry.put("pos", pos);
+			nbtBlocks.add(entry);
 		}
 
-		NbtIo.writeCompressed(root, path);
-
-
+		return nbtBlocks;
 	}
 
 	@AllArgsConstructor

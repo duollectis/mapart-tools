@@ -96,8 +96,10 @@ tasks.register('compileNative', Exec) {
     commandLine 'g++',
             '-shared',
             '-fPIC',
-            '-I',
             '-O3',
+            '-march=native',
+            '-funroll-loops',
+            '-std=c++17',
             '-o',
             outputFile.absolutePath
 

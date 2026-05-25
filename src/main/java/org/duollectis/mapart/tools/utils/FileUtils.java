@@ -1,40 +1,32 @@
 package org.duollectis.mapart.tools.utils;
 
+import lombok.experimental.UtilityClass;
+
 import java.io.File;
 
+@UtilityClass
 public class FileUtils {
 
-    public static File getFileOrExit(
-        File parent,
-        String name,
-        boolean isDir,
-        String errorMessage) {
+	public File getFileOrExit(File parent, String name, boolean isDir, String errorMessage) {
+		if (parent == null) {
+			return null;
+		}
 
-        if (parent == null) {
-            return null;
-        }
+		File[] matches = parent.listFiles(f -> f.getName().equals(name) && (isDir ? f.isDirectory() : f.isFile()));
 
-        File[] c =
-            parent.listFiles(f -> (isDir ? f.isDirectory() : f.isFile()) && f.getName().equals(name));
+		if (matches == null || matches.length == 0) {
+			System.err.println(errorMessage);
+			System.exit(-1);
+			return null;
+		}
 
-        if (c == null || c.length == 0) {
-            System.err.println(errorMessage);
-            System.exit(-1);
-            return null;
-        }
+		return matches[0];
+	}
 
-        return c[0];
-    }
+	public String getNameOnly(File file) {
+		String fileName = file.getName();
+		int lastDot = fileName.lastIndexOf('.');
 
-    public static String getNameOnly(File file) {
-        String fileName = file.getName();
-
-        int lastDotIndex = fileName.lastIndexOf('.');
-
-        if (lastDotIndex > 0) {
-            return fileName.substring(0, lastDotIndex);
-        }
-
-        return fileName;
-    }
+		return lastDot > 0 ? fileName.substring(0, lastDot) : fileName;
+	}
 }

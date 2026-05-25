@@ -9,5 +9,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface NativeMethod {
 
-	String value() default ""; // Позволяет указать имя функции в C++, если оно отличается
+	/** Имя функции в C++. Если не указано — используется имя Java-метода. */
+	String value() default "";
 }
