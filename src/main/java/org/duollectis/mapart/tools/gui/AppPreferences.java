@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.experimental.UtilityClass;
+import org.duollectis.mapart.tools.converter.DitherSettings;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,6 +36,8 @@ public class AppPreferences {
 	private static final String KEY_GAMMA = "gamma";
 	private static final String KEY_HUE = "hue";
 	private static final String KEY_AUTO_CONVERT = "auto_convert";
+	private static final String KEY_ERROR_DIFFUSION_RATE = "error_diffusion_rate";
+	private static final String KEY_NOISE_LEVEL = "noise_level";
 
 	public void saveVersion(String version) {
 		putString(KEY_VERSION, version);
@@ -157,6 +160,25 @@ public class AppPreferences {
 	public boolean loadAutoConvert(boolean defaultValue) {
 		JsonObject root = readRoot();
 		return root.has(KEY_AUTO_CONVERT) ? root.get(KEY_AUTO_CONVERT).getAsBoolean() : defaultValue;
+	}
+
+	public void saveDitherSettings(DitherSettings settings) {
+		JsonObject root = readRoot();
+		root.addProperty(KEY_ERROR_DIFFUSION_RATE, settings.errorDiffusionRate());
+		root.addProperty(KEY_NOISE_LEVEL, settings.noiseLevel());
+		writeRoot(root);
+	}
+
+	public DitherSettings loadDitherSettings() {
+		DitherSettings defaults = DitherSettings.defaults();
+		JsonObject root = readRoot();
+		double errorRate = root.has(KEY_ERROR_DIFFUSION_RATE)
+				? root.get(KEY_ERROR_DIFFUSION_RATE).getAsDouble()
+				: defaults.errorDiffusionRate();
+		double noiseLevel = root.has(KEY_NOISE_LEVEL)
+				? root.get(KEY_NOISE_LEVEL).getAsDouble()
+				: defaults.noiseLevel();
+		return new DitherSettings(errorRate, noiseLevel);
 	}
 
 	private void putString(String key, String value) {

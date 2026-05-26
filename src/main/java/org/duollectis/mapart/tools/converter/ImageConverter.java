@@ -22,7 +22,6 @@ import java.util.Set;
 public class ImageConverter {
 
 	private static final int MAP_SIZE = 128;
-	private static final double DITHER_ERROR_RATE = 0.8;
 	private static final String DEFAULT_SUPPORT_BLOCK_ID = "minecraft:stone";
 
 	private final List<PaletteEntry> palette = new ArrayList<>();
@@ -37,12 +36,15 @@ public class ImageConverter {
 	 * Схематики не сохраняются — это позволяет сначала показать превью пользователю.
 	 * Вызывающий код обязан закрыть возвращённый {@link Ditherer} после использования.
 	 *
-	 * @param paletteJson JSON-строка с палитрой цветов версии Майнкрафта
-	 * @param imageFile   исходное изображение
-	 * @param blocksFile  файл со списком разрешённых блоков
-	 * @param mapWidth    количество карт по горизонтали
-	 * @param mapHeight   количество карт по вертикали
-	 * @param algorithm   алгоритм дизеринга
+	 * @param paletteJson    JSON-строка с палитрой цветов версии Майнкрафта
+	 * @param imageFile      исходное изображение
+	 * @param blocksFile     файл со списком разрешённых блоков
+	 * @param mapWidth       количество карт по горизонтали
+	 * @param mapHeight      количество карт по вертикали
+	 * @param algorithm      алгоритм дизеринга
+	 * @param adjustments    коррекция изображения
+	 * @param ditherSettings настройки алгоритма дизеринга
+	 * @param cropSettings   настройки кропа/подгонки изображения
 	 * @return {@link Ditherer} с заполненным результатом дизеринга и готовым превью
 	 */
 	public Ditherer dither(
@@ -52,17 +54,20 @@ public class ImageConverter {
 		int mapWidth,
 		int mapHeight,
 		Ditherer.Algorithm algorithm,
-		ImageAdjustments adjustments
+		ImageAdjustments adjustments,
+		DitherSettings ditherSettings,
+		CropSettings cropSettings
 	) {
 		Set<String> allowedBlocks = loadAllowedBlocks(blocksFile);
 		loadPalette(paletteJson, allowedBlocks);
 
 		try {
 			BufferedImage image = ImageIO.read(imageFile);
-			image = ImageUtils.resizeImage(image, MAP_SIZE * mapWidth, MAP_SIZE * mapHeight);
+			image = ImageUtils.prepareImage(image, MAP_SIZE * mapWidth, MAP_SIZE * mapHeight, cropSettings);
 			image = ImageUtils.applyAdjustments(image, adjustments);
 
-			ditherer.setErrorDiffusionRate(DITHER_ERROR_RATE);
+			ditherer.setErrorDiffusionRate(ditherSettings.errorDiffusionRate());
+			ditherer.setNoiseLevel(ditherSettings.noiseLevel());
 			ditherer.setPalette(palette);
 			ditherer.setAlgorithm(algorithm);
 			ditherer.processImage(image);
@@ -129,7 +134,9 @@ public class ImageConverter {
 			BufferedImage image = ImageIO.read(imageFile);
 			image = ImageUtils.resizeImage(image, MAP_SIZE * mapWidth, MAP_SIZE * mapHeight);
 
-			ditherer.setErrorDiffusionRate(DITHER_ERROR_RATE);
+			DitherSettings defaults = DitherSettings.defaults();
+			ditherer.setErrorDiffusionRate(defaults.errorDiffusionRate());
+			ditherer.setNoiseLevel(defaults.noiseLevel());
 			ditherer.setPalette(palette);
 			ditherer.setAlgorithm(Ditherer.Algorithm.FLOYD_STEINBERG);
 			ditherer.processImage(image);

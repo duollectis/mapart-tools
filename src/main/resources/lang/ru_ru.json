@@ -4,7 +4,10 @@
 
   "section.version": "Версия Minecraft",
   "section.size": "Размер (в картах)",
+  "section.crop": "Режим подгонки",
   "section.algorithm": "Алгоритм дизеринга",
+  "dither.error_rate": "Сила",
+  "dither.noise_level": "Шум",
   "section.image_adjust": "Коррекция изображения",
   "section.image": "Изображение",
   "section.blocks": "Блоки палитры",
@@ -36,7 +39,17 @@
   "btn.settings": "⚙  Настройки",
 
   "preview.source": "Исходное изображение",
-  "preview.result": "Результат дизеринга",
+  "preview.result": "Результат конвертации",
+  "preview.open_window": "Открыть в натуральном размере",
+  "preview.show_grid": "Сетка карт",
+  "preview.grid_width": "Толщина:",
+  "preview.bg_color": "Цвет фона сетки",
+  "preview.reset_view": "Сбросить вид",
+
+  "crop.STRETCH": "Растянуть",
+  "crop.CENTER": "По центру (обрезка)",
+  "crop.MANUAL": "Ручная обрезка",
+  "crop.FIT": "Вписать целиком",
 
   "progress.ready": "Готов к работе",
   "progress.dithering": "Дизеринг...",

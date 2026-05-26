@@ -1,5 +1,7 @@
 package org.duollectis.mapart.tools.gui;
 
+import lombok.Getter;
+
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -40,6 +42,7 @@ public class SettingsDialog extends JDialog {
 	};
 
 	private ModernComboBox<String> langCombo;
+	@Getter
 	private boolean confirmed = false;
 
 	public SettingsDialog(JFrame parent) {
@@ -49,10 +52,6 @@ public class SettingsDialog extends JDialog {
 		setResizable(false);
 		setLocationRelativeTo(parent);
 		setVisible(true);
-	}
-
-	public boolean isConfirmed() {
-		return confirmed;
 	}
 
 	private void buildUi() {
@@ -134,7 +133,8 @@ public class SettingsDialog extends JDialog {
 	}
 
 	private JPanel buildCard() {
-		JPanel card = new JPanel() {
+
+		return new JPanel() {
 			{
 				setOpaque(false);
 				setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -152,8 +152,6 @@ public class SettingsDialog extends JDialog {
 				g2.dispose();
 			}
 		};
-
-		return card;
 	}
 
 	private JButton buildPrimaryButton(String text, Color bgColor, Color fgColor) {

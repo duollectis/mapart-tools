@@ -1,6 +1,8 @@
 package org.duollectis.mapart.tools.gui;
 
+import org.duollectis.mapart.tools.converter.CropSettings;
 import org.duollectis.mapart.tools.converter.Ditherer;
+import org.duollectis.mapart.tools.converter.DitherSettings;
 import org.duollectis.mapart.tools.converter.ImageConverter;
 import org.duollectis.mapart.tools.utils.image.ImageAdjustments;
 
@@ -25,6 +27,8 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 	private final int mapHeight;
 	private final Ditherer.Algorithm algorithm;
 	private final ImageAdjustments adjustments;
+	private final DitherSettings ditherSettings;
+	private final CropSettings cropSettings;
 	private final Consumer<String> onProgress;
 	private final Consumer<Ditherer> onSuccess;
 	private final Consumer<String> onError;
@@ -37,6 +41,8 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 		int mapHeight,
 		Ditherer.Algorithm algorithm,
 		ImageAdjustments adjustments,
+		DitherSettings ditherSettings,
+		CropSettings cropSettings,
 		Consumer<String> onProgress,
 		Consumer<Ditherer> onSuccess,
 		Consumer<String> onError
@@ -48,6 +54,8 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 		this.mapHeight = mapHeight;
 		this.algorithm = algorithm;
 		this.adjustments = adjustments;
+		this.ditherSettings = ditherSettings;
+		this.cropSettings = cropSettings;
 		this.onProgress = onProgress;
 		this.onSuccess = onSuccess;
 		this.onError = onError;
@@ -65,7 +73,9 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 			mapWidth,
 			mapHeight,
 			algorithm,
-			adjustments
+			adjustments,
+			ditherSettings,
+			cropSettings
 		);
 	}
 

@@ -1,11 +1,13 @@
 package org.duollectis.mapart.tools.gui;
 
+import org.duollectis.mapart.tools.converter.CropSettings;
 import org.duollectis.mapart.tools.converter.Ditherer;
+import org.duollectis.mapart.tools.converter.DitherSettings;
 import org.duollectis.mapart.tools.utils.image.ImageAdjustments;
 import org.duollectis.mapart.tools.utils.image.ImageUtils;
 
-import javax.swing.Scrollable;
-import javax.swing.SwingWorker;
+import javax.swing.*;
+import javax.swing.JColorChooser;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,26 +15,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.imageio.ImageIO;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.event.KeyEvent;
@@ -69,6 +58,8 @@ public class MainWindow extends JFrame {
 	private static final int SPINNER_MIN = 1;
 	private static final int SPINNER_MAX = 32;
 	private static final int CARD_RADIUS = 12;
+	private static final int SETTINGS_MIN_WIDTH = 350;
+	private static final int SETTINGS_MAX_WIDTH = 550;
 
 	private static final Color BG = GuiApp.BG_DEEP;
 	private static final Color CARD = GuiApp.BG_CARD;
@@ -91,6 +82,11 @@ public class MainWindow extends JFrame {
 	private JTextField outPathField;
 	private JTextField supportBlockField;
 	private ModernComboBox<Ditherer.Algorithm> algorithmCombo;
+	private JPanel ditherSettingsPanel;
+	private ModernSlider errorRateSlider;
+	private ModernSlider noiseLevelSlider;
+	private JLabel errorRateLabel;
+	private JLabel noiseLevelLabel;
 	private ModernToggleButton autoConvertToggle;
 	private ModernSlider brightnessSlider;
 	private ModernSlider contrastSlider;
@@ -111,6 +107,9 @@ public class MainWindow extends JFrame {
 	private JTextArea logArea;
 	private ImagePreviewPanel sourcePreview;
 	private ImagePreviewPanel resultPreview;
+	private ModernCheckBox showGridCheckBox;
+	private ModernSpinner gridWidthSpinner;
+	private JButton gridBgColorButton;
 
 	private File selectedImageFile;
 	private BufferedImage rawSourceImage;
@@ -120,6 +119,7 @@ public class MainWindow extends JFrame {
 	private Set<String> enabledBlocks = new HashSet<>();
 	private volatile boolean sourcePreviewPending;
 	private volatile boolean sourcePreviewRunning;
+	private volatile boolean resetSourceViewOnNextImage;
 	private Timer conversionDebounceTimer;
 	private final Map<String, String> paletteCache = new HashMap<>();
 
@@ -147,6 +147,8 @@ public class MainWindow extends JFrame {
 
 		add(buildHeader(), BorderLayout.NORTH);
 		add(buildCenterPanel(), BorderLayout.CENTER);
+
+		syncSourcePreviewMapCount();
 
 		java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager()
 			.addKeyEventDispatcher(event -> {
@@ -221,11 +223,25 @@ public class MainWindow extends JFrame {
 		rightColumn.add(buildPreviewPanel(), BorderLayout.CENTER);
 		rightColumn.add(buildBottomPanel(), BorderLayout.SOUTH);
 
+		JPanel settingsPanel = buildSettingsPanel();
+
 		JPanel center = new JPanel(new BorderLayout(10, 0));
 		center.setBackground(BG);
 		center.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 0));
-		center.add(buildSettingsPanel(), BorderLayout.WEST);
+		center.add(settingsPanel, BorderLayout.WEST);
 		center.add(rightColumn, BorderLayout.CENTER);
+
+		// Динамически ограничиваем ширину левой панели: растёт пропорционально окну,
+		// но не выходит за пределы [SETTINGS_MIN_WIDTH, SETTINGS_MAX_WIDTH].
+		center.addComponentListener(new java.awt.event.ComponentAdapter() {
+			@Override
+			public void componentResized(java.awt.event.ComponentEvent e) {
+				int targetWidth = (int) (center.getWidth() * 0.28);
+				int clampedWidth = Math.max(SETTINGS_MIN_WIDTH, Math.min(SETTINGS_MAX_WIDTH, targetWidth));
+				settingsPanel.setPreferredSize(new Dimension(clampedWidth, 0));
+				center.revalidate();
+			}
+		});
 
 		return center;
 	}
@@ -251,6 +267,8 @@ public class MainWindow extends JFrame {
 		content.add(buildSectionLabel(Lang.t("section.algorithm")));
 		content.add(Box.createVerticalStrut(5));
 		content.add(buildAlgorithmRow());
+		content.add(Box.createVerticalStrut(4));
+		content.add(buildDitherSettingsPanel());
 
 		content.add(Box.createVerticalStrut(12));
 		content.add(buildSectionLabel(Lang.t("section.image_adjust")));
@@ -291,10 +309,32 @@ public class MainWindow extends JFrame {
 		JPanel buttons = buildActionButtons();
 		buttons.setBorder(BorderFactory.createEmptyBorder(10, 14, 14, 14));
 
-		JPanel card = buildCard();
+		JPanel card = new JPanel() {
+			@Override
+			protected void paintComponent(Graphics g) {
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(CARD);
+				g2.fillRoundRect(0, 0, getWidth(), getHeight(), CARD_RADIUS * 2, CARD_RADIUS * 2);
+				g2.setColor(BORDER);
+				g2.setStroke(new BasicStroke(1f));
+				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, CARD_RADIUS * 2, CARD_RADIUS * 2);
+				g2.dispose();
+			}
+
+			@Override
+			public Dimension getMinimumSize() {
+				return new Dimension(SETTINGS_MIN_WIDTH, super.getMinimumSize().height);
+			}
+
+			@Override
+			public Dimension getMaximumSize() {
+				return new Dimension(SETTINGS_MAX_WIDTH, Integer.MAX_VALUE);
+			}
+		};
+		card.setOpaque(false);
 		card.setBorder(BorderFactory.createEmptyBorder());
 		card.setLayout(new BorderLayout());
-		card.setPreferredSize(new Dimension(310, 0));
 		card.add(scroll, BorderLayout.CENTER);
 		card.add(buttons, BorderLayout.SOUTH);
 
@@ -316,8 +356,15 @@ public class MainWindow extends JFrame {
 		widthSpinner = new ModernSpinner(new SpinnerNumberModel(1, SPINNER_MIN, SPINNER_MAX, 1));
 		heightSpinner = new ModernSpinner(new SpinnerNumberModel(1, SPINNER_MIN, SPINNER_MAX, 1));
 
-		widthSpinner.addChangeListener(e -> scheduleConversionIfAuto());
-		heightSpinner.addChangeListener(e -> scheduleConversionIfAuto());
+		widthSpinner.addChangeListener(e -> {
+			syncSourcePreviewMapCount();
+			scheduleConversionIfAuto();
+		});
+
+		heightSpinner.addChangeListener(e -> {
+			syncSourcePreviewMapCount();
+			scheduleConversionIfAuto();
+		});
 
 		JPanel row = new JPanel(new GridBagLayout());
 		row.setOpaque(false);
@@ -344,6 +391,16 @@ public class MainWindow extends JFrame {
 		gbc.weightx = 1;
 		gbc.insets = new Insets(0, 0, 0, 0);
 		row.add(heightSpinner, gbc);
+
+		JButton autoFitBtn = buildIconButton("⊡", 14, new Insets(2, 6, 2, 6));
+		autoFitBtn.setToolTipText(Lang.t("btn.auto_fit_maps"));
+		autoFitBtn.addActionListener(e -> autoFitMapCount());
+
+		gbc.gridx = 4;
+		gbc.weightx = 0;
+		gbc.fill = GridBagConstraints.NONE;
+		gbc.insets = new Insets(0, 6, 0, 0);
+		row.add(autoFitBtn, gbc);
 
 		return row;
 	}
@@ -398,19 +455,18 @@ public class MainWindow extends JFrame {
 		JButton resetBtn = buildIconButton(Lang.t("adjust.reset"));
 		resetBtn.addActionListener(e -> resetAdjustments());
 
-		JPanel grid = new JPanel(new java.awt.GridBagLayout());
+		JPanel grid = new JPanel(new GridBagLayout());
 		grid.setOpaque(false);
 
-		java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
-		gbc.fill = java.awt.GridBagConstraints.HORIZONTAL;
-		gbc.insets = new java.awt.Insets(1, 0, 1, 4);
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets = new Insets(1, 0, 1, 4);
 
-		ImageAdjustments def = ImageAdjustments.defaults();
-		addSliderRow(grid, gbc, 0, Lang.t("adjust.brightness"), brightnessSlider, brightnessLabel, def.brightness(), false);
-		addSliderRow(grid, gbc, 1, Lang.t("adjust.contrast"), contrastSlider, contrastLabel, def.contrast(), false);
-		addSliderRow(grid, gbc, 2, Lang.t("adjust.saturation"), saturationSlider, saturationLabel, def.saturation(), false);
-		addSliderRow(grid, gbc, 3, Lang.t("adjust.gamma"), gammaSlider, gammaLabel, def.gamma(), true);
-		addSliderRow(grid, gbc, 4, Lang.t("adjust.hue"), hueSlider, hueLabel, def.hue(), false);
+		addSliderRow(grid, gbc, 0, Lang.t("adjust.brightness"), brightnessSlider, brightnessLabel, defaults.brightness(), false);
+		addSliderRow(grid, gbc, 1, Lang.t("adjust.contrast"), contrastSlider, contrastLabel, defaults.contrast(), false);
+		addSliderRow(grid, gbc, 2, Lang.t("adjust.saturation"), saturationSlider, saturationLabel, defaults.saturation(), false);
+		addSliderRow(grid, gbc, 3, Lang.t("adjust.gamma"), gammaSlider, gammaLabel, defaults.gamma(), true);
+		addSliderRow(grid, gbc, 4, Lang.t("adjust.hue"), hueSlider, hueLabel, defaults.hue(), false);
 
 		JPanel wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
@@ -433,7 +489,7 @@ public class MainWindow extends JFrame {
 
 	private void addSliderRow(
 		JPanel grid,
-		java.awt.GridBagConstraints gbc,
+		GridBagConstraints gbc,
 		int row,
 		String label,
 		ModernSlider slider,
@@ -445,25 +501,42 @@ public class MainWindow extends JFrame {
 
 		gbc.gridx = 0;
 		gbc.weightx = 0;
-		gbc.insets = new java.awt.Insets(1, 0, 1, 6);
+		gbc.insets = new Insets(1, 0, 1, 6);
 		JLabel nameLabel = dimLabel(label);
-		nameLabel.setPreferredSize(new java.awt.Dimension(80, 16));
+		nameLabel.setPreferredSize(new Dimension(80, 16));
 		grid.add(nameLabel, gbc);
 
 		gbc.gridx = 1;
 		gbc.weightx = 1;
-		gbc.insets = new java.awt.Insets(1, 0, 1, 4);
+		gbc.insets = new Insets(1, 0, 1, 4);
 		grid.add(slider, gbc);
 
 		gbc.gridx = 2;
 		gbc.weightx = 0;
-		gbc.insets = new java.awt.Insets(1, 0, 1, 4);
-		valueLabel.setPreferredSize(new java.awt.Dimension(36, 16));
-		grid.add(valueLabel, gbc);
+		gbc.insets = new Insets(1, 0, 1, 4);
+		valueLabel.setPreferredSize(new Dimension(36, 16));
+		JButton decBtn = buildIconButton("◀", 9, new Insets(2, 4, 2, 4));
+		JButton incBtn = buildIconButton("▶", 9, new Insets(2, 4, 2, 4));
+		decBtn.addActionListener(e -> {
+			int next = Math.max(slider.getMinimum(), slider.getValue() - 1);
+			slider.setValue(next);
+			valueLabel.setText(formatSliderValue(next, isGamma));
+		});
+		incBtn.addActionListener(e -> {
+			int next = Math.min(slider.getMaximum(), slider.getValue() + 1);
+			slider.setValue(next);
+			valueLabel.setText(formatSliderValue(next, isGamma));
+		});
+		JPanel valueCell = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 2, 0));
+		valueCell.setOpaque(false);
+		valueCell.add(decBtn);
+		valueCell.add(valueLabel);
+		valueCell.add(incBtn);
+		grid.add(valueCell, gbc);
 
 		gbc.gridx = 3;
 		gbc.weightx = 0;
-		gbc.insets = new java.awt.Insets(1, 0, 1, 0);
+		gbc.insets = new Insets(1, 0, 1, 0);
 		JButton resetOne = buildIconButton("↺");
 		resetOne.addActionListener(e -> {
 			slider.setValue(defaultValue);
@@ -474,6 +547,45 @@ public class MainWindow extends JFrame {
 
 	private ModernSlider buildSlider(int min, int max, int value) {
 		return new ModernSlider(min, max, value);
+	}
+
+	private JButton buildIconButton(String text, int fontSize, Insets padding) {
+		JButton btn = new JButton(text) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+				if (getModel().isRollover()) {
+					g2.setColor(new Color(255, 255, 255, 20));
+					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+				}
+
+				g2.dispose();
+				super.paintComponent(g);
+			}
+		};
+
+		btn.setForeground(TEXT_DIM);
+		btn.setFont(new Font("SansSerif", Font.PLAIN, fontSize));
+		btn.setFocusPainted(false);
+		btn.setContentAreaFilled(false);
+		btn.setBorderPainted(false);
+		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		btn.setBorder(BorderFactory.createEmptyBorder(padding.top, padding.left, padding.bottom, padding.right));
+		btn.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				btn.setForeground(TEXT);
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				btn.setForeground(TEXT_DIM);
+			}
+		});
+
+		return btn;
 	}
 
 	private JLabel buildSliderValueLabel(int value, boolean isGamma) {
@@ -512,7 +624,10 @@ public class MainWindow extends JFrame {
 
 	private JPanel buildAlgorithmRow() {
 		algorithmCombo = new ModernComboBox<>(Ditherer.Algorithm.values());
-		algorithmCombo.addActionListener(e -> scheduleConversionIfAuto());
+		algorithmCombo.addActionListener(e -> {
+			refreshDitherSettingsPanel();
+			scheduleConversionIfAuto();
+		});
 
 		JPanel row = new JPanel(new BorderLayout());
 		row.setOpaque(false);
@@ -520,6 +635,88 @@ public class MainWindow extends JFrame {
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
 
 		return row;
+	}
+
+	private JPanel buildDitherSettingsPanel() {
+		DitherSettings defaults = DitherSettings.defaults();
+		int defaultErrorRate = (int) (defaults.errorDiffusionRate() * 100);
+		int defaultNoiseLevel = (int) (defaults.noiseLevel() * 100);
+
+		errorRateSlider = buildSlider(0, 100, defaultErrorRate);
+		noiseLevelSlider = buildSlider(0, 100, defaultNoiseLevel);
+
+		errorRateLabel = buildSliderValueLabel(defaultErrorRate, true);
+		noiseLevelLabel = buildSliderValueLabel(defaultNoiseLevel, true);
+
+		errorRateSlider.addChangeListener(e -> {
+			errorRateLabel.setText(formatSliderValue(errorRateSlider.getValue(), true));
+			scheduleConversionIfAuto();
+		});
+
+		noiseLevelSlider.addChangeListener(e -> {
+			noiseLevelLabel.setText(formatSliderValue(noiseLevelSlider.getValue(), true));
+			scheduleConversionIfAuto();
+		});
+
+		JPanel grid = new JPanel(new GridBagLayout());
+		grid.setOpaque(false);
+
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets = new Insets(1, 0, 1, 4);
+
+		addSliderRow(grid, gbc, 0, Lang.t("dither.error_rate"), errorRateSlider, errorRateLabel, defaultErrorRate, true);
+		addSliderRow(grid, gbc, 1, Lang.t("dither.noise_level"), noiseLevelSlider, noiseLevelLabel, defaultNoiseLevel, true);
+
+		JPanel wrapper = new JPanel();
+		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+		wrapper.setOpaque(false);
+		wrapper.add(grid);
+
+		ditherSettingsPanel = wrapper;
+
+		refreshDitherSettingsPanel();
+
+		return wrapper;
+	}
+
+	private void refreshDitherSettingsPanel() {
+		if (ditherSettingsPanel == null) {
+			return;
+		}
+
+		Ditherer.Algorithm selected = (Ditherer.Algorithm) algorithmCombo.getSelectedItem();
+
+		if (selected == null || selected == Ditherer.Algorithm.NONE) {
+			ditherSettingsPanel.setVisible(false);
+			return;
+		}
+
+		boolean isErrorDiffusion = selected.getId() <= 8;
+		ditherSettingsPanel.setVisible(true);
+
+		// Строка errorRate видна только для алгоритмов диффузии ошибки
+		setSliderRowVisible(errorRateSlider, errorRateLabel, isErrorDiffusion);
+	}
+
+	private void setSliderRowVisible(ModernSlider slider, JLabel valueLabel, boolean visible) {
+		// Находим все компоненты в той же строке GridBagLayout и переключаем видимость
+		java.awt.Container parent = slider.getParent();
+
+		if (parent == null) {
+			return;
+		}
+
+		java.awt.GridBagLayout layout = (java.awt.GridBagLayout) parent.getLayout();
+		int targetRow = layout.getConstraints(slider).gridy;
+
+		for (java.awt.Component comp : parent.getComponents()) {
+			java.awt.GridBagConstraints c = layout.getConstraints(comp);
+
+			if (c.gridy == targetRow) {
+				comp.setVisible(visible);
+			}
+		}
 	}
 
 	private JPanel buildBlocksRow() {
@@ -623,6 +820,28 @@ public class MainWindow extends JFrame {
 		stylePreviewPanel(resultPreview);
 		setupImageDropTarget(sourcePreview);
 
+		// Левая картинка интерактивна: drag, resize за края, zoom колёсиком
+		sourcePreview.setInteractive(this::scheduleConversionIfAuto);
+
+		// Правая панель всегда показывает чёрный фон сетки
+		resultPreview.setShowGridBackground(true);
+
+		showGridCheckBox = new ModernCheckBox(Lang.t("preview.show_grid"));
+		showGridCheckBox.addActionListener(e -> {
+			boolean show = showGridCheckBox.isSelected();
+			sourcePreview.setShowGrid(show);
+			resultPreview.setShowGrid(show);
+		});
+
+		gridWidthSpinner = new ModernSpinner(new SpinnerNumberModel(1, 1, 10, 1));
+		gridWidthSpinner.addChangeListener(e -> {
+			float width = ((Number) gridWidthSpinner.getValue()).floatValue();
+			sourcePreview.setGridStrokeWidth(width);
+			resultPreview.setGridStrokeWidth(width);
+		});
+
+		gridBgColorButton = buildGridBgColorButton();
+
 		JPanel panel = new JPanel(new GridBagLayout());
 		panel.setBackground(BG);
 
@@ -632,14 +851,178 @@ public class MainWindow extends JFrame {
 		gbc.weighty = 1;
 		gbc.insets = new Insets(0, 0, 0, 5);
 
+		JButton resetBtn = buildIconButton(Lang.t("adjust.reset"), 11, new Insets(2, 8, 2, 8));
+		resetBtn.setToolTipText(Lang.t("preview.reset_view"));
+		resetBtn.addActionListener(e -> sourcePreview.resetDisplayOffset());
+
 		gbc.gridx = 0;
-		panel.add(sourcePreview, gbc);
+		panel.add(wrapPreviewWithButton(sourcePreview, Lang.t("preview.source"), null, null, resetBtn), gbc);
 
 		gbc.gridx = 1;
 		gbc.insets = new Insets(0, 5, 0, 0);
-		panel.add(resultPreview, gbc);
+		panel.add(wrapPreviewWithButton(resultPreview, Lang.t("preview.result"), showGridCheckBox, gridWidthSpinner, gridBgColorButton), gbc);
 
 		return panel;
+	}
+
+	private JPanel wrapPreviewWithButton(
+		ImagePreviewPanel preview,
+		String windowTitle,
+		ModernCheckBox checkBox,
+		ModernSpinner gridSpinner
+	) {
+		return wrapPreviewWithButton(preview, windowTitle, checkBox, gridSpinner, null);
+	}
+
+	private JPanel wrapPreviewWithButton(
+		ImagePreviewPanel preview,
+		String windowTitle,
+		ModernCheckBox checkBox,
+		ModernSpinner gridSpinner,
+		JButton extraButton
+	) {
+		JButton expandBtn = buildIconButton("⤢", 14, new Insets(2, 5, 2, 5));
+		expandBtn.setToolTipText(Lang.t("preview.open_window"));
+		expandBtn.addActionListener(e -> {
+			BufferedImage img = preview.getImage();
+			if (img == null) {
+				return;
+			}
+			openImageInWindow(img, windowTitle);
+		});
+
+		JLayeredPane layered = new JLayeredPane() {
+			@Override
+			public Dimension getPreferredSize() {
+				return preview.getPreferredSize();
+			}
+
+			@Override
+			public Dimension getMinimumSize() {
+				return preview.getMinimumSize();
+			}
+		};
+		layered.setOpaque(false);
+
+		preview.setBounds(0, 0, 0, 0);
+		layered.add(preview, JLayeredPane.DEFAULT_LAYER);
+		layered.add(expandBtn, JLayeredPane.PALETTE_LAYER);
+
+		layered.addComponentListener(new java.awt.event.ComponentAdapter() {
+			@Override
+			public void componentResized(java.awt.event.ComponentEvent e) {
+				int w = layered.getWidth();
+				int h = layered.getHeight();
+				preview.setBounds(0, 0, w, h);
+
+				Dimension btnSize = expandBtn.getPreferredSize();
+				expandBtn.setBounds(w - btnSize.width - 4, 2, btnSize.width, btnSize.height);
+			}
+		});
+
+		JPanel footer = new JPanel(new BorderLayout());
+		footer.setOpaque(false);
+
+		if (checkBox != null) {
+			footer.add(checkBox, BorderLayout.WEST);
+		}
+
+		if (gridSpinner != null || extraButton != null) {
+			JPanel eastGroup = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+			eastGroup.setOpaque(false);
+
+			if (extraButton != null) {
+				eastGroup.add(extraButton);
+			}
+
+			if (gridSpinner != null) {
+				JLabel gridWidthLabel = dimLabel(Lang.t("preview.grid_width"));
+				eastGroup.add(gridWidthLabel);
+				eastGroup.add(gridSpinner);
+			}
+
+			footer.add(eastGroup, BorderLayout.EAST);
+		}
+
+		if (checkBox == null && gridSpinner == null && extraButton == null) {
+			Dimension cbSize = new ModernCheckBox("").getPreferredSize();
+			footer.setPreferredSize(new Dimension(0, cbSize.height));
+		}
+
+		JPanel wrapper = new JPanel(new BorderLayout(0, 4));
+		wrapper.setOpaque(false);
+		wrapper.add(layered, BorderLayout.CENTER);
+		wrapper.add(footer, BorderLayout.SOUTH);
+
+		return wrapper;
+	}
+
+	private JButton buildGridBgColorButton() {
+		JButton btn = new JButton() {
+			@Override
+			protected void paintComponent(Graphics g) {
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(resultPreview != null ? resultPreview.getGridBackgroundColor() : Color.BLACK);
+				g2.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 4, 4);
+				g2.setColor(BORDER);
+				g2.setStroke(new BasicStroke(1f));
+				g2.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 4, 4);
+				g2.dispose();
+			}
+		};
+
+		btn.setPreferredSize(new Dimension(22, 22));
+		btn.setOpaque(false);
+		btn.setContentAreaFilled(false);
+		btn.setBorderPainted(false);
+		btn.setToolTipText(Lang.t("preview.bg_color"));
+		btn.addActionListener(e -> {
+			Color current = resultPreview != null ? resultPreview.getGridBackgroundColor() : Color.BLACK;
+			Color chosen = JColorChooser.showDialog(this, Lang.t("preview.bg_color"), current);
+
+			if (chosen == null) {
+				return;
+			}
+
+			resultPreview.setGridBackgroundColor(chosen);
+			btn.repaint();
+		});
+
+		return btn;
+	}
+
+	private void openImageInWindow(BufferedImage image, String title) {
+		JFrame window = new JFrame(title);
+		window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+		JLabel imageLabel = new JLabel(new ImageIcon(image));
+		imageLabel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+		JScrollPane scroll = new JScrollPane(imageLabel);
+		scroll.setBackground(new Color(10, 11, 18));
+		scroll.getViewport().setBackground(new Color(10, 11, 18));
+		scroll.getVerticalScrollBar().setUI(GuiApp.buildScrollBarUi());
+		scroll.getHorizontalScrollBar().setUI(GuiApp.buildScrollBarUi());
+		scroll.getVerticalScrollBar().setBackground(new Color(10, 11, 18));
+		scroll.getHorizontalScrollBar().setBackground(new Color(10, 11, 18));
+
+		window.getContentPane().setBackground(new Color(10, 11, 18));
+		window.getContentPane().add(scroll);
+
+		var screenBounds = GraphicsEnvironment
+			.getLocalGraphicsEnvironment()
+			.getMaximumWindowBounds();
+
+		int maxW = (int) (screenBounds.getWidth() * 0.9);
+		int maxH = (int) (screenBounds.getHeight() * 0.9);
+
+		int winW = Math.min(image.getWidth() + 32, maxW);
+		int winH = Math.min(image.getHeight() + 32, maxH);
+
+		window.setSize(winW, winH);
+		window.setLocationRelativeTo(this);
+		window.setVisible(true);
 	}
 
 	private JPanel buildBottomPanel() {
@@ -756,6 +1139,11 @@ public class MainWindow extends JFrame {
 			protected void done() {
 				try {
 					sourcePreview.setImage(get());
+
+					if (resetSourceViewOnNextImage) {
+						resetSourceViewOnNextImage = false;
+						sourcePreview.resetDisplayOffset();
+					}
 				} catch (Exception ignored) {
 				}
 
@@ -826,6 +1214,8 @@ public class MainWindow extends JFrame {
 			mapHeight,
 			algorithm,
 			buildAdjustments(),
+			buildDitherSettingsFromUi(),
+			buildCropSettingsFromUi(),
 			this::log,
 			this::onDitheringSuccess,
 			this::onConversionError
@@ -949,6 +1339,12 @@ public class MainWindow extends JFrame {
 	private void onDitheringSuccess(Ditherer ditherer) {
 		lastDitherer = ditherer;
 		resultPreview.setImage(ditherer.createPreview());
+		resultPreview.setMapCount((int) widthSpinner.getValue(), (int) heightSpinner.getValue());
+
+		// Дизеренное изображение имеет размер mapW*128 × mapH*128 — точно пропорции сетки.
+		// Растягиваем его на всю сетку без полей (stretch, не fit).
+		javax.swing.SwingUtilities.invokeLater(() -> resultPreview.resetDisplayOffsetStretch());
+
 		setConvertingState(false);
 		progressBar.setString(Lang.t("progress.dither_done", ditherer.getDitherTime()));
 		progressBar.setForeground(SUCCESS);
@@ -1037,6 +1433,16 @@ public class MainWindow extends JFrame {
 		// Авто-режим восстанавливаем ДО слайдеров, чтобы ChangeListeners не триггерили конвертацию
 		autoConvertToggle.setSelected(AppPreferences.loadAutoConvert(false));
 
+		DitherSettings savedDither = AppPreferences.loadDitherSettings();
+
+		if (errorRateSlider != null) {
+			errorRateSlider.setValue((int) (savedDither.errorDiffusionRate() * 100));
+		}
+
+		if (noiseLevelSlider != null) {
+			noiseLevelSlider.setValue((int) (savedDither.noiseLevel() * 100));
+		}
+
 		ImageAdjustments defaults = ImageAdjustments.defaults();
 		brightnessSlider.setValue(AppPreferences.loadBrightness(defaults.brightness()));
 		contrastSlider.setValue(AppPreferences.loadContrast(defaults.contrast()));
@@ -1092,6 +1498,48 @@ public class MainWindow extends JFrame {
 		AppPreferences.saveGamma(gammaSlider.getValue());
 		AppPreferences.saveHue(hueSlider.getValue());
 		AppPreferences.saveAutoConvert(autoConvertToggle.isSelected());
+		AppPreferences.saveDitherSettings(buildDitherSettingsFromUi());
+	}
+
+	private void syncSourcePreviewMapCount() {
+		if (sourcePreview == null || widthSpinner == null || heightSpinner == null) {
+			return;
+		}
+
+		sourcePreview.setMapCount(
+			(int) widthSpinner.getValue(),
+			(int) heightSpinner.getValue()
+		);
+	}
+
+	private void autoFitMapCount() {
+		if (rawSourceImage == null) {
+			return;
+		}
+
+		int maps = (int) Math.ceil(rawSourceImage.getWidth() / 128.0);
+		int mapsH = (int) Math.ceil(rawSourceImage.getHeight() / 128.0);
+
+		widthSpinner.setValue(Math.max(SPINNER_MIN, Math.min(SPINNER_MAX, maps)));
+		heightSpinner.setValue(Math.max(SPINNER_MIN, Math.min(SPINNER_MAX, mapsH)));
+	}
+
+	private CropSettings buildCropSettingsFromUi() {
+		int mapWidth = (int) widthSpinner.getValue();
+		int mapHeight = (int) heightSpinner.getValue();
+		int targetW = mapWidth * 128;
+		int targetH = mapHeight * 128;
+		return sourcePreview.buildCropSettings(targetW, targetH);
+	}
+
+	private DitherSettings buildDitherSettingsFromUi() {
+		double errorRate = errorRateSlider != null
+				? errorRateSlider.getValue() / 100.0
+				: DitherSettings.defaults().errorDiffusionRate();
+		double noiseLevel = noiseLevelSlider != null
+				? noiseLevelSlider.getValue() / 100.0
+				: DitherSettings.defaults().noiseLevel();
+		return new DitherSettings(errorRate, noiseLevel);
 	}
 
 	private void tryAutoLoadBlocks() {
@@ -1210,15 +1658,22 @@ public class MainWindow extends JFrame {
 		private void loadImageFile(File file) {
 			try {
 				BufferedImage image = ImageIO.read(file);
-	
+
 				if (image == null) {
 					showError(Lang.t("error.image_load_failed", file.getName()));
 					return;
 				}
-	
+
 				selectedImageFile = file;
 				rawSourceImage = image;
 				imagePathField.setText(file.getAbsolutePath());
+
+				resetSourceViewOnNextImage = true;
+
+				if (resultPreview != null) {
+					resultPreview.clear();
+				}
+
 				scheduleSourcePreview();
 				log(Lang.t("log.image_loaded", file.getName(), image.getWidth(), image.getHeight()));
 			} catch (IOException e) {

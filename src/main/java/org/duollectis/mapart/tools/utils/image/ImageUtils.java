@@ -1,6 +1,7 @@
 package org.duollectis.mapart.tools.utils.image;
 
 import lombok.experimental.UtilityClass;
+import org.duollectis.mapart.tools.converter.CropSettings;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -11,8 +12,53 @@ import java.awt.image.BufferedImage;
 public class ImageUtils {
 
 	/**
+	 * Подготавливает изображение к дизерингу: вписывает исходник в целевой размер карт
+	 * с учётом пользовательского зума и смещения из {@link CropSettings}.
+	 * <p>
+	 * Поддерживает независимое масштабирование по X и Y для корректного воспроизведения
+	 * деформаций, которые пользователь задал resize'ом в левой панели.
+	 */
+	public BufferedImage prepareImage(BufferedImage source, int targetWidth, int targetHeight, CropSettings crop) {
+		return fitImage(source, targetWidth, targetHeight, crop.offsetX(), crop.offsetY(), crop.scaleX(), crop.scaleY());
+	}
+
+	/**
+	 * Вписывает изображение в холст с чёрным фоном с независимым масштабом по X и Y.
+	 * Базовый fit-scale по каждой оси умножается на соответствующий userScale.
+	 * offsetX/offsetY сдвигают картинку внутри холста в пикселях целевого размера.
+	 */
+	public BufferedImage fitImage(
+		BufferedImage source,
+		int targetWidth,
+		int targetHeight,
+		int offsetX,
+		int offsetY,
+		double userScaleX,
+		double userScaleY
+	) {
+		double baseScaleX = (double) targetWidth / source.getWidth();
+		double baseScaleY = (double) targetHeight / source.getHeight();
+		double baseScale = Math.min(baseScaleX, baseScaleY);
+
+		int scaledW = (int) Math.round(source.getWidth() * baseScale * userScaleX);
+		int scaledH = (int) Math.round(source.getHeight() * baseScale * userScaleY);
+
+		int drawX = (targetWidth - scaledW) / 2 + offsetX;
+		int drawY = (targetHeight - scaledH) / 2 + offsetY;
+
+		BufferedImage result = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2 = result.createGraphics();
+		g2.setColor(Color.BLACK);
+		g2.fillRect(0, 0, targetWidth, targetHeight);
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+		g2.drawImage(source, drawX, drawY, scaledW, scaledH, null);
+		g2.dispose();
+
+		return result;
+	}
+
+	/**
 	 * Масштабирует изображение до указанных размеров с использованием бикубической интерполяции.
-	 * Бикубика обеспечивает баланс между скоростью и качеством при масштабировании.
 	 */
 	public BufferedImage resizeImage(BufferedImage source, int targetWidth, int targetHeight) {
 		BufferedImage result = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_ARGB);
@@ -44,7 +90,6 @@ public class ImageUtils {
 		double gammaValue = adj.gamma() / 100.0;
 		int[] gammaLut = buildGammaLut(gammaValue);
 
-		// Нормализуем параметры в рабочие диапазоны
 		float brightnessShift = adj.brightness() / 100.0f;
 		float contrastFactor = buildContrastFactor(adj.contrast());
 		float saturationFactor = 1.0f + adj.saturation() / 100.0f;
@@ -58,17 +103,14 @@ public class ImageUtils {
 				int g = (argb >> 8) & 0xFF;
 				int b = argb & 0xFF;
 
-				// Гамма-коррекция через LUT
 				r = gammaLut[r];
 				g = gammaLut[g];
 				b = gammaLut[b];
 
-				// Яркость и контраст в RGB-пространстве
-					r = clamp((int) ((r - 127.5f) * contrastFactor + 127.5f + brightnessShift * 255));
-					g = clamp((int) ((g - 127.5f) * contrastFactor + 127.5f + brightnessShift * 255));
-					b = clamp((int) ((b - 127.5f) * contrastFactor + 127.5f + brightnessShift * 255));
+				r = clamp((int) ((r - 127.5f) * contrastFactor + 127.5f + brightnessShift * 255));
+				g = clamp((int) ((g - 127.5f) * contrastFactor + 127.5f + brightnessShift * 255));
+				b = clamp((int) ((b - 127.5f) * contrastFactor + 127.5f + brightnessShift * 255));
 
-				// Насыщенность и оттенок в HSB-пространстве
 				if (adj.saturation() != 0 || adj.hue() != 0) {
 					float[] hsb = Color.RGBtoHSB(r, g, b, null);
 

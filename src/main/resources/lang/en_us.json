@@ -4,7 +4,10 @@
 
   "section.version": "Minecraft Version",
   "section.size": "Size (in maps)",
+  "section.crop": "Fit Mode",
   "section.algorithm": "Dithering Algorithm",
+  "dither.error_rate": "Strength",
+  "dither.noise_level": "Noise",
   "section.image_adjust": "Image Adjustments",
   "section.image": "Image",
   "section.blocks": "Palette Blocks",
@@ -36,7 +39,17 @@
   "btn.settings": "⚙  Settings",
 
   "preview.source": "Source Image",
-  "preview.result": "Dithering Result",
+  "preview.result": "Converted Image",
+  "preview.open_window": "Open at actual size",
+  "preview.show_grid": "Map grid",
+  "preview.grid_width": "Width:",
+  "preview.bg_color": "Grid background color",
+  "preview.reset_view": "Reset view",
+
+  "crop.STRETCH": "Stretch",
+  "crop.CENTER": "Center crop",
+  "crop.MANUAL": "Manual crop",
+  "crop.FIT": "Fit inside",
 
   "progress.ready": "Ready",
   "progress.dithering": "Dithering...",
