@@ -37,6 +37,7 @@
   "btn.save_preview": "🖼  Save Preview",
   "btn.pick_blocks": "🎨  Pick Blocks",
   "btn.settings": "⚙  Settings",
+  "btn.auto_fit_maps": "Auto-fit: calculate map count to fit the image (⌈width/128⌉ × ⌈height/128⌉)",
 
   "preview.source": "Source Image",
   "preview.result": "Converted Image",
