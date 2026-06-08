@@ -12,7 +12,10 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Ditherer implements AutoCloseable {
 
@@ -42,12 +45,23 @@ public class Ditherer implements AutoCloseable {
 	@Getter
 	private int[][] dithered = new int[0][0];
 
+	/**
+	 * Материализованный результат: для каждого пикселя уже выбран конкретный блок
+	 * согласно весовому распределению. Заполняется сразу после нативного дизеринга.
+	 * Гарантирует что список блоков, превью и экспорт используют одни и те же блоки.
+	 */
+	@Getter
+	private BlockData[][] resolved = new BlockData[0][0];
+
 	public Ditherer(File lib) {
 		nativeWrapper = NativeBridge.create(ImageDithererWrapper.class, lib);
 	}
 
 	public void processImage(BufferedImage image) {
-		dithered = new int[image.getHeight()][image.getWidth()];
+		int height = image.getHeight();
+		int width = image.getWidth();
+		dithered = new int[height][width];
+		resolved = new BlockData[height][width];
 
 		if (palette.isEmpty()) {
 			return;
@@ -62,8 +76,8 @@ public class Ditherer implements AutoCloseable {
 			paletteRgb,
 			paletteRgb.length,
 			pixels,
-			dithered[0].length,
-			dithered.length,
+			width,
+			height,
 			dithered,
 			algorithm.getId(),
 			errorDiffusionRate,
@@ -71,6 +85,21 @@ public class Ditherer implements AutoCloseable {
 		);
 
 		ditherTime = Math.toIntExact(System.currentTimeMillis() - startTime);
+
+		materializeBlocks(height, width);
+	}
+
+	private void materializeBlocks(int height, int width) {
+		Map<Integer, WeightedSelector<BlockData>> freshSelectors = buildFreshSelectors();
+		Map<Integer, Integer> perEntryCounters = new LinkedHashMap<>();
+
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				int paletteIndex = dithered[y][x];
+				int counter = perEntryCounters.merge(paletteIndex, 1, Integer::sum) - 1;
+				resolved[y][x] = freshSelectors.get(paletteIndex).pick(counter);
+			}
+		}
 	}
 
 	/**
@@ -93,6 +122,63 @@ public class Ditherer implements AutoCloseable {
 		}
 
 		return preview;
+	}
+
+	/**
+	 * Подсчитывает количество использований каждого блока по материализованному результату.
+	 * Числа стабильны — не меняются при повторных вызовах.
+	 * Результат отсортирован по убыванию количества.
+	 *
+	 * @return карта блок → количество, отсортированная по убыванию
+	 */
+	public Map<BlockData, Integer> getUsedBlockCounts() {
+		Map<BlockData, Integer> counts = new LinkedHashMap<>();
+
+		for (BlockData[] row : resolved) {
+			for (BlockData block : row) {
+				counts.merge(block, 1, Integer::sum);
+			}
+		}
+
+		return counts.entrySet()
+			.stream()
+			.sorted(Map.Entry.<BlockData, Integer>comparingByValue().reversed())
+			.collect(Collectors.toMap(
+				Map.Entry::getKey,
+				Map.Entry::getValue,
+				(a, b) -> a,
+				LinkedHashMap::new
+			));
+	}
+
+	/**
+	 * Считает количество пикселей, под которыми при экспорте будет подложен блок опоры.
+	 * Читает из материализованного результата — стабильный счётчик.
+	 *
+	 * @return количество блоков опоры, необходимых для схематики
+	 */
+	public int getSupportBlockCount() {
+		int count = 0;
+
+		for (BlockData[] row : resolved) {
+			for (BlockData block : row) {
+				if (block.isNeedSupport()) {
+					count++;
+				}
+			}
+		}
+
+		return count;
+	}
+
+	private Map<Integer, WeightedSelector<BlockData>> buildFreshSelectors() {
+		Map<Integer, WeightedSelector<BlockData>> result = new LinkedHashMap<>();
+
+		for (int i = 0; i < palette.size(); i++) {
+			result.put(i, palette.get(i).getBlockSelector().copy());
+		}
+
+		return result;
 	}
 
 	@Override

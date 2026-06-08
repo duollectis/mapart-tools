@@ -1,46 +1,36 @@
-package org.duollectis.mapart.tools.utils;
+package org.duollectis.mapart.tools.converter.schematic;
 
 import lombok.AllArgsConstructor;
-import lombok.Setter;
 import net.minecraft.nbt.elements.NbtCompound;
 import net.minecraft.nbt.elements.NbtInt;
 import net.minecraft.nbt.elements.NbtList;
-import net.minecraft.nbt.utils.NbtIo;
 import org.duollectis.mapart.tools.converter.BlockData;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class Schematic {
+/**
+ * Экспортёр схематики в формат Structure Block (.nbt).
+ * Хранит блоки как список позиций со ссылкой на индекс палитры.
+ */
+public class NbtSchematicWriter extends SchematicWriter {
 
-	private static final String AUTHOR = "Duollectis Mapart Tools By Applee453";
 	// Версия данных 1.21.1 — чтобы Майнкрафт не ругался на несовместимость формата
 	private static final int DATA_VERSION = 3463;
 
-	@Setter
-	private int width;
+	private final int width;
+	private final int height;
+	private final int length;
 
-	@Setter
-	private int height;
+	private final List<PlacedBlock> blocks = new ArrayList<>();
 
-	@Setter
-	private int length;
-
-	// Список для сохранения порядка (индекс = state в NBT)
-	private final List<BlockData> paletteList = new ArrayList<>();
-	// HashMap для O(1) поиска индекса блока в палитре
-	private final Map<BlockData, Integer> paletteIndex = new HashMap<>();
-	private final List<Block> blocks = new ArrayList<>();
-
-	public Schematic(int width, int height, int length) {
+	public NbtSchematicWriter(int width, int height, int length) {
 		this.width = width;
 		this.height = height;
 		this.length = length;
 	}
 
+	@Override
 	public void setBlock(int x, int y, int z, BlockData block) {
 		if (x < 0 || x >= width) {
 			throw new RuntimeException("X выходит за границы схематики: %s".formatted(x));
@@ -54,20 +44,11 @@ public class Schematic {
 			throw new RuntimeException("Z выходит за границы схематики: %s".formatted(z));
 		}
 
-		// computeIfAbsent гарантирует O(1) и добавляет блок в список только при первом появлении
-		int index = paletteIndex.computeIfAbsent(block, b -> {
-			paletteList.add(b);
-			return paletteList.size() - 1;
-		});
-
-		blocks.add(new Block(index, x, y, z));
+		blocks.add(new PlacedBlock(resolveIndex(block), x, y, z));
 	}
 
-	public void save(Path path) throws Exception {
-		NbtIo.writeCompressed(buildRootNbt(), path);
-	}
-
-	private NbtCompound buildRootNbt() {
+	@Override
+	protected NbtCompound buildRootNbt() {
 		NbtCompound root = new NbtCompound();
 		root.putString("author", AUTHOR);
 		root.putInt("DataVersion", DATA_VERSION);
@@ -85,22 +66,10 @@ public class Schematic {
 		return size;
 	}
 
-	private NbtList buildPaletteNbt() {
-		NbtList nbtPalette = new NbtList();
-
-		for (BlockData block : paletteList) {
-			NbtCompound entry = new NbtCompound();
-			entry.putString("Name", block.getId());
-			nbtPalette.add(entry);
-		}
-
-		return nbtPalette;
-	}
-
 	private NbtList buildBlocksNbt() {
 		NbtList nbtBlocks = new NbtList();
 
-		for (Block block : blocks) {
+		for (PlacedBlock block : blocks) {
 			NbtCompound entry = new NbtCompound();
 			entry.putInt("state", block.id);
 
@@ -117,7 +86,7 @@ public class Schematic {
 	}
 
 	@AllArgsConstructor
-	private static class Block {
+	private static class PlacedBlock {
 
 		private final int id;
 		private final int x;

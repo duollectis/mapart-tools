@@ -17,9 +17,11 @@ import org.gradle.internal.os.OperatingSystem
 // Определяем имя библиотеки в зависимости от ОС
 def libraryName = "mt-ditherer"
 
-def outputLibName = OperatingSystem.current().isWindows() ? "${libraryName}.dll" :
-        OperatingSystem.current().isMacOsX() ? "lib${libraryName}.dylib" :
-                "lib${libraryName}.so"
+def outputLibName = OperatingSystem.current().isWindows()
+        ? "${libraryName}.dll"
+        : OperatingSystem.current().isMacOsX()
+        ? "lib${libraryName}.dylib"
+        : "lib${libraryName}.so"
 
 def mainClassName = "org.duollectis.mapart.tools.app.MTBootstrap"
 
@@ -37,11 +39,9 @@ application {
 dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
 
-    implementation 'com.google.guava:guava:33.0.0-jre'
-
     implementation 'com.google.code.gson:gson:2.14.0'
     implementation 'info.picocli:picocli:4.7.7'
-    implementation 'org.jetbrains:annotations:15.0'
+    implementation 'com.google.guava:guava:33.4.8-jre'
 
     compileOnly 'org.projectlombok:lombok:1.18.38'
     annotationProcessor 'org.projectlombok:lombok:1.18.38'
@@ -56,9 +56,19 @@ jar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
+    // Выбрасываем мусорные метаданные Maven и ProGuard из зависимостей
+    exclude 'META-INF/maven/**'
+    exclude 'META-INF/proguard/**'
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+
     from(file("${buildDir}/native")) {
-        into "native" // Библиотеки будут лежать внутри JAR в папке 'native'
+        into "native"
     }
+
+    // Промежуточный fat-JAR кладём во временную папку — финальным будет shrunk
+    destinationDirectory = file("${buildDir}/libs-temp")
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -106,43 +116,14 @@ tasks.register('compileNative', Exec) {
     args(filePaths)
 }
 
-// task shrinkJar(type: proguard.gradle.ProGuardTask) {
-//     dependsOn 'jar'
-//     // Используем runtimeClasspath для включения зависимостей
-//     configurations.runtimeClasspath.each { File file ->
-//         injars file
-//     }
-//     injars jar.archiveFile.get().asFile
-//     outjars "${buildDir}/libs/proxy-tester-optimized.jar"
-//     libraryjars "${System.getProperty('java.home')}/jmods"
+task shrinkJar(type: proguard.gradle.ProGuardTask) {
+    dependsOn 'jar'
 
-//     dontobfuscate
+    injars jar.archiveFile.get().asFile
+    outjars "${buildDir}/libs/${project.name}-${version}.jar"
+    libraryjars "${System.getProperty('java.home')}/jmods"
 
-//     keep 'public class proxy.tester.App { public static void main(java.lang.String[]); }'
+    configuration file('proguard.pro')
+}
 
-//     keepclassmembers 'class * { @com.google.gson.annotations.SerializedName *; }'
-//     keepnames 'class * implements java.io.Serializable { *; }'
-
-//     keepclassmembers 'enum * { *; }'
-//     keep 'class proxy.tester.ProxyInfo$Type { *; }'
-
-//     dontwarn 'com.google.common.**'
-//     dontwarn 'com.google.gson.**'
-//     dontwarn 'sun.misc.Unsafe'
-//     dontwarn 'javax.annotation.**'
-//     dontwarn 'org.apache.commons.**'
-//     dontwarn 'com.google.errorprone.**'
-
-//     keepattributes 'Signature,InnerClasses,EnclosingMethod,Deprecated,SourceFile,LineNumberTable,*Annotation*,EnclosingMethod,Exceptions,InnerClasses,Manifest'
-
-//     ignorewarnings
-// }
-
-// task finalJar(type: Jar) {
-//     dependsOn shrinkJar
-//     manifest {
-//         attributes 'Main-Class': 'proxy.tester.App'
-//     }
-//     from zipTree("${buildDir}/libs/proxy-tester-optimized.jar")
-//     archiveFileName = "proxy-tester.jar"
-// }
+build.dependsOn shrinkJar

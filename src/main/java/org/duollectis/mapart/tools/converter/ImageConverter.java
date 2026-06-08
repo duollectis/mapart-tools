@@ -1,23 +1,28 @@
 package org.duollectis.mapart.tools.converter;
 
 import com.google.gson.reflect.TypeToken;
+import org.duollectis.mapart.tools.converter.schematic.SchematicImportResult;
+import org.duollectis.mapart.tools.converter.schematic.SchematicWriter;
 import org.duollectis.mapart.tools.nativee.NativeHolder;
 import org.duollectis.mapart.tools.utils.JsonHelper;
 import org.duollectis.mapart.tools.utils.RGBUtils;
-import org.duollectis.mapart.tools.utils.Schematic;
 import org.duollectis.mapart.tools.utils.image.ImageAdjustments;
 import org.duollectis.mapart.tools.utils.image.ImageUtils;
 
 import javax.imageio.ImageIO;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ImageConverter {
 
@@ -56,10 +61,11 @@ public class ImageConverter {
 		Ditherer.Algorithm algorithm,
 		ImageAdjustments adjustments,
 		DitherSettings ditherSettings,
-		CropSettings cropSettings
+		CropSettings cropSettings,
+		Map<String, WeightedSelector<BlockData>> blockSelectors
 	) {
 		Set<String> allowedBlocks = loadAllowedBlocks(blocksFile);
-		loadPalette(paletteJson, allowedBlocks);
+		loadPalette(paletteJson, allowedBlocks, blockSelectors);
 
 		try {
 			BufferedImage image = ImageIO.read(imageFile);
@@ -80,29 +86,33 @@ public class ImageConverter {
 	}
 
 	/**
-	 * Экспортирует схематики из уже готового результата дизеринга.
+	 * Экспортирует схематики из уже материализованного результата дизеринга.
 	 * Вызывается отдельно после {@link #dither} — когда пользователь подтвердил превью.
-	 * Палитра передаётся явно, так как этот метод может вызываться из нового экземпляра конвертера.
+	 * Палитра передаётся явно для расчёта высот; конкретные блоки берутся из {@code resolved}.
 	 *
-	 * @param dithered       двумерный массив индексов палитры (результат дизеринга)
-	 * @param palette        палитра, использованная при дизеринге (из {@link Ditherer#getPalette()})
-	 * @param outDir         директория для сохранения .nbt файлов
-	 * @param mapWidth       количество карт по горизонтали
-	 * @param mapHeight      количество карт по вертикали
-	 * @param supportBlockId идентификатор блока-опоры для блоков с {@code needSupport = true}
+	 * @param dithered        двумерный массив индексов палитры (для расчёта высот в BlockLeveler)
+	 * @param resolved        материализованный массив блоков (из {@link Ditherer#getResolved()})
+	 * @param palette         палитра, использованная при дизеринге (из {@link Ditherer#getPalette()})
+	 * @param outDir          директория для сохранения файлов схематик
+	 * @param mapWidth        количество карт по горизонтали
+	 * @param mapHeight       количество карт по вертикали
+	 * @param supportSettings настройки блоков-опор (список блоков с весами и режим распределения)
+	 * @param format          формат экспорта: NBT (.nbt) или LITEMATIC (.litematic)
 	 */
 	public void exportSchematics(
 		int[][] dithered,
+		BlockData[][] resolved,
 		List<PaletteEntry> palette,
 		File outDir,
 		int mapWidth,
 		int mapHeight,
-		String supportBlockId
+		SupportBlockSettings supportSettings,
+		SchematicFormat format
 	) {
 		this.palette.addAll(palette);
 
 		try {
-			renderSchematics(dithered, outDir, mapWidth, mapHeight, supportBlockId);
+			renderSchematics(dithered, resolved, outDir, mapWidth, mapHeight, supportSettings, format);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -128,7 +138,7 @@ public class ImageConverter {
 		int mapHeight
 	) {
 		Set<String> allowedBlocks = loadAllowedBlocks(blocksFile);
-		loadPalette(paletteJson, allowedBlocks);
+		loadPalette(paletteJson, allowedBlocks, Collections.emptyMap());
 
 		try {
 			BufferedImage image = ImageIO.read(imageFile);
@@ -141,7 +151,15 @@ public class ImageConverter {
 			ditherer.setAlgorithm(Ditherer.Algorithm.FLOYD_STEINBERG);
 			ditherer.processImage(image);
 
-			renderSchematics(ditherer.getDithered(), outDir, mapWidth, mapHeight, DEFAULT_SUPPORT_BLOCK_ID);
+			renderSchematics(
+				ditherer.getDithered(),
+				ditherer.getResolved(),
+				outDir,
+				mapWidth,
+				mapHeight,
+				SupportBlockSettings.single(DEFAULT_SUPPORT_BLOCK_ID),
+				SchematicFormat.NBT
+			);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -150,15 +168,20 @@ public class ImageConverter {
 	}
 
 	/**
-	 * Загружает палитру из JSON и фильтрует блоки по белому списку.
+	 * Загружает палитру из JSON, фильтрует блоки по белому списку и применяет
+	 * пользовательские селекторы весов для каждого базового blockId.
 	 * Для каждого базового цвета генерирует три варианта яркости ({@link Brightness}).
-	 * Использует {@link Set} для O(1) проверки принадлежности к белому списку.
 	 *
-	 * @param data      JSON-строка с маппингом цвет → список блоков
-	 * @param whitelist множество разрешённых идентификаторов блоков
+	 * @param data           JSON-строка с маппингом цвет → список блоков
+	 * @param whitelist      множество разрешённых идентификаторов блоков
+	 * @param blockSelectors карта пользовательских селекторов: ключ — базовый blockId
 	 * @throws RuntimeException если палитра уже была загружена ранее
 	 */
-	public void loadPalette(String data, Set<String> whitelist) {
+	public void loadPalette(
+		String data,
+		Set<String> whitelist,
+		Map<String, WeightedSelector<BlockData>> blockSelectors
+	) {
 		if (!palette.isEmpty()) {
 			throw new RuntimeException("Палитра уже загружена!");
 		}
@@ -170,48 +193,74 @@ public class ImageConverter {
 
 		// Итерируем по entrySet напрямую — без лишней копии keySet
 		paletteMap.entrySet().removeIf(entry -> {
-			entry.getValue().removeIf(block -> !whitelist.contains(block.getId()));
+			entry.getValue().removeIf(block ->
+				!whitelist.contains(block.getId()) && !whitelist.contains(block.getUniqueKey())
+			);
 			return entry.getValue().isEmpty();
 		});
 
 		paletteMap.forEach((color, blocks) -> {
+			String baseId = blocks.getFirst().getId();
+			WeightedSelector<BlockData> baseSelector = blockSelectors.containsKey(baseId)
+				? blockSelectors.get(baseId)
+				: buildEqualSelector(blocks);
+
+			// Каждая яркость получает независимую копию селектора — свои счётчики SEQUENTIAL
 			for (Brightness brightness : Brightness.values()) {
 				int scaledColor = RGBUtils.scaleRGB(color, brightness.getModifier());
-				palette.add(new PaletteEntry(blocks, scaledColor, brightness));
+				palette.add(new PaletteEntry(blocks, scaledColor, brightness, baseSelector.copy()));
 			}
 		});
 	}
 
+	private static WeightedSelector<BlockData> buildEqualSelector(List<BlockData> blocks) {
+		List<WeightedSelector.Entry<BlockData>> entries = blocks.stream()
+			.map(b -> new WeightedSelector.Entry<>(b, 100))
+			.toList();
+
+		return new WeightedSelector<>(entries, WeightedSelector.Mode.SEQUENTIAL);
+	}
+
 	private void renderSchematics(
 		int[][] dithered,
+		BlockData[][] resolved,
 		File outDir,
 		int mapWidth,
 		int mapHeight,
-		String supportBlockId
+		SupportBlockSettings supportSettings,
+		SchematicFormat format
 	) throws Exception {
+		String primarySupportId = supportSettings.isEmpty()
+			? DEFAULT_SUPPORT_BLOCK_ID
+			: supportSettings.getEntries().getFirst().blockId();
+
 		BlockLeveler leveler = new BlockLeveler();
 		leveler.setPalette(palette);
-		leveler.setSupportBlockId(supportBlockId);
-
-		int maxHeight = 0;
+		leveler.setSupportBlockId(primarySupportId);
 
 		for (int mx = 0; mx < mapWidth; mx++) {
 			for (int my = 0; my < mapHeight; my++) {
 				int[][] mapSlice = extractMapSlice(dithered, mx, my);
+				BlockData[][] resolvedSlice = extractResolvedSlice(resolved, mx, my);
 
 				leveler.setImage(mapSlice);
 				leveler.process(true);
 
-				if (maxHeight < leveler.getProcessedHeight()) {
-					maxHeight = leveler.getProcessedHeight();
-				}
-
+				int schematicHeight = leveler.getProcessedHeight();
 				int offset = needsSupportOffset(leveler.getProcessed());
-				Schematic schematic = new Schematic(MAP_SIZE, maxHeight + offset, MAP_SIZE + 1);
-				fillSchematic(schematic, leveler.getProcessed(), supportBlockId, offset);
+				String mapName = "map_%s_%s".formatted(mx + 1, my + 1);
 
-				File outFile = new File(outDir, "map_%s_%s.nbt".formatted(mx + 1, my + 1));
-				schematic.save(outFile.toPath());
+				SchematicWriter writer = format.createWriter(
+					MAP_SIZE,
+					schematicHeight + offset,
+					MAP_SIZE + 1,
+					mapName
+				);
+
+				fillWriter(writer, leveler.getProcessed(), resolvedSlice, supportSettings, offset);
+
+				File outFile = new File(outDir, mapName + format.getExtension());
+				writer.save(outFile.toPath());
 			}
 		}
 	}
@@ -228,9 +277,23 @@ public class ImageConverter {
 		return slice;
 	}
 
+	private BlockData[][] extractResolvedSlice(BlockData[][] resolved, int mx, int my) {
+		BlockData[][] slice = new BlockData[MAP_SIZE][MAP_SIZE];
+
+		for (int x = 0; x < MAP_SIZE; x++) {
+			for (int y = 0; y < MAP_SIZE; y++) {
+				slice[y][x] = resolved[my * MAP_SIZE + y][mx * MAP_SIZE + x];
+			}
+		}
+
+		return slice;
+	}
+
 	private static int needsSupportOffset(LeveledEntry[][] leveled) {
 		for (LeveledEntry[] row : leveled) {
 			for (LeveledEntry entry : row) {
+				// Проверяем первый блок как представитель цвета — достаточно для определения нужды в опоре,
+				// так как все варианты одного цвета имеют одинаковый флаг needSupport
 				if (entry.getEntry().getBlocks().getFirst().isNeedSupport() && entry.getLevel() == 0) {
 					return 1;
 				}
@@ -240,22 +303,91 @@ public class ImageConverter {
 		return 0;
 	}
 
-	private void fillSchematic(Schematic schematic, LeveledEntry[][] leveled, String supportBlockId, int offset) {
-		BlockData supportBlock = new BlockData(supportBlockId);
+	private void fillWriter(
+		SchematicWriter writer,
+		LeveledEntry[][] leveled,
+		BlockData[][] resolvedSlice,
+		SupportBlockSettings supportSettings,
+		int offset
+	) {
+		AtomicInteger supportIndex = new AtomicInteger(0);
 
 		for (int x = 0; x < leveled[0].length; x++) {
-			for (int y = 0; y < leveled.length; y++) {
+			// y=0 — технический ряд опоры/воздуха из BlockLeveler, блок берётся из leveled, не из resolvedSlice
+			LeveledEntry topEntry = leveled[0][x];
+			BlockData topBlock = topEntry.getEntry().getBlocks().getFirst();
+			writer.setBlock(x, topEntry.getLevel() + offset, 0, topBlock);
+
+			// y=1..128 — реальные блоки карты; resolvedSlice индексируется как [y-1][x]
+			for (int y = 1; y < leveled.length; y++) {
 				LeveledEntry entry = leveled[y][x];
-				BlockData block = entry.getEntry().getBlocks().getFirst();
+				BlockData block = resolvedSlice[y - 1][x];
 				int level = entry.getLevel() + offset;
 
-				schematic.setBlock(x, level, y, block);
+				writer.setBlock(x, level, y, block);
 
 				if (block.isNeedSupport()) {
-					schematic.setBlock(x, level - 1, y, supportBlock);
+					String supportId = supportSettings.pickBlock(supportIndex.getAndIncrement());
+					BlockData supportBlock = new BlockData(supportId);
+					writer.setBlock(
+						x,
+						level - 1,
+						y,
+						supportBlock.isSlab() ? supportBlock.asTopSlab() : supportBlock
+					);
 				}
 			}
 		}
+	}
+
+	/**
+	 * Рендерит превью карт-арта из результата импорта схематики.
+	 * Для каждого блока ищет цвет в палитре по blockId и яркости NORMAL.
+	 * Блоки, не найденные в палитре, отображаются серым цветом.
+	 *
+	 * @param importResult результат импорта схематики с верхним слоем блоков
+	 * @param paletteJson  JSON-строка с палитрой цветов версии Майнкрафта
+	 * @return изображение превью размером sizeX × sizeZ
+	 */
+	public static BufferedImage renderPreview(SchematicImportResult importResult, String paletteJson) {
+		Map<Integer, List<BlockData>> paletteMap = JsonHelper.GSON.fromJson(
+			paletteJson,
+			new TypeToken<Map<Integer, List<BlockData>>>() {}.getType()
+		);
+
+		Map<String, Integer> blockColorMap = buildBlockColorMap(paletteMap);
+
+		BlockData[][] blocks = importResult.blocks();
+		int height = blocks.length;
+		int width = height > 0 ? blocks[0].length : 0;
+
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				BlockData block = blocks[y][x];
+				int color = block == null
+					? Color.GRAY.getRGB()
+					: blockColorMap.getOrDefault(block.getId(), Color.GRAY.getRGB());
+				image.setRGB(x, y, color);
+			}
+		}
+
+		return image;
+	}
+
+	private static Map<String, Integer> buildBlockColorMap(Map<Integer, List<BlockData>> paletteMap) {
+		Map<String, Integer> colorMap = new HashMap<>();
+
+		paletteMap.forEach((baseColor, blocks) -> {
+			int normalColor = RGBUtils.scaleRGB(baseColor, Brightness.NORMAL.getModifier());
+
+			for (BlockData block : blocks) {
+				colorMap.putIfAbsent(block.getId(), normalColor);
+			}
+		});
+
+		return colorMap;
 	}
 
 	private static Set<String> loadAllowedBlocks(File blocksFile) {

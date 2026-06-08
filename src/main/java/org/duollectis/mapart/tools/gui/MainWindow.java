@@ -1,55 +1,41 @@
 package org.duollectis.mapart.tools.gui;
 
+import com.google.gson.reflect.TypeToken;
+import org.duollectis.mapart.tools.converter.BlockData;
+import org.duollectis.mapart.tools.converter.Brightness;
 import org.duollectis.mapart.tools.converter.CropSettings;
 import org.duollectis.mapart.tools.converter.Ditherer;
 import org.duollectis.mapart.tools.converter.DitherSettings;
+import org.duollectis.mapart.tools.converter.ImageConverter;
+import org.duollectis.mapart.tools.converter.PaletteEntry;
+import org.duollectis.mapart.tools.converter.SchematicFormat;
+import org.duollectis.mapart.tools.converter.SupportBlockSettings;
+import org.duollectis.mapart.tools.converter.WeightedSelector;
+import org.duollectis.mapart.tools.converter.schematic.SchematicImportResult;
+import org.duollectis.mapart.tools.utils.JsonHelper;
 import org.duollectis.mapart.tools.utils.image.ImageAdjustments;
 import org.duollectis.mapart.tools.utils.image.ImageUtils;
 
-import javax.swing.*;
-import javax.swing.JColorChooser;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.BasicStroke;
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Color;
-import java.awt.Cursor;
-import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.event.KeyEvent;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.RenderingHints;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class MainWindow extends JFrame {
 
@@ -80,7 +66,7 @@ public class MainWindow extends JFrame {
 	private JTextField imagePathField;
 	private JTextField blocksPathField;
 	private JTextField outPathField;
-	private JTextField supportBlockField;
+	private SupportBlockSettings supportSettings;
 	private ModernComboBox<Ditherer.Algorithm> algorithmCombo;
 	private JPanel ditherSettingsPanel;
 	private ModernSlider errorRateSlider;
@@ -98,9 +84,11 @@ public class MainWindow extends JFrame {
 	private JLabel saturationLabel;
 	private JLabel gammaLabel;
 	private JLabel hueLabel;
+	private ModernComboBox<SchematicFormat> formatCombo;
 	private JButton convertButton;
 	private JButton exportButton;
 	private JButton savePreviewButton;
+	private JButton blockListButton;
 	private JButton pickBlocksButton;
 	private JLabel blocksCountLabel;
 	private JProgressBar progressBar;
@@ -110,13 +98,18 @@ public class MainWindow extends JFrame {
 	private ModernCheckBox showGridCheckBox;
 	private ModernSpinner gridWidthSpinner;
 	private JButton gridBgColorButton;
+	private JButton importButton;
 
 	private File selectedImageFile;
 	private BufferedImage rawSourceImage;
 	private ConversionWorker activeConversionWorker;
 	private ExportWorker activeExportWorker;
+	private ImportWorker activeImportWorker;
 	private Ditherer lastDitherer;
+	private SchematicImportResult lastImportResult;
+	private BlockListDialog activeBlockListDialog;
 	private Set<String> enabledBlocks = new HashSet<>();
+	private Map<String, WeightedSelector<BlockData>> blockSelectors = new HashMap<>();
 	private volatile boolean sourcePreviewPending;
 	private volatile boolean sourcePreviewRunning;
 	private volatile boolean resetSourceViewOnNextImage;
@@ -151,24 +144,24 @@ public class MainWindow extends JFrame {
 		syncSourcePreviewMapCount();
 
 		java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager()
-			.addKeyEventDispatcher(event -> {
-				boolean isCtrlV = event.getID() == KeyEvent.KEY_PRESSED
-					&& event.getKeyCode() == KeyEvent.VK_V
-					&& event.isControlDown();
+		                             .addKeyEventDispatcher(event -> {
+			                             boolean isCtrlV = event.getID() == KeyEvent.KEY_PRESSED
+					                             && event.getKeyCode() == KeyEvent.VK_V
+					                             && event.isControlDown();
 
-				if (!isCtrlV) {
-					return false;
-				}
+			                             if (!isCtrlV) {
+				                             return false;
+			                             }
 
-				boolean focusInTextField = event.getComponent() instanceof JTextField;
+			                             boolean focusInTextField = event.getComponent() instanceof JTextField;
 
-				if (focusInTextField) {
-					return false;
-				}
+			                             if (focusInTextField) {
+				                             return false;
+			                             }
 
-				pasteImageFromClipboard();
-				return true;
-			});
+			                             pasteImageFromClipboard();
+			                             return true;
+		                             });
 	}
 
 	private JPanel buildHeader() {
@@ -178,8 +171,8 @@ public class MainWindow extends JFrame {
 				Graphics2D g2 = (Graphics2D) g.create();
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 				GradientPaint gradient = new GradientPaint(
-					0, 0, new Color(18, 22, 45),
-					getWidth(), 0, new Color(25, 30, 55)
+						0, 0, new Color(18, 22, 45),
+						getWidth(), 0, new Color(25, 30, 55)
 				);
 				g2.setPaint(gradient);
 				g2.fillRect(0, 0, getWidth(), getHeight());
@@ -290,15 +283,10 @@ public class MainWindow extends JFrame {
 		content.add(Box.createVerticalStrut(5));
 		content.add(buildFileRow(outPathField = buildTextField(Lang.t("placeholder.outdir")), this::chooseOutDir));
 
-		content.add(Box.createVerticalStrut(12));
-		content.add(buildSectionLabel(Lang.t("section.support_block")));
-		content.add(Box.createVerticalStrut(5));
-		content.add(buildSupportBlockRow());
-
 		JScrollPane scroll = new JScrollPane(
-			content,
-			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+				content,
+				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
 		);
 		scroll.setOpaque(false);
 		scroll.getViewport().setOpaque(false);
@@ -396,9 +384,26 @@ public class MainWindow extends JFrame {
 		autoFitBtn.setToolTipText(Lang.t("btn.auto_fit_maps"));
 		autoFitBtn.addActionListener(e -> autoFitMapCount());
 
-		gbc.gridx = 4;
-		gbc.weightx = 0;
+		JButton halvBtn = buildIconButton("÷2", 11, new Insets(2, 5, 2, 5));
+		halvBtn.setToolTipText(Lang.t("btn.halve_maps"));
+		halvBtn.addActionListener(e -> scaleMapCount(0.5));
+
+		JButton doubleBtn = buildIconButton("×2", 11, new Insets(2, 5, 2, 5));
+		doubleBtn.setToolTipText(Lang.t("btn.double_maps"));
+		doubleBtn.addActionListener(e -> scaleMapCount(2.0));
+
 		gbc.fill = GridBagConstraints.NONE;
+		gbc.weightx = 0;
+
+		gbc.gridx = 4;
+		gbc.insets = new Insets(0, 6, 0, 0);
+		row.add(halvBtn, gbc);
+
+		gbc.gridx = 5;
+		gbc.insets = new Insets(0, 2, 0, 0);
+		row.add(doubleBtn, gbc);
+
+		gbc.gridx = 6;
 		gbc.insets = new Insets(0, 6, 0, 0);
 		row.add(autoFitBtn, gbc);
 
@@ -462,9 +467,36 @@ public class MainWindow extends JFrame {
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.insets = new Insets(1, 0, 1, 4);
 
-		addSliderRow(grid, gbc, 0, Lang.t("adjust.brightness"), brightnessSlider, brightnessLabel, defaults.brightness(), false);
-		addSliderRow(grid, gbc, 1, Lang.t("adjust.contrast"), contrastSlider, contrastLabel, defaults.contrast(), false);
-		addSliderRow(grid, gbc, 2, Lang.t("adjust.saturation"), saturationSlider, saturationLabel, defaults.saturation(), false);
+		addSliderRow(
+				grid,
+				gbc,
+				0,
+				Lang.t("adjust.brightness"),
+				brightnessSlider,
+				brightnessLabel,
+				defaults.brightness(),
+				false
+		);
+		addSliderRow(
+				grid,
+				gbc,
+				1,
+				Lang.t("adjust.contrast"),
+				contrastSlider,
+				contrastLabel,
+				defaults.contrast(),
+				false
+		);
+		addSliderRow(
+				grid,
+				gbc,
+				2,
+				Lang.t("adjust.saturation"),
+				saturationSlider,
+				saturationLabel,
+				defaults.saturation(),
+				false
+		);
 		addSliderRow(grid, gbc, 3, Lang.t("adjust.gamma"), gammaSlider, gammaLabel, defaults.gamma(), true);
 		addSliderRow(grid, gbc, 4, Lang.t("adjust.hue"), hueSlider, hueLabel, defaults.hue(), false);
 
@@ -488,14 +520,14 @@ public class MainWindow extends JFrame {
 	}
 
 	private void addSliderRow(
-		JPanel grid,
-		GridBagConstraints gbc,
-		int row,
-		String label,
-		ModernSlider slider,
-		JLabel valueLabel,
-		int defaultValue,
-		boolean isGamma
+			JPanel grid,
+			GridBagConstraints gbc,
+			int row,
+			String label,
+			ModernSlider slider,
+			JLabel valueLabel,
+			int defaultValue,
+			boolean isGamma
 	) {
 		gbc.gridy = row;
 
@@ -599,8 +631,8 @@ public class MainWindow extends JFrame {
 
 	private String formatSliderValue(int value, boolean isGamma) {
 		return isGamma
-			? String.format("%.2f", value / 100.0)
-			: (value >= 0 ? "+" : "") + value;
+		       ? String.format("%.2f", value / 100.0)
+		       : (value >= 0 ? "+" : "") + value;
 	}
 
 	private void resetAdjustments() {
@@ -614,11 +646,11 @@ public class MainWindow extends JFrame {
 
 	private ImageAdjustments buildAdjustments() {
 		return new ImageAdjustments(
-			brightnessSlider.getValue(),
-			contrastSlider.getValue(),
-			saturationSlider.getValue(),
-			gammaSlider.getValue(),
-			hueSlider.getValue()
+				brightnessSlider.getValue(),
+				contrastSlider.getValue(),
+				saturationSlider.getValue(),
+				gammaSlider.getValue(),
+				hueSlider.getValue()
 		);
 	}
 
@@ -665,8 +697,26 @@ public class MainWindow extends JFrame {
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.insets = new Insets(1, 0, 1, 4);
 
-		addSliderRow(grid, gbc, 0, Lang.t("dither.error_rate"), errorRateSlider, errorRateLabel, defaultErrorRate, true);
-		addSliderRow(grid, gbc, 1, Lang.t("dither.noise_level"), noiseLevelSlider, noiseLevelLabel, defaultNoiseLevel, true);
+		addSliderRow(
+				grid,
+				gbc,
+				0,
+				Lang.t("dither.error_rate"),
+				errorRateSlider,
+				errorRateLabel,
+				defaultErrorRate,
+				true
+		);
+		addSliderRow(
+				grid,
+				gbc,
+				1,
+				Lang.t("dither.noise_level"),
+				noiseLevelSlider,
+				noiseLevelLabel,
+				defaultNoiseLevel,
+				true
+		);
 
 		JPanel wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
@@ -727,7 +777,8 @@ public class MainWindow extends JFrame {
 		blocksCountLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
 		blocksCountLabel.setAlignmentX(LEFT_ALIGNMENT);
 
-		pickBlocksButton = buildAccentButton(Lang.t("btn.pick_blocks"), new Color(34, 85, 34), new Color(100, 210, 130));
+		pickBlocksButton =
+				buildAccentButton(Lang.t("btn.pick_blocks"), new Color(34, 85, 34), new Color(100, 210, 130));
 		pickBlocksButton.addActionListener(e -> openBlockPicker());
 
 		JButton browseBtn = buildIconButton("...");
@@ -755,18 +806,6 @@ public class MainWindow extends JFrame {
 		return wrapper;
 	}
 
-	private JPanel buildSupportBlockRow() {
-		supportBlockField = buildTextField(DEFAULT_SUPPORT_BLOCK);
-		supportBlockField.setText(DEFAULT_SUPPORT_BLOCK);
-
-		JPanel row = new JPanel(new BorderLayout());
-		row.setOpaque(false);
-		row.add(supportBlockField, BorderLayout.CENTER);
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
-
-		return row;
-	}
-
 	private JPanel buildFileRow(JTextField field, Runnable onBrowse) {
 		JButton browseBtn = buildIconButton("...");
 		browseBtn.addActionListener(e -> onBrowse.run());
@@ -784,6 +823,9 @@ public class MainWindow extends JFrame {
 		convertButton = buildPrimaryButton(Lang.t("btn.convert"), ACCENT, BG);
 		convertButton.addActionListener(e -> startConversion());
 
+		formatCombo = new ModernComboBox<>(SchematicFormat.values());
+		formatCombo.addActionListener(e -> syncExportButtonLabel());
+
 		exportButton = buildAccentButton(Lang.t("btn.export_nbt"), new Color(60, 45, 10), WARN);
 		exportButton.setEnabled(false);
 		exportButton.addActionListener(e -> startExport());
@@ -792,24 +834,64 @@ public class MainWindow extends JFrame {
 		savePreviewButton.setEnabled(false);
 		savePreviewButton.addActionListener(e -> savePreview());
 
+		blockListButton = buildAccentButton(Lang.t("btn.block_list"), new Color(20, 35, 60), new Color(130, 180, 240));
+		blockListButton.setEnabled(false);
+		blockListButton.addActionListener(e -> openBlockList());
+
+		importButton = buildAccentButton(Lang.t("btn.import_schematic"), new Color(35, 20, 55), new Color(180, 140, 240));
+		importButton.addActionListener(e -> startImport());
+
 		convertButton.setAlignmentX(LEFT_ALIGNMENT);
 		exportButton.setAlignmentX(LEFT_ALIGNMENT);
 		savePreviewButton.setAlignmentX(LEFT_ALIGNMENT);
+		blockListButton.setAlignmentX(LEFT_ALIGNMENT);
+		importButton.setAlignmentX(LEFT_ALIGNMENT);
 
 		convertButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, convertButton.getPreferredSize().height + 4));
 		exportButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, exportButton.getPreferredSize().height + 4));
-		savePreviewButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, savePreviewButton.getPreferredSize().height + 4));
+		savePreviewButton.setMaximumSize(new Dimension(
+				Integer.MAX_VALUE,
+				savePreviewButton.getPreferredSize().height + 4
+		));
+		blockListButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, blockListButton.getPreferredSize().height + 4));
+		importButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, importButton.getPreferredSize().height + 4));
+		formatCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+
+		JLabel formatLabel = dimLabel(Lang.t("label.format"));
+
+		JPanel formatRow = new JPanel(new BorderLayout(6, 0));
+		formatRow.setOpaque(false);
+		formatRow.add(formatLabel, BorderLayout.WEST);
+		formatRow.add(formatCombo, BorderLayout.CENTER);
+		formatRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+		formatRow.setAlignmentX(LEFT_ALIGNMENT);
 
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setOpaque(false);
 		panel.add(convertButton);
 		panel.add(Box.createVerticalStrut(6));
+		panel.add(formatRow);
+		panel.add(Box.createVerticalStrut(4));
 		panel.add(exportButton);
 		panel.add(Box.createVerticalStrut(4));
 		panel.add(savePreviewButton);
+		panel.add(Box.createVerticalStrut(4));
+		panel.add(blockListButton);
+		panel.add(Box.createVerticalStrut(8));
+		panel.add(importButton);
 
 		return panel;
+	}
+
+	private void syncExportButtonLabel() {
+		if (exportButton == null || formatCombo == null) {
+			return;
+		}
+
+		SchematicFormat selected = (SchematicFormat) formatCombo.getSelectedItem();
+		String key = selected == SchematicFormat.LITEMATIC ? "btn.export_litematic" : "btn.export_nbt";
+		exportButton.setText(Lang.t(key));
 	}
 
 	private JPanel buildPreviewPanel() {
@@ -851,35 +933,54 @@ public class MainWindow extends JFrame {
 		gbc.weighty = 1;
 		gbc.insets = new Insets(0, 0, 0, 5);
 
-		JButton resetBtn = buildIconButton(Lang.t("adjust.reset"), 11, new Insets(2, 8, 2, 8));
-		resetBtn.setToolTipText(Lang.t("preview.reset_view"));
-		resetBtn.addActionListener(e -> sourcePreview.resetDisplayOffset());
+		JButton fitBtn = buildIconButton(Lang.t("preview.btn_fit"), 11, new Insets(2, 8, 2, 8));
+		fitBtn.setToolTipText(Lang.t("preview.reset_view"));
+		fitBtn.addActionListener(e -> sourcePreview.resetDisplayOffset());
+
+		JButton coverBtn = buildIconButton(Lang.t("preview.btn_cover"), 11, new Insets(2, 8, 2, 8));
+		coverBtn.setToolTipText(Lang.t("preview.cover_view"));
+		coverBtn.addActionListener(e -> sourcePreview.resetDisplayOffsetCover());
+
+		JPanel sourceViewBtns = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		sourceViewBtns.setOpaque(false);
+		sourceViewBtns.add(fitBtn);
+		sourceViewBtns.add(coverBtn);
 
 		gbc.gridx = 0;
-		panel.add(wrapPreviewWithButton(sourcePreview, Lang.t("preview.source"), null, null, resetBtn), gbc);
+		panel.add(wrapPreviewWithButton(sourcePreview, Lang.t("preview.source"), null, null, sourceViewBtns), gbc);
 
 		gbc.gridx = 1;
 		gbc.insets = new Insets(0, 5, 0, 0);
-		panel.add(wrapPreviewWithButton(resultPreview, Lang.t("preview.result"), showGridCheckBox, gridWidthSpinner, gridBgColorButton), gbc);
+		panel.add(
+				wrapPreviewWithButton(
+						resultPreview,
+						Lang.t("preview.result"),
+						showGridCheckBox,
+						gridWidthSpinner,
+						null,
+						gridBgColorButton
+				), gbc
+		);
 
 		return panel;
 	}
 
 	private JPanel wrapPreviewWithButton(
-		ImagePreviewPanel preview,
-		String windowTitle,
-		ModernCheckBox checkBox,
-		ModernSpinner gridSpinner
+			ImagePreviewPanel preview,
+			String windowTitle,
+			ModernCheckBox checkBox,
+			ModernSpinner gridSpinner
 	) {
-		return wrapPreviewWithButton(preview, windowTitle, checkBox, gridSpinner, null);
+		return wrapPreviewWithButton(preview, windowTitle, checkBox, gridSpinner, null, new JButton[0]);
 	}
 
 	private JPanel wrapPreviewWithButton(
-		ImagePreviewPanel preview,
-		String windowTitle,
-		ModernCheckBox checkBox,
-		ModernSpinner gridSpinner,
-		JButton extraButton
+			ImagePreviewPanel preview,
+			String windowTitle,
+			ModernCheckBox checkBox,
+			ModernSpinner gridSpinner,
+			JComponent westComponent,
+			JButton... extraButtons
 	) {
 		JButton expandBtn = buildIconButton("⤢", 14, new Insets(2, 5, 2, 5));
 		expandBtn.setToolTipText(Lang.t("preview.open_window"));
@@ -926,13 +1027,18 @@ public class MainWindow extends JFrame {
 		if (checkBox != null) {
 			footer.add(checkBox, BorderLayout.WEST);
 		}
+		else if (westComponent != null) {
+			footer.add(westComponent, BorderLayout.WEST);
+		}
 
-		if (gridSpinner != null || extraButton != null) {
+		if (gridSpinner != null || extraButtons.length > 0) {
 			JPanel eastGroup = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
 			eastGroup.setOpaque(false);
 
-			if (extraButton != null) {
-				eastGroup.add(extraButton);
+			for (JButton btn : extraButtons) {
+				if (btn != null) {
+					eastGroup.add(btn);
+				}
 			}
 
 			if (gridSpinner != null) {
@@ -944,7 +1050,7 @@ public class MainWindow extends JFrame {
 			footer.add(eastGroup, BorderLayout.EAST);
 		}
 
-		if (checkBox == null && gridSpinner == null && extraButton == null) {
+		if (checkBox == null && westComponent == null && gridSpinner == null && extraButtons.length == 0) {
 			Dimension cbSize = new ModernCheckBox("").getPreferredSize();
 			footer.setPreferredSize(new Dimension(0, cbSize.height));
 		}
@@ -1011,8 +1117,8 @@ public class MainWindow extends JFrame {
 		window.getContentPane().add(scroll);
 
 		var screenBounds = GraphicsEnvironment
-			.getLocalGraphicsEnvironment()
-			.getMaximumWindowBounds();
+				.getLocalGraphicsEnvironment()
+				.getMaximumWindowBounds();
 
 		int maxW = (int) (screenBounds.getWidth() * 0.9);
 		int maxH = (int) (screenBounds.getHeight() * 0.9);
@@ -1067,9 +1173,11 @@ public class MainWindow extends JFrame {
 				if (isIndeterminate()) {
 					g2.setColor(ACCENT);
 					g2.fillRoundRect(0, 0, getWidth() / 3, getHeight(), 6, 6);
-				} else if (getValue() > getMinimum()) {
+				}
+				else if (getValue() > getMinimum()) {
 					int fillW = (int) ((double) (getValue() - getMinimum())
-						/ (getMaximum() - getMinimum()) * getWidth());
+							/ (getMaximum() - getMinimum()) * getWidth()
+					);
 					g2.setColor(ACCENT);
 					g2.fillRoundRect(0, 0, fillW, getHeight(), 6, 6);
 				}
@@ -1144,7 +1252,8 @@ public class MainWindow extends JFrame {
 						resetSourceViewOnNextImage = false;
 						sourcePreview.resetDisplayOffset();
 					}
-				} catch (Exception ignored) {
+				}
+				catch (Exception ignored) {
 				}
 
 				sourcePreviewRunning = false;
@@ -1156,7 +1265,9 @@ public class MainWindow extends JFrame {
 		}.execute();
 	}
 
-	/** Запускает конвертацию с debounce 400ms только если включена кнопка «Авто». */
+	/**
+	 * Запускает конвертацию с debounce 400ms только если включена кнопка «Авто».
+	 */
 	private void scheduleConversion() {
 		if (autoConvertToggle == null || !autoConvertToggle.isSelected()) {
 			return;
@@ -1171,12 +1282,19 @@ public class MainWindow extends JFrame {
 		conversionDebounceTimer.start();
 	}
 
-	/** Псевдоним для единообразия вызовов из алгоритма/размера. */
+	/**
+	 * Псевдоним для единообразия вызовов из алгоритма/размера.
+	 */
 	private void scheduleConversionIfAuto() {
 		scheduleConversion();
 	}
 
 	private void startConversion() {
+		if (enabledBlocks.isEmpty()) {
+			showError(Lang.t("error.no_blocks_selected"));
+			return;
+		}
+
 		if (activeConversionWorker != null && !activeConversionWorker.isDone()) {
 			activeConversionWorker.cancel(true);
 		}
@@ -1197,7 +1315,8 @@ public class MainWindow extends JFrame {
 
 		try {
 			paletteJson = loadPaletteJson(version);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			onConversionError(e.getMessage());
 			return;
 		}
@@ -1207,18 +1326,19 @@ public class MainWindow extends JFrame {
 		log(Lang.t("log.dither_start", imageFile.getName(), mapWidth, mapHeight));
 
 		activeConversionWorker = new ConversionWorker(
-			paletteJson,
-			imageFile,
-			blocksFile,
-			mapWidth,
-			mapHeight,
-			algorithm,
-			buildAdjustments(),
-			buildDitherSettingsFromUi(),
-			buildCropSettingsFromUi(),
-			this::log,
-			this::onDitheringSuccess,
-			this::onConversionError
+				paletteJson,
+				imageFile,
+				blocksFile,
+				mapWidth,
+				mapHeight,
+				algorithm,
+				buildAdjustments(),
+				buildDitherSettingsFromUi(),
+				buildCropSettingsFromUi(),
+				blockSelectors,
+				this::log,
+				this::onDitheringSuccess,
+				this::onConversionError
 		);
 
 		activeConversionWorker.execute();
@@ -1278,19 +1398,24 @@ public class MainWindow extends JFrame {
 		setExportingState(true);
 		log(Lang.t("log.export_start", outDir.getAbsolutePath()));
 
-		String supportBlockId = supportBlockField.getText().isBlank()
-			? DEFAULT_SUPPORT_BLOCK
-			: supportBlockField.getText().strip();
+		SupportBlockSettings effectiveSupport = supportSettings != null
+		                                        ? supportSettings
+		                                        : SupportBlockSettings.single(DEFAULT_SUPPORT_BLOCK);
+
+		SchematicFormat format = formatCombo != null
+		                         ? (SchematicFormat) formatCombo.getSelectedItem()
+		                         : SchematicFormat.NBT;
 
 		activeExportWorker = new ExportWorker(
-			lastDitherer,
-			outDir,
-			mapWidth,
-			mapHeight,
-			supportBlockId,
-			this::log,
-			this::onExportSuccess,
-			this::onExportError
+				lastDitherer,
+				outDir,
+				mapWidth,
+				mapHeight,
+				effectiveSupport,
+				format,
+				this::log,
+				this::onExportSuccess,
+				this::onExportError
 		);
 
 		activeExportWorker.execute();
@@ -1301,16 +1426,16 @@ public class MainWindow extends JFrame {
 			return;
 		}
 
-		JFileChooser chooser = new JFileChooser();
-		chooser.setDialogTitle(Lang.t("dialog.save_preview"));
-		chooser.setFileFilter(new FileNameExtensionFilter(Lang.t("filter.png"), "png"));
-		chooser.setSelectedFile(new File("preview.png"));
+		FileDialog dialog = new FileDialog(this, Lang.t("dialog.save_preview"), FileDialog.SAVE);
+		dialog.setFile("preview.png");
+		dialog.setFilenameFilter((dir, name) -> name.toLowerCase().endsWith(".png"));
+		dialog.setVisible(true);
 
-		if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+		if (dialog.getFile() == null) {
 			return;
 		}
 
-		File file = chooser.getSelectedFile();
+		File file = new File(dialog.getDirectory(), dialog.getFile());
 
 		if (!file.getName().toLowerCase().endsWith(".png")) {
 			file = new File(file.getAbsolutePath() + ".png");
@@ -1320,7 +1445,8 @@ public class MainWindow extends JFrame {
 			BufferedImage preview = lastDitherer.createPreview();
 			ImageIO.write(preview, "PNG", file);
 			log(Lang.t("log.preview_saved", file.getAbsolutePath()));
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			showError(Lang.t("error.preview_save_failed", e.getMessage()));
 		}
 	}
@@ -1350,6 +1476,7 @@ public class MainWindow extends JFrame {
 		progressBar.setForeground(SUCCESS);
 		exportButton.setEnabled(true);
 		savePreviewButton.setEnabled(true);
+		blockListButton.setEnabled(true);
 		log(Lang.t("log.dither_done", ditherer.getDitherTime()));
 	}
 
@@ -1376,6 +1503,204 @@ public class MainWindow extends JFrame {
 		showError(Lang.t("error.export", message));
 	}
 
+	private void startImport() {
+		if (activeImportWorker != null && !activeImportWorker.isDone()) {
+			return;
+		}
+
+		FileDialog dialog = new FileDialog(this, Lang.t("dialog.choose_schematic"), FileDialog.LOAD);
+		dialog.setMultipleMode(true);
+		dialog.setFilenameFilter((dir, name) -> {
+			String lower = name.toLowerCase();
+			return lower.endsWith(".nbt") || lower.endsWith(".litematic");
+		});
+		dialog.setVisible(true);
+
+		File[] selected = dialog.getFiles();
+
+		if (selected == null || selected.length == 0) {
+			return;
+		}
+
+		List<File> schematicFiles = Arrays.asList(selected);
+
+		int[] grid = detectGrid(schematicFiles);
+		int gridWidth = grid[0];
+		int gridHeight = grid[1];
+
+		String version = (String) versionCombo.getSelectedItem();
+		String paletteJson;
+
+		try {
+			paletteJson = loadPaletteJson(version);
+		} catch (Exception e) {
+			showError(Lang.t("error.import_palette_failed", e.getMessage()));
+			return;
+		}
+
+		ImportOptions options = showImportOptionsDialog();
+
+		String firstFileName = schematicFiles.size() == 1
+				? schematicFiles.get(0).getName()
+				: Lang.t("log.import_start_multi", schematicFiles.size());
+
+		setImportingState(true);
+		log(Lang.t("log.import_start", firstFileName));
+
+		activeImportWorker = new ImportWorker(
+				schematicFiles,
+				paletteJson,
+				gridWidth,
+				gridHeight,
+				options.xyOrder(),
+				msg -> log(Lang.t("log.import_progress", msg)),
+				(result, preview) -> onImportSuccess(result, preview, options.addToBlocks()),
+				this::onImportError
+		);
+
+		activeImportWorker.execute();
+	}
+
+	private int[] detectGrid(List<File> files) {
+		if (files.size() == 1) {
+			return new int[]{1, 1};
+		}
+
+		java.util.regex.Pattern mapPattern = java.util.regex.Pattern.compile("map_(\\d+)_(\\d+)(?:\\..+)?$");
+		int maxX = 0;
+		int maxY = 0;
+
+		for (File file : files) {
+			java.util.regex.Matcher matcher = mapPattern.matcher(file.getName());
+
+			if (matcher.find()) {
+				maxX = Math.max(maxX, Integer.parseInt(matcher.group(1)));
+				maxY = Math.max(maxY, Integer.parseInt(matcher.group(2)));
+			}
+		}
+
+		if (maxX > 0 && maxY > 0) {
+			return new int[]{maxX, maxY};
+		}
+
+		int autoWidth = (int) Math.ceil(Math.sqrt(files.size()));
+		int autoHeight = (int) Math.ceil((double) files.size() / autoWidth);
+
+		return new int[]{autoWidth, autoHeight};
+	}
+
+	private ImportOptions showImportOptionsDialog() {
+		ModernCheckBox addBlocksCheckBox = new ModernCheckBox(Lang.t("import.add_to_palette"));
+		addBlocksCheckBox.setSelected(false);
+		addBlocksCheckBox.setForeground(TEXT);
+		addBlocksCheckBox.setOpaque(false);
+
+		JRadioButton xyButton = new JRadioButton(Lang.t("import.order_xy"));
+		JRadioButton yxButton = new JRadioButton(Lang.t("import.order_yx"));
+		xyButton.setSelected(true);
+		xyButton.setOpaque(false);
+		yxButton.setOpaque(false);
+		xyButton.setForeground(TEXT);
+		yxButton.setForeground(TEXT);
+
+		ButtonGroup orderGroup = new ButtonGroup();
+		orderGroup.add(xyButton);
+		orderGroup.add(yxButton);
+
+		JPanel orderRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+		orderRow.setOpaque(false);
+		orderRow.add(xyButton);
+		orderRow.add(yxButton);
+
+		JLabel orderLabel = new JLabel(Lang.t("import.order_label"));
+		orderLabel.setForeground(TEXT_DIM);
+
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		panel.setOpaque(false);
+		panel.add(new JLabel(Lang.t("import.options_hint")));
+		panel.add(Box.createVerticalStrut(6));
+		panel.add(addBlocksCheckBox);
+		panel.add(Box.createVerticalStrut(8));
+		panel.add(orderLabel);
+		panel.add(Box.createVerticalStrut(4));
+		panel.add(orderRow);
+
+		JOptionPane.showMessageDialog(
+			this,
+			panel,
+			Lang.t("import.options_title"),
+			JOptionPane.PLAIN_MESSAGE
+		);
+
+		return new ImportOptions(addBlocksCheckBox.isSelected(), xyButton.isSelected());
+	}
+
+	private record ImportOptions(boolean addToBlocks, boolean xyOrder) {}
+
+	private void onImportSuccess(ImportWorker.Result result, BufferedImage preview, boolean addToBlocks) {
+		setImportingState(false);
+
+		lastImportResult = result.importResult();
+
+		sourcePreview.setImage(preview);
+		resetSourceViewOnNextImage = true;
+		sourcePreview.resetDisplayOffset();
+
+		widthSpinner.setValue(Math.max(SPINNER_MIN, Math.min(SPINNER_MAX, lastImportResult.mapWidth())));
+		heightSpinner.setValue(Math.max(SPINNER_MIN, Math.min(SPINNER_MAX, lastImportResult.mapHeight())));
+
+		saveImportPreviewAsTemp(preview);
+
+		if (addToBlocks) {
+			enabledBlocks.addAll(lastImportResult.blockIds());
+			syncBlocksFromFieldIfNeeded();
+		}
+
+		progressBar.setString(Lang.t("progress.import_done"));
+		progressBar.setForeground(SUCCESS);
+		log(Lang.t(
+			"log.import_done",
+			lastImportResult.mapWidth(),
+			lastImportResult.mapHeight(),
+			lastImportResult.blockIds().size()
+		));
+	}
+
+	private void saveImportPreviewAsTemp(BufferedImage preview) {
+		try {
+			File tempFile = Files.createTempFile("mapart_import_", ".png").toFile();
+			tempFile.deleteOnExit();
+			ImageIO.write(preview, "png", tempFile);
+
+			selectedImageFile = tempFile;
+			rawSourceImage = preview;
+			imagePathField.setText(tempFile.getAbsolutePath());
+		}
+		catch (IOException e) {
+			log(Lang.t("log.error", e.getMessage()));
+		}
+	}
+
+	private void onImportError(String message) {
+		setImportingState(false);
+		progressBar.setString(Lang.t("progress.import_error"));
+		progressBar.setForeground(ERROR);
+		log(Lang.t("log.error", message));
+		showError(Lang.t("error.import_failed", message));
+	}
+
+	private void setImportingState(boolean importing) {
+		importButton.setEnabled(!importing);
+		convertButton.setEnabled(!importing);
+		progressBar.setIndeterminate(importing);
+
+		if (importing) {
+			progressBar.setString(Lang.t("progress.importing"));
+			progressBar.setForeground(new Color(140, 100, 220));
+		}
+	}
+
 	private void setConvertingState(boolean converting) {
 		convertButton.setEnabled(!converting);
 		progressBar.setIndeterminate(converting);
@@ -1385,6 +1710,7 @@ public class MainWindow extends JFrame {
 			progressBar.setForeground(ACCENT);
 			exportButton.setEnabled(false);
 			savePreviewButton.setEnabled(false);
+			blockListButton.setEnabled(false);
 		}
 	}
 
@@ -1408,8 +1734,174 @@ public class MainWindow extends JFrame {
 		lastDitherer = null;
 		exportButton.setEnabled(false);
 		savePreviewButton.setEnabled(false);
+		blockListButton.setEnabled(false);
 	}
 
+	private void openBlockList() {
+		if (lastDitherer == null) {
+			return;
+		}
+
+		String version = (String) versionCombo.getSelectedItem();
+		String primarySupportId = (supportSettings != null && !supportSettings.isEmpty())
+		                          ? supportSettings.getEntries().getFirst().blockId()
+		                          : null;
+
+		activeBlockListDialog = new BlockListDialog(
+				this,
+				lastDitherer.getUsedBlockCounts(),
+				version,
+				primarySupportId,
+				lastDitherer.getSupportBlockCount(),
+				this::removeBlockAndReconvert
+		);
+		// Диалог немодальный — очищаем ссылку при закрытии через WindowListener
+		activeBlockListDialog.addWindowListener(new java.awt.event.WindowAdapter() {
+			@Override
+			public void windowClosed(java.awt.event.WindowEvent e) {
+				activeBlockListDialog = null;
+			}
+		});
+	}
+
+	/**
+	 * Удаляет блок из активного набора, сохраняет обновлённый файл блоков
+	 * и запускает реконвертацию. По завершении обновляет открытый диалог.
+	 *
+	 * @param blockId идентификатор блока для удаления (например "minecraft:stone")
+	 */
+	private void removeBlockAndReconvert(String blockId) {
+		// Удаляем все uniqueKey, соответствующие данному getId():
+		// точное совпадение (блок без свойств) или начинающиеся с "blockId_" (варианты с axis/facing/etc.)
+		enabledBlocks.removeIf(key -> key.equals(blockId) || key.startsWith(blockId + "_"));
+		blocksCountLabel.setText(Lang.t("label.blocks_count", enabledBlocks.size()));
+
+		File blocksFile = resolveBlocksTargetFile();
+		saveBlocksToFile(blocksFile);
+		blocksPathField.setText(blocksFile.getAbsolutePath());
+
+		log(Lang.t("log.block_removed", blockId));
+		startConversionForBlockList();
+	}
+
+	private void saveBlocksToFile(File file) {
+		try {
+			String version = (String) versionCombo.getSelectedItem();
+			Map<String, BlockData> paletteBlocks = parsePaletteBlocks(version);
+			String content = buildBlocksFileContent(paletteBlocks);
+			Files.writeString(file.toPath(), content);
+		}
+		catch (IOException e) {
+			showError(Lang.t("error.blocks_save_failed", e.getMessage()));
+		}
+	}
+
+	/**
+	 * Строит содержимое файла блоков: каждая строка — uniqueKey блока,
+	 * а если для него задан нестандартный вес — добавляется комментарий с процентом.
+	 * Формат: {@code minecraft:stone # 80%} или {@code minecraft:stone_axis_y # 25%}
+	 */
+	private String buildBlocksFileContent(Map<String, BlockData> paletteBlocks) {
+		StringBuilder sb = new StringBuilder();
+
+		for (String uniqueKey : enabledBlocks) {
+			sb.append(uniqueKey);
+
+			BlockData block = paletteBlocks.get(uniqueKey);
+
+			if (block != null) {
+				String baseId = block.getId();
+				WeightedSelector<BlockData> selector = blockSelectors.get(baseId);
+
+				if (selector != null) {
+					int percent = computeBlockPercent(block, selector);
+					sb.append(" # ").append(percent).append('%');
+				}
+			}
+
+			sb.append('\n');
+		}
+
+		return sb.isEmpty() ? "" : sb.substring(0, sb.length() - 1);
+	}
+
+	private int computeBlockPercent(BlockData block, WeightedSelector<BlockData> selector) {
+		int totalWeight = selector.getEntries().stream().mapToInt(WeightedSelector.Entry::weight).sum();
+
+		if (totalWeight == 0) {
+			return 0;
+		}
+
+		return selector.getEntries().stream()
+		               .filter(e -> e.value().getUniqueKey().equals(block.getUniqueKey()))
+		               .mapToInt(WeightedSelector.Entry::weight)
+		               .map(w -> (int) Math.round(w * 100.0 / totalWeight))
+		               .findFirst()
+		               .orElse(0);
+	}
+
+	private void startConversionForBlockList() {
+		if (activeConversionWorker != null && !activeConversionWorker.isDone()) {
+			activeConversionWorker.cancel(true);
+		}
+
+		File imageFile = resolveImageFile();
+		File blocksFile = resolveBlocksFile();
+
+		if (imageFile == null || blocksFile == null) {
+			return;
+		}
+
+		String version = (String) versionCombo.getSelectedItem();
+		int mapWidth = (int) widthSpinner.getValue();
+		int mapHeight = (int) heightSpinner.getValue();
+		Ditherer.Algorithm algorithm = (Ditherer.Algorithm) algorithmCombo.getSelectedItem();
+
+		String paletteJson;
+
+		try {
+			paletteJson = loadPaletteJson(version);
+		}
+		catch (Exception e) {
+			onConversionError(e.getMessage());
+			return;
+		}
+
+		closePreviousDitherer();
+		setConvertingState(true);
+		log(Lang.t("log.dither_start", imageFile.getName(), mapWidth, mapHeight));
+
+		activeConversionWorker = new ConversionWorker(
+				paletteJson,
+				imageFile,
+				blocksFile,
+				mapWidth,
+				mapHeight,
+				algorithm,
+				buildAdjustments(),
+				buildDitherSettingsFromUi(),
+				buildCropSettingsFromUi(),
+				blockSelectors,
+				this::log,
+				this::onDitheringSuccessFromBlockList,
+				this::onConversionError
+		);
+
+		activeConversionWorker.execute();
+	}
+
+	private void onDitheringSuccessFromBlockList(Ditherer ditherer) {
+		onDitheringSuccess(ditherer);
+
+		if (activeBlockListDialog != null && activeBlockListDialog.isVisible()) {
+			activeBlockListDialog.refresh(ditherer.getUsedBlockCounts(), ditherer.getSupportBlockCount());
+		}
+	}
+
+	/**
+	 * Восстанавливает настройки из файла. После загрузки палитры фильтрует
+	 * сохранённые блоки опоры — удаляет ID которых нет в текущей версии.
+	 */
 	private void restorePreferences() {
 		String savedVersion = AppPreferences.loadVersion(null);
 
@@ -1425,7 +1917,8 @@ public class MainWindow extends JFrame {
 		if (savedAlgorithm != null) {
 			try {
 				algorithmCombo.setSelectedItem(Ditherer.Algorithm.valueOf(savedAlgorithm));
-			} catch (IllegalArgumentException ignored) {
+			}
+			catch (IllegalArgumentException ignored) {
 				// неизвестный алгоритм — оставляем дефолт
 			}
 		}
@@ -1462,7 +1955,8 @@ public class MainWindow extends JFrame {
 				try {
 					rawSourceImage = javax.imageio.ImageIO.read(imageFile);
 					scheduleSourcePreview();
-				} catch (java.io.IOException ignored) {
+				}
+				catch (java.io.IOException ignored) {
 					// не критично — просто не показываем превью
 				}
 			}
@@ -1480,7 +1974,52 @@ public class MainWindow extends JFrame {
 		}
 
 		outPathField.setText(AppPreferences.loadOutPath("./rendered"));
-		supportBlockField.setText(AppPreferences.loadSupportBlock(DEFAULT_SUPPORT_BLOCK));
+
+		SchematicFormat savedFormat = AppPreferences.loadSchematicFormat();
+
+		if (formatCombo != null) {
+			formatCombo.setSelectedItem(savedFormat);
+			syncExportButtonLabel();
+		}
+
+		String version = (String) versionCombo.getSelectedItem();
+		Map<String, BlockData> paletteBlocks = parsePaletteBlocks(version);
+
+		SupportBlockSettings loaded = AppPreferences.loadSupportSettings(DEFAULT_SUPPORT_BLOCK);
+
+		if (loaded != null) {
+			Set<String> validSupportIds = paletteBlocks.values().stream()
+			                                           .filter(b -> !b.isNeedSupport())
+			                                           .map(BlockData::getId)
+			                                           .collect(Collectors.toSet());
+			supportSettings = loaded.filtered(validSupportIds);
+		}
+
+		blockSelectors = new HashMap<>(AppPreferences.loadBlockSelectors(paletteBlocks));
+	}
+
+	private Map<String, BlockData> parsePaletteBlocks(String version) {
+		try {
+			String paletteJson = loadPaletteJson(version);
+			Map<Integer, List<BlockData>> parsed = JsonHelper.GSON.fromJson(
+					paletteJson,
+					new TypeToken<Map<Integer, List<BlockData>>>() {}.getType()
+			);
+
+			return parsed.values().stream()
+			             .flatMap(List::stream)
+			             .collect(Collectors.toMap(BlockData::getUniqueKey, b -> b, (a, b) -> a));
+		}
+		catch (Exception ignored) {
+			return Map.of();
+		}
+	}
+
+	private Set<String> loadValidSupportIds(String version) {
+		return parsePaletteBlocks(version).values().stream()
+		                                  .filter(b -> !b.isNeedSupport())
+		                                  .map(BlockData::getId)
+		                                  .collect(Collectors.toSet());
 	}
 
 	private void savePreferences() {
@@ -1491,7 +2030,7 @@ public class MainWindow extends JFrame {
 		AppPreferences.saveImagePath(imagePathField.getText().strip());
 		AppPreferences.saveBlocksPath(blocksPathField.getText().strip());
 		AppPreferences.saveOutPath(outPathField.getText().strip());
-		AppPreferences.saveSupportBlock(supportBlockField.getText().strip());
+		AppPreferences.saveSupportSettings(supportSettings);
 		AppPreferences.saveBrightness(brightnessSlider.getValue());
 		AppPreferences.saveContrast(contrastSlider.getValue());
 		AppPreferences.saveSaturation(saturationSlider.getValue());
@@ -1499,6 +2038,11 @@ public class MainWindow extends JFrame {
 		AppPreferences.saveHue(hueSlider.getValue());
 		AppPreferences.saveAutoConvert(autoConvertToggle.isSelected());
 		AppPreferences.saveDitherSettings(buildDitherSettingsFromUi());
+		AppPreferences.saveBlockSelectors(blockSelectors);
+
+		if (formatCombo != null) {
+			AppPreferences.saveSchematicFormat((SchematicFormat) formatCombo.getSelectedItem());
+		}
 	}
 
 	private void syncSourcePreviewMapCount() {
@@ -1507,9 +2051,16 @@ public class MainWindow extends JFrame {
 		}
 
 		sourcePreview.setMapCount(
-			(int) widthSpinner.getValue(),
-			(int) heightSpinner.getValue()
+				(int) widthSpinner.getValue(),
+				(int) heightSpinner.getValue()
 		);
+	}
+
+	private void scaleMapCount(double factor) {
+		int w = (int) Math.round((int) widthSpinner.getValue() * factor);
+		int h = (int) Math.round((int) heightSpinner.getValue() * factor);
+		widthSpinner.setValue(Math.max(SPINNER_MIN, Math.min(SPINNER_MAX, w)));
+		heightSpinner.setValue(Math.max(SPINNER_MIN, Math.min(SPINNER_MAX, h)));
 	}
 
 	private void autoFitMapCount() {
@@ -1534,11 +2085,11 @@ public class MainWindow extends JFrame {
 
 	private DitherSettings buildDitherSettingsFromUi() {
 		double errorRate = errorRateSlider != null
-				? errorRateSlider.getValue() / 100.0
-				: DitherSettings.defaults().errorDiffusionRate();
+		                   ? errorRateSlider.getValue() / 100.0
+		                   : DitherSettings.defaults().errorDiffusionRate();
 		double noiseLevel = noiseLevelSlider != null
-				? noiseLevelSlider.getValue() / 100.0
-				: DitherSettings.defaults().noiseLevel();
+		                    ? noiseLevelSlider.getValue() / 100.0
+		                    : DitherSettings.defaults().noiseLevel();
 		return new DitherSettings(errorRate, noiseLevel);
 	}
 
@@ -1562,8 +2113,17 @@ public class MainWindow extends JFrame {
 			for (String line : content.split("\n")) {
 				String trimmed = line.strip();
 
-				if (!trimmed.isBlank()) {
-					enabledBlocks.add(trimmed);
+				if (trimmed.isBlank() || trimmed.startsWith("#")) {
+					continue;
+				}
+
+				int commentIdx = trimmed.indexOf('#');
+				String uniqueKey = commentIdx >= 0
+				                   ? trimmed.substring(0, commentIdx).strip()
+				                   : trimmed;
+
+				if (!uniqueKey.isBlank()) {
+					enabledBlocks.add(uniqueKey);
 				}
 			}
 
@@ -1571,452 +2131,475 @@ public class MainWindow extends JFrame {
 			blocksCountLabel.setText(Lang.t("label.blocks_count", enabledBlocks.size()));
 			blocksCountLabel.setForeground(SUCCESS);
 			log(Lang.t("log.blocks_loaded", file.getName(), enabledBlocks.size()));
-			} catch (IOException e) {
-				showError(Lang.t("error.blocks_load_failed", e.getMessage()));
-			}
 		}
-	
-		private void openBlockPicker() {
-			syncBlocksFromFieldIfNeeded();
-	
-			String version = (String) versionCombo.getSelectedItem();
-			File targetFile = resolveBlocksTargetFile();
-	
-			BlockPickerDialog dialog = new BlockPickerDialog(this, version, targetFile, enabledBlocks);
-	
-			if (dialog.isConfirmed()) {
-				enabledBlocks = new HashSet<>(dialog.getEnabledBlocks());
-				blocksPathField.setText(targetFile.getAbsolutePath());
-				blocksCountLabel.setText(Lang.t("label.blocks_count", enabledBlocks.size()));
-				blocksCountLabel.setForeground(SUCCESS);
-				log(Lang.t("log.blocks_picked", enabledBlocks.size(), targetFile.getName()));
-			}
-		}
-	
-		private void syncBlocksFromFieldIfNeeded() {
-			String path = blocksPathField.getText().strip();
-	
-			if (path.isBlank() || !enabledBlocks.isEmpty()) {
-				return;
-			}
-	
-			File file = new File(path);
-	
-			if (file.exists() && file.isFile()) {
-				loadBlocksFromFile(file);
-			}
-		}
-	
-		private File resolveBlocksTargetFile() {
-			String path = blocksPathField.getText().strip();
-	
-			if (!path.isBlank()) {
-				return new File(path);
-			}
-	
-			return new File("./blocks.txt");
-		}
-	
-		private void chooseImage() {
-			JFileChooser chooser = new JFileChooser();
-			chooser.setDialogTitle(Lang.t("dialog.choose_image"));
-			chooser.setFileFilter(new FileNameExtensionFilter(
-				Lang.t("filter.images"), "png", "jpg", "jpeg", "bmp", "gif"
-			));
-	
-			if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
-				return;
-			}
-	
-			loadImageFile(chooser.getSelectedFile());
-		}
-	
-		private void chooseBlocks() {
-			JFileChooser chooser = new JFileChooser();
-			chooser.setDialogTitle(Lang.t("dialog.choose_blocks"));
-			chooser.setFileFilter(new FileNameExtensionFilter(Lang.t("filter.txt"), "txt"));
-	
-			if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
-				return;
-			}
-	
-			loadBlocksFromFile(chooser.getSelectedFile());
-		}
-	
-		private void chooseOutDir() {
-			JFileChooser chooser = new JFileChooser();
-			chooser.setDialogTitle(Lang.t("dialog.choose_outdir"));
-			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-	
-			if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
-				return;
-			}
-	
-			outPathField.setText(chooser.getSelectedFile().getAbsolutePath());
-		}
-	
-		private void loadImageFile(File file) {
-			try {
-				BufferedImage image = ImageIO.read(file);
-
-				if (image == null) {
-					showError(Lang.t("error.image_load_failed", file.getName()));
-					return;
-				}
-
-				selectedImageFile = file;
-				rawSourceImage = image;
-				imagePathField.setText(file.getAbsolutePath());
-
-				resetSourceViewOnNextImage = true;
-
-				if (resultPreview != null) {
-					resultPreview.clear();
-				}
-
-				scheduleSourcePreview();
-				log(Lang.t("log.image_loaded", file.getName(), image.getWidth(), image.getHeight()));
-			} catch (IOException e) {
-				showError(Lang.t("error.image_load_failed", e.getMessage()));
-			}
-		}
-	
-		private File resolveImageFile() {
-			if (selectedImageFile != null && selectedImageFile.exists()) {
-				return selectedImageFile;
-			}
-	
-			String path = imagePathField.getText().strip();
-	
-			if (path.isBlank()) {
-				showError(Lang.t("error.no_image"));
-				return null;
-			}
-	
-			File file = new File(path);
-	
-			if (!file.exists() || !file.isFile()) {
-				showError(Lang.t("error.image_not_found", path));
-				return null;
-			}
-	
-			selectedImageFile = file;
-	
-			return file;
-		}
-	
-		private File resolveBlocksFile() {
-			String path = blocksPathField.getText().strip();
-	
-			if (!path.isBlank()) {
-				File file = new File(path);
-	
-				if (file.exists() && file.isFile()) {
-					return file;
-				}
-	
-				showError(Lang.t("error.blocks_not_found", path));
-				return null;
-			}
-	
-			File defaultFile = new File("./blocks.txt");
-	
-			if (defaultFile.exists()) {
-				return defaultFile;
-			}
-	
-			showError(Lang.t("error.blocks_not_found", "./blocks.txt"));
-			return null;
-		}
-	
-		private File resolveOutDir() {
-			String path = outPathField.getText().strip();
-			File dir = path.isBlank() ? new File("./rendered") : new File(path);
-	
-			if (dir.exists()) {
-				return dir;
-			}
-	
-			if (!dir.mkdirs()) {
-				showError(Lang.t("error.outdir_failed", dir.getAbsolutePath()));
-				return null;
-			}
-	
-			return dir;
-		}
-	
-		private void setupImageDropTarget(ImagePreviewPanel panel) {
-			new DropTarget(panel, DnDConstants.ACTION_COPY, new java.awt.dnd.DropTargetAdapter() {
-				@Override
-				public void drop(DropTargetDropEvent event) {
-					try {
-						event.acceptDrop(DnDConstants.ACTION_COPY);
-						List<?> files = (List<?>) event.getTransferable()
-							.getTransferData(DataFlavor.javaFileListFlavor);
-	
-						if (!files.isEmpty()) {
-							loadImageFile((File) files.get(0));
-						}
-					} catch (Exception e) {
-						showError(Lang.t("error.drop_failed", e.getMessage()));
-					}
-				}
-			});
-		}
-
-		private void pasteImageFromClipboard() {
-			try {
-				var transferable = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
-
-				if (transferable == null || !transferable.isDataFlavorSupported(DataFlavor.imageFlavor)) {
-					return;
-				}
-
-				BufferedImage image = (BufferedImage) transferable.getTransferData(DataFlavor.imageFlavor);
-
-				if (image == null) {
-					return;
-				}
-
-				File tempFile = Files.createTempFile("mapart_paste_", ".png").toFile();
-				tempFile.deleteOnExit();
-				ImageIO.write(image, "png", tempFile);
-				loadImageFile(tempFile);
-				log(Lang.t("log.clipboard_paste", image.getWidth(), image.getHeight()));
-			} catch (Exception e) {
-				showError(Lang.t("error.image_load_failed", e.getMessage()));
-			}
-		}
-
-		private void log(String message) {
-			logArea.append(message + "\n");
-			logArea.setCaretPosition(logArea.getDocument().getLength());
-		}
-	
-		private void showError(String message) {
-			JOptionPane.showMessageDialog(this, message, Lang.t("dialog.error_title"), JOptionPane.ERROR_MESSAGE);
-		}
-	
-		private String[] loadVersions() {
-			try (InputStream stream = getClass().getClassLoader().getResourceAsStream("versions/versions.txt")) {
-				if (stream == null) {
-					return new String[]{"1.21.11"};
-				}
-	
-				String content = new String(stream.readAllBytes());
-				String[] versions = content.lines()
-					.map(String::strip)
-					.filter(l -> !l.isBlank())
-					.toArray(String[]::new);
-	
-				return versions.length > 0 ? versions : new String[]{"1.21.11"};
-			} catch (IOException e) {
-				return new String[]{"1.21.11"};
-			}
-		}
-	
-		// ── UI-фабрики ─────────────────────────────────────────────────────────────
-	
-		private JPanel buildCard() {
-			JPanel card = new JPanel() {
-				@Override
-				protected void paintComponent(Graphics g) {
-					Graphics2D g2 = (Graphics2D) g.create();
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					g2.setColor(CARD);
-					g2.fillRoundRect(0, 0, getWidth(), getHeight(), CARD_RADIUS * 2, CARD_RADIUS * 2);
-					g2.setColor(BORDER);
-					g2.setStroke(new BasicStroke(1f));
-					g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, CARD_RADIUS * 2, CARD_RADIUS * 2);
-					g2.dispose();
-				}
-			};
-	
-			card.setOpaque(false);
-			card.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
-	
-			return card;
-		}
-	
-		private JLabel buildSectionLabel(String text) {
-			JLabel label = new JLabel(text.toUpperCase());
-			label.setForeground(TEXT_DIM);
-			label.setFont(new Font("SansSerif", Font.BOLD, 10));
-			label.setAlignmentX(LEFT_ALIGNMENT);
-	
-			return label;
-		}
-	
-		private JLabel dimLabel(String text) {
-			JLabel label = new JLabel(text);
-			label.setForeground(TEXT_DIM);
-			label.setFont(new Font("SansSerif", Font.PLAIN, 12));
-	
-			return label;
-		}
-	
-		private JTextField buildTextField(String placeholder) {
-			JTextField field = new JTextField() {
-				@Override
-				protected void paintComponent(Graphics g) {
-					super.paintComponent(g);
-	
-					if (getText().isEmpty()) {
-						Graphics2D g2 = (Graphics2D) g.create();
-						g2.setColor(TEXT_DIM);
-						g2.setFont(getFont().deriveFont(Font.ITALIC));
-						Insets insets = getInsets();
-						g2.drawString(placeholder, insets.left, getHeight() / 2 + g2.getFontMetrics().getAscent() / 2 - 1);
-						g2.dispose();
-					}
-				}
-			};
-	
-			field.setBackground(INPUT);
-			field.setForeground(TEXT);
-			field.setCaretColor(ACCENT);
-			field.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(BORDER),
-				BorderFactory.createEmptyBorder(5, 8, 5, 8)
-			));
-			field.setFont(new Font("SansSerif", Font.PLAIN, 12));
-	
-			return field;
-		}
-	
-		private JButton buildPrimaryButton(String text, Color bgColor, Color fgColor) {
-			JButton btn = new JButton(text) {
-				@Override
-				protected void paintComponent(Graphics g) {
-					Graphics2D g2 = (Graphics2D) g.create();
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					Color base = getModel().isPressed()
-						? bgColor.darker()
-						: (getModel().isRollover() ? bgColor.brighter() : bgColor);
-					g2.setColor(base);
-					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-					g2.dispose();
-					super.paintComponent(g);
-				}
-			};
-	
-			btn.setForeground(fgColor);
-			btn.setFont(new Font("SansSerif", Font.BOLD, 13));
-			btn.setFocusPainted(false);
-			btn.setContentAreaFilled(false);
-			btn.setBorderPainted(false);
-			btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			btn.setBorder(BorderFactory.createEmptyBorder(9, 16, 9, 16));
-	
-			return btn;
-		}
-	
-		private JButton buildAccentButton(String text, Color bgColor, Color fgColor) {
-			JButton btn = new JButton(text) {
-				@Override
-				protected void paintComponent(Graphics g) {
-					Graphics2D g2 = (Graphics2D) g.create();
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					Color base = getModel().isPressed()
-						? bgColor.darker()
-						: (getModel().isRollover() ? bgColor.brighter() : bgColor);
-					g2.setColor(base);
-					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-					g2.setColor(BORDER);
-					g2.setStroke(new BasicStroke(1f));
-					g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
-					g2.dispose();
-					super.paintComponent(g);
-				}
-			};
-	
-			btn.setForeground(fgColor);
-			btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
-			btn.setFocusPainted(false);
-			btn.setContentAreaFilled(false);
-			btn.setBorderPainted(false);
-			btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			btn.setBorder(BorderFactory.createEmptyBorder(8, 14, 8, 14));
-	
-			return btn;
-		}
-	
-		private JButton buildIconButton(String text) {
-			JButton btn = new JButton(text) {
-				@Override
-				protected void paintComponent(Graphics g) {
-					Graphics2D g2 = (Graphics2D) g.create();
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-	
-					if (getModel().isRollover()) {
-						g2.setColor(new Color(255, 255, 255, 20));
-						g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
-					}
-	
-					g2.dispose();
-					super.paintComponent(g);
-				}
-			};
-	
-			btn.setForeground(TEXT_DIM);
-			btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
-			btn.setFocusPainted(false);
-			btn.setContentAreaFilled(false);
-			btn.setBorderPainted(false);
-			btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			btn.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
-			addHoverEffect(btn);
-	
-			return btn;
-		}
-	
-		private void stylePreviewPanel(ImagePreviewPanel panel) {
-			panel.setBackground(CARD);
-			panel.setBorder(BorderFactory.createCompoundBorder(
-				BorderFactory.createLineBorder(BORDER),
-				BorderFactory.createEmptyBorder(4, 4, 4, 4)
-			));
-		}
-	
-		private void addHoverEffect(JButton btn) {
-			btn.addMouseListener(new MouseAdapter() {
-				@Override
-				public void mouseEntered(MouseEvent e) {
-					btn.setForeground(TEXT);
-				}
-	
-				@Override
-				public void mouseExited(MouseEvent e) {
-					btn.setForeground(TEXT_DIM);
-				}
-			});
+		catch (IOException e) {
+			showError(Lang.t("error.blocks_load_failed", e.getMessage()));
 		}
 	}
+
+	private void openBlockPicker() {
+		syncBlocksFromFieldIfNeeded();
+
+		String version = (String) versionCombo.getSelectedItem();
+		File targetFile = resolveBlocksTargetFile();
+
+		BlockPickerDialog dialog = new BlockPickerDialog(
+				this,
+				version,
+				targetFile,
+				enabledBlocks,
+				supportSettings,
+				blockSelectors
+		);
+
+		if (dialog.isConfirmed()) {
+			enabledBlocks = new HashSet<>(dialog.getEnabledBlocks());
+			blockSelectors = new HashMap<>(dialog.getBlockSelectors());
+			supportSettings = dialog.getSupportSettings();
+			savePreferences();
+
+			blocksPathField.setText(targetFile.getAbsolutePath());
+			blocksCountLabel.setText(Lang.t("label.blocks_count", enabledBlocks.size()));
+			blocksCountLabel.setForeground(SUCCESS);
+			log(Lang.t("log.blocks_picked", enabledBlocks.size(), targetFile.getName()));
+		}
+	}
+
+	private void syncBlocksFromFieldIfNeeded() {
+		String path = blocksPathField.getText().strip();
+
+		if (path.isBlank() || !enabledBlocks.isEmpty()) {
+			return;
+		}
+
+		File file = new File(path);
+
+		if (file.exists() && file.isFile()) {
+			loadBlocksFromFile(file);
+		}
+	}
+
+	private File resolveBlocksTargetFile() {
+		String path = blocksPathField.getText().strip();
+
+		if (!path.isBlank()) {
+			return new File(path);
+		}
+
+		return new File("./blocks.txt");
+	}
+
+	private void chooseImage() {
+		FileDialog dialog = new FileDialog(this, Lang.t("dialog.choose_image"), FileDialog.LOAD);
+		dialog.setFilenameFilter((dir, name) -> {
+			String lower = name.toLowerCase();
+			return lower.endsWith(".png")
+				|| lower.endsWith(".jpg")
+				|| lower.endsWith(".jpeg")
+				|| lower.endsWith(".bmp")
+				|| lower.endsWith(".gif");
+		});
+		dialog.setVisible(true);
+
+		if (dialog.getFile() == null) {
+			return;
+		}
+
+		loadImageFile(new File(dialog.getDirectory(), dialog.getFile()));
+	}
+
+	private void chooseBlocks() {
+		FileDialog dialog = new FileDialog(this, Lang.t("dialog.choose_blocks"), FileDialog.LOAD);
+		dialog.setFilenameFilter((dir, name) -> name.toLowerCase().endsWith(".txt"));
+		dialog.setVisible(true);
+
+		if (dialog.getFile() == null) {
+			return;
+		}
+
+		loadBlocksFromFile(new File(dialog.getDirectory(), dialog.getFile()));
+	}
+
+	private void chooseOutDir() {
+		JFileChooser chooser = new JFileChooser();
+		chooser.setDialogTitle(Lang.t("dialog.choose_outdir"));
+		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+
+		if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
+			return;
+		}
+
+		outPathField.setText(chooser.getSelectedFile().getAbsolutePath());
+	}
+
+	private void loadImageFile(File file) {
+		try {
+			BufferedImage image = ImageIO.read(file);
+
+			if (image == null) {
+				showError(Lang.t("error.image_load_failed", file.getName()));
+				return;
+			}
+
+			selectedImageFile = file;
+			rawSourceImage = image;
+			imagePathField.setText(file.getAbsolutePath());
+
+			resetSourceViewOnNextImage = true;
+
+			if (resultPreview != null) {
+				resultPreview.clear();
+			}
+
+			scheduleSourcePreview();
+			log(Lang.t("log.image_loaded", file.getName(), image.getWidth(), image.getHeight()));
+		}
+		catch (IOException e) {
+			showError(Lang.t("error.image_load_failed", e.getMessage()));
+		}
+	}
+
+	private File resolveImageFile() {
+		if (selectedImageFile != null && selectedImageFile.exists()) {
+			return selectedImageFile;
+		}
+
+		String path = imagePathField.getText().strip();
+
+		if (path.isBlank()) {
+			showError(Lang.t("error.no_image"));
+			return null;
+		}
+
+		File file = new File(path);
+
+		if (!file.exists() || !file.isFile()) {
+			showError(Lang.t("error.image_not_found", path));
+			return null;
+		}
+
+		selectedImageFile = file;
+
+		return file;
+	}
+
+	private File resolveBlocksFile() {
+		String path = blocksPathField.getText().strip();
+
+		if (!path.isBlank()) {
+			File file = new File(path);
+
+			if (file.exists() && file.isFile()) {
+				return file;
+			}
+
+			showError(Lang.t("error.blocks_not_found", path));
+			return null;
+		}
+
+		File defaultFile = new File("./blocks.txt");
+
+		if (defaultFile.exists()) {
+			return defaultFile;
+		}
+
+		showError(Lang.t("error.blocks_not_found", "./blocks.txt"));
+		return null;
+	}
+
+	private File resolveOutDir() {
+		String path = outPathField.getText().strip();
+		File dir = path.isBlank() ? new File("./rendered") : new File(path);
+
+		if (dir.exists()) {
+			return dir;
+		}
+
+		if (!dir.mkdirs()) {
+			showError(Lang.t("error.outdir_failed", dir.getAbsolutePath()));
+			return null;
+		}
+
+		return dir;
+	}
+
+	private void setupImageDropTarget(ImagePreviewPanel panel) {
+		new DropTarget(
+				panel, DnDConstants.ACTION_COPY, new java.awt.dnd.DropTargetAdapter() {
+			@Override
+			public void drop(DropTargetDropEvent event) {
+				try {
+					event.acceptDrop(DnDConstants.ACTION_COPY);
+					List<?> files = (List<?>) event.getTransferable()
+					                               .getTransferData(DataFlavor.javaFileListFlavor);
+
+					if (!files.isEmpty()) {
+						loadImageFile((File) files.get(0));
+					}
+				}
+				catch (Exception e) {
+					showError(Lang.t("error.drop_failed", e.getMessage()));
+				}
+			}
+		}
+		);
+	}
+
+	private void pasteImageFromClipboard() {
+		try {
+			var transferable = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
+
+			if (transferable == null || !transferable.isDataFlavorSupported(DataFlavor.imageFlavor)) {
+				return;
+			}
+
+			BufferedImage image = (BufferedImage) transferable.getTransferData(DataFlavor.imageFlavor);
+
+			if (image == null) {
+				return;
+			}
+
+			File tempFile = Files.createTempFile("mapart_paste_", ".png").toFile();
+			tempFile.deleteOnExit();
+			ImageIO.write(image, "png", tempFile);
+			loadImageFile(tempFile);
+			log(Lang.t("log.clipboard_paste", image.getWidth(), image.getHeight()));
+		}
+		catch (Exception e) {
+			showError(Lang.t("error.image_load_failed", e.getMessage()));
+		}
+	}
+
+	private void log(String message) {
+		logArea.append(message + "\n");
+		logArea.setCaretPosition(logArea.getDocument().getLength());
+	}
+
+	private void showError(String message) {
+		JOptionPane.showMessageDialog(this, message, Lang.t("dialog.error_title"), JOptionPane.ERROR_MESSAGE);
+	}
+
+	private String[] loadVersions() {
+		try (InputStream stream = getClass().getClassLoader().getResourceAsStream("versions/versions.txt")) {
+			if (stream == null) {
+				return new String[]{"1.21.11"};
+			}
+
+			String content = new String(stream.readAllBytes());
+			String[] versions = content.lines()
+			                           .map(String::strip)
+			                           .filter(l -> !l.isBlank())
+			                           .toArray(String[]::new);
+
+			return versions.length > 0 ? versions : new String[]{"1.21.11"};
+		}
+		catch (IOException e) {
+			return new String[]{"1.21.11"};
+		}
+	}
+
+	// ── UI-фабрики ─────────────────────────────────────────────────────────────
+
+	private JPanel buildCard() {
+		JPanel card = new JPanel() {
+			@Override
+			protected void paintComponent(Graphics g) {
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(CARD);
+				g2.fillRoundRect(0, 0, getWidth(), getHeight(), CARD_RADIUS * 2, CARD_RADIUS * 2);
+				g2.setColor(BORDER);
+				g2.setStroke(new BasicStroke(1f));
+				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, CARD_RADIUS * 2, CARD_RADIUS * 2);
+				g2.dispose();
+			}
+		};
+
+		card.setOpaque(false);
+		card.setBorder(BorderFactory.createEmptyBorder(14, 14, 14, 14));
+
+		return card;
+	}
+
+	private JLabel buildSectionLabel(String text) {
+		JLabel label = new JLabel(text.toUpperCase());
+		label.setForeground(TEXT_DIM);
+		label.setFont(new Font("SansSerif", Font.BOLD, 10));
+		label.setAlignmentX(LEFT_ALIGNMENT);
+
+		return label;
+	}
+
+	private JLabel dimLabel(String text) {
+		JLabel label = new JLabel(text);
+		label.setForeground(TEXT_DIM);
+		label.setFont(new Font("SansSerif", Font.PLAIN, 12));
+
+		return label;
+	}
+
+	private JTextField buildTextField(String placeholder) {
+		JTextField field = new JTextField() {
+			@Override
+			protected void paintComponent(Graphics g) {
+				super.paintComponent(g);
+
+				if (getText().isEmpty()) {
+					Graphics2D g2 = (Graphics2D) g.create();
+					g2.setColor(TEXT_DIM);
+					g2.setFont(getFont().deriveFont(Font.ITALIC));
+					Insets insets = getInsets();
+					g2.drawString(placeholder, insets.left, getHeight() / 2 + g2.getFontMetrics().getAscent() / 2 - 1);
+					g2.dispose();
+				}
+			}
+		};
+
+		field.setBackground(INPUT);
+		field.setForeground(TEXT);
+		field.setCaretColor(ACCENT);
+		field.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(BORDER),
+				BorderFactory.createEmptyBorder(5, 8, 5, 8)
+		));
+		field.setFont(new Font("SansSerif", Font.PLAIN, 12));
+
+		return field;
+	}
+
+	private JButton buildPrimaryButton(String text, Color bgColor, Color fgColor) {
+		JButton btn = new JButton(text) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				Color base = getModel().isPressed()
+				             ? bgColor.darker()
+				             : (getModel().isRollover() ? bgColor.brighter() : bgColor);
+				g2.setColor(base);
+				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+				g2.dispose();
+				super.paintComponent(g);
+			}
+		};
+
+		btn.setForeground(fgColor);
+		btn.setFont(new Font("SansSerif", Font.BOLD, 13));
+		btn.setFocusPainted(false);
+		btn.setContentAreaFilled(false);
+		btn.setBorderPainted(false);
+		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		btn.setBorder(BorderFactory.createEmptyBorder(9, 16, 9, 16));
+
+		return btn;
+	}
+
+	private JButton buildAccentButton(String text, Color bgColor, Color fgColor) {
+		JButton btn = new JButton(text) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				Color base = getModel().isPressed()
+				             ? bgColor.darker()
+				             : (getModel().isRollover() ? bgColor.brighter() : bgColor);
+				g2.setColor(base);
+				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+				g2.setColor(BORDER);
+				g2.setStroke(new BasicStroke(1f));
+				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+				g2.dispose();
+				super.paintComponent(g);
+			}
+		};
+
+		btn.setForeground(fgColor);
+		btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
+		btn.setFocusPainted(false);
+		btn.setContentAreaFilled(false);
+		btn.setBorderPainted(false);
+		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		btn.setBorder(BorderFactory.createEmptyBorder(8, 14, 8, 14));
+
+		return btn;
+	}
+
+	private JButton buildIconButton(String text) {
+		JButton btn = new JButton(text) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+				if (getModel().isRollover()) {
+					g2.setColor(new Color(255, 255, 255, 20));
+					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+				}
+
+				g2.dispose();
+				super.paintComponent(g);
+			}
+		};
+
+		btn.setForeground(TEXT_DIM);
+		btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
+		btn.setFocusPainted(false);
+		btn.setContentAreaFilled(false);
+		btn.setBorderPainted(false);
+		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		btn.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
+		addHoverEffect(btn);
+
+		return btn;
+	}
+
+	private void stylePreviewPanel(ImagePreviewPanel panel) {
+		panel.setBackground(CARD);
+		panel.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(BORDER),
+				BorderFactory.createEmptyBorder(4, 4, 4, 4)
+		));
+	}
+
+	private void addHoverEffect(JButton btn) {
+		btn.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				btn.setForeground(TEXT);
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				btn.setForeground(TEXT_DIM);
+			}
+		});
+	}
+}
 
 class ScrollablePanel extends JPanel implements Scrollable {
 
-		@Override
-		public Dimension getPreferredScrollableViewportSize() {
-			return getPreferredSize();
-		}
-
-		@Override
-		public int getScrollableUnitIncrement(java.awt.Rectangle visibleRect, int orientation, int direction) {
-			return 12;
-		}
-
-		@Override
-		public int getScrollableBlockIncrement(java.awt.Rectangle visibleRect, int orientation, int direction) {
-			return 60;
-		}
-
-		@Override
-		public boolean getScrollableTracksViewportWidth() {
-			return true;
-		}
-
-		@Override
-		public boolean getScrollableTracksViewportHeight() {
-			return false;
-		}
+	@Override
+	public Dimension getPreferredScrollableViewportSize() {
+		return getPreferredSize();
 	}
+
+	@Override
+	public int getScrollableUnitIncrement(java.awt.Rectangle visibleRect, int orientation, int direction) {
+		return 12;
+	}
+
+	@Override
+	public int getScrollableBlockIncrement(java.awt.Rectangle visibleRect, int orientation, int direction) {
+		return 60;
+	}
+
+	@Override
+	public boolean getScrollableTracksViewportWidth() {
+		return true;
+	}
+
+	@Override
+	public boolean getScrollableTracksViewportHeight() {
+		return false;
+	}
+}

@@ -1,13 +1,16 @@
 package org.duollectis.mapart.tools.gui;
 
+import org.duollectis.mapart.tools.converter.BlockData;
 import org.duollectis.mapart.tools.converter.CropSettings;
 import org.duollectis.mapart.tools.converter.Ditherer;
 import org.duollectis.mapart.tools.converter.DitherSettings;
 import org.duollectis.mapart.tools.converter.ImageConverter;
+import org.duollectis.mapart.tools.converter.WeightedSelector;
 import org.duollectis.mapart.tools.utils.image.ImageAdjustments;
 
 import javax.swing.SwingWorker;
 import java.io.File;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -29,6 +32,7 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 	private final ImageAdjustments adjustments;
 	private final DitherSettings ditherSettings;
 	private final CropSettings cropSettings;
+	private final Map<String, WeightedSelector<BlockData>> blockSelectors;
 	private final Consumer<String> onProgress;
 	private final Consumer<Ditherer> onSuccess;
 	private final Consumer<String> onError;
@@ -43,6 +47,7 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 		ImageAdjustments adjustments,
 		DitherSettings ditherSettings,
 		CropSettings cropSettings,
+		Map<String, WeightedSelector<BlockData>> blockSelectors,
 		Consumer<String> onProgress,
 		Consumer<Ditherer> onSuccess,
 		Consumer<String> onError
@@ -56,6 +61,7 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 		this.adjustments = adjustments;
 		this.ditherSettings = ditherSettings;
 		this.cropSettings = cropSettings;
+		this.blockSelectors = blockSelectors;
 		this.onProgress = onProgress;
 		this.onSuccess = onSuccess;
 		this.onError = onError;
@@ -75,7 +81,8 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 			algorithm,
 			adjustments,
 			ditherSettings,
-			cropSettings
+			cropSettings,
+			blockSelectors
 		);
 	}
 

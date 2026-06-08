@@ -2,6 +2,8 @@ package org.duollectis.mapart.tools.gui;
 
 import org.duollectis.mapart.tools.converter.Ditherer;
 import org.duollectis.mapart.tools.converter.ImageConverter;
+import org.duollectis.mapart.tools.converter.SchematicFormat;
+import org.duollectis.mapart.tools.converter.SupportBlockSettings;
 
 import javax.swing.SwingWorker;
 import java.io.File;
@@ -9,7 +11,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Экспортирует схематики (.nbt) из уже готового результата дизеринга в фоновом потоке.
+ * Экспортирует схематики из уже готового результата дизеринга в фоновом потоке.
  * Принимает {@link Ditherer} с заполненным результатом и сохраняет файлы в указанную директорию.
  * Палитра берётся напрямую из {@link Ditherer#getPalette()} — повторная загрузка не нужна.
  */
@@ -19,7 +21,8 @@ public class ExportWorker extends SwingWorker<Void, String> {
 	private final File outDir;
 	private final int mapWidth;
 	private final int mapHeight;
-	private final String supportBlockId;
+	private final SupportBlockSettings supportSettings;
+	private final SchematicFormat format;
 	private final Consumer<String> onProgress;
 	private final Runnable onSuccess;
 	private final Consumer<String> onError;
@@ -29,7 +32,8 @@ public class ExportWorker extends SwingWorker<Void, String> {
 		File outDir,
 		int mapWidth,
 		int mapHeight,
-		String supportBlockId,
+		SupportBlockSettings supportSettings,
+		SchematicFormat format,
 		Consumer<String> onProgress,
 		Runnable onSuccess,
 		Consumer<String> onError
@@ -38,7 +42,8 @@ public class ExportWorker extends SwingWorker<Void, String> {
 		this.outDir = outDir;
 		this.mapWidth = mapWidth;
 		this.mapHeight = mapHeight;
-		this.supportBlockId = supportBlockId;
+		this.supportSettings = supportSettings;
+		this.format = format;
 		this.onProgress = onProgress;
 		this.onSuccess = onSuccess;
 		this.onError = onError;
@@ -50,11 +55,13 @@ public class ExportWorker extends SwingWorker<Void, String> {
 
 		new ImageConverter().exportSchematics(
 			ditherer.getDithered(),
+			ditherer.getResolved(),
 			ditherer.getPalette(),
 			outDir,
 			mapWidth,
 			mapHeight,
-			supportBlockId
+			supportSettings,
+			format
 		);
 
 		return null;

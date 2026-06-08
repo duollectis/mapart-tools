@@ -179,6 +179,33 @@ public class ImagePreviewPanel extends JPanel {
 	}
 
 	/**
+	 * Cover-режим: масштабирует картинку так, чтобы она полностью заполнила сетку
+	 * с сохранением пропорций. Края, выходящие за границы, обрезаются.
+	 */
+	public void resetDisplayOffsetCover() {
+		imgOffsetX = 0;
+		imgOffsetY = 0;
+
+		if (image == null || getWidth() == 0 || getHeight() == 0) {
+			imgScaleX = 1.0;
+			imgScaleY = 1.0;
+			repaint();
+			return;
+		}
+
+		int contentW = getWidth() - 8;
+		int contentH = getHeight() - TITLE_HEIGHT - 4;
+		int[] grid = computeGridBounds(4, TITLE_HEIGHT, contentW, contentH);
+
+		double scaleX = (double) grid[2] / image.getWidth();
+		double scaleY = (double) grid[3] / image.getHeight();
+		imgScaleX = Math.max(scaleX, scaleY);
+		imgScaleY = imgScaleX;
+
+		repaint();
+	}
+
+	/**
 	 * Растягивает картинку точно на всю сетку (stretch без сохранения пропорций).
 	 * Используется для правой панели: дизеренное изображение имеет размер mapW*128 × mapH*128,
 	 * что точно соответствует пропорциям сетки mapsX × mapsY, поэтому деформации нет.
@@ -364,11 +391,17 @@ public class ImagePreviewPanel extends JPanel {
 		g2.drawString(PLACEHOLDER_TEXT, textX, textY);
 	}
 
+	/**
+	 * Рисует сетку в XOR-режиме: цвет линии = инверсия пикселя под ней.
+	 * На тёмном фоне линии светлые, на светлом — тёмные, всегда контрастны.
+	 */
 	private void drawGrid(Graphics2D g2, int drawX, int drawY, int drawWidth, int drawHeight) {
 		double cellW = (double) drawWidth / mapsX;
 		double cellH = (double) drawHeight / mapsY;
 
-		g2.setColor(GRID_COLOR);
+		// XOR(WHITE) + рисование чёрным = инверсия dst: dst XOR 0xFFFFFF
+		g2.setXORMode(Color.WHITE);
+		g2.setColor(Color.BLACK);
 		g2.setStroke(new BasicStroke(gridStrokeWidth));
 
 		for (int col = 1; col < mapsX; col++) {
@@ -382,6 +415,8 @@ public class ImagePreviewPanel extends JPanel {
 		}
 
 		g2.drawRect(drawX, drawY, drawWidth - 1, drawHeight - 1);
+
+		g2.setPaintMode();
 	}
 
 	/** Вычисляет фиксированные координаты сетки (fit-scale без imgScale). */

@@ -34,9 +34,18 @@
 
   "btn.convert": "▶  Convert",
   "btn.export_nbt": "📦  Export .nbt",
+  "btn.export_litematic": "📦  Export .litematic",
+  "label.format": "Format:",
+  "format.NBT": ".nbt",
+  "format.LITEMATIC": ".litematic",
   "btn.save_preview": "🖼  Save Preview",
+  "btn.block_list": "📋  Block List",
   "btn.pick_blocks": "🎨  Pick Blocks",
   "btn.settings": "⚙  Settings",
+  "btn.halve_maps": "Halve map count (÷2)",
+  "btn.double_maps": "Double map count (×2)",
+  "btn.halve_maps": "Halve map count (÷2)",
+  "btn.double_maps": "Double map count (×2)",
   "btn.auto_fit_maps": "Auto-fit: calculate map count to fit the image (⌈width/128⌉ × ⌈height/128⌉)",
 
   "preview.source": "Source Image",
@@ -45,7 +54,10 @@
   "preview.show_grid": "Map grid",
   "preview.grid_width": "Width:",
   "preview.bg_color": "Grid background color",
-  "preview.reset_view": "Reset view",
+  "preview.btn_fit": "Fit",
+  "preview.btn_cover": "Cover",
+  "preview.reset_view": "Fit image inside grid (letterbox)",
+  "preview.cover_view": "Fill grid completely (edges may be clipped)",
 
   "crop.STRETCH": "Stretch",
   "crop.CENTER": "Center crop",
@@ -106,10 +118,85 @@
   "picker.colors": "Colors",
   "picker.blocks": "Blocks",
   "picker.no_blocks": "No blocks",
+  "picker.colors_configured": "{0} of {1} colors configured",
+  "picker.tab_palette": "Palette",
+  "picker.tab_support": "Support",
 
   "settings.title": "Settings",
   "settings.language": "Interface Language",
   "settings.save": "Save",
   "settings.cancel": "Cancel",
-  "settings.restart_hint": "Changes will take effect after restart."
+  "settings.restart_hint": "Changes will take effect after restart.",
+
+  "blocklist.title": "Block List",
+  "blocklist.total": "{0} unique blocks",
+  "blocklist.search": "Search by ID...",
+  "blocklist.col_id": "Block",
+  "blocklist.col_count": "Count",
+  "blocklist.btn_remove": "Remove",
+  "blocklist.close": "Close",
+  "blocklist.support_label": "[support]",
+  "blocklist.mode_items": "Items",
+  "blocklist.mode_stacks": "Stacks",
+  "blocklist.mode_shulkers": "Shulkers",
+  "blocklist.mode_shulkers_ceil": "Shulkers ⌈⌉",
+  "blocklist.btn_export": "📄  Export TXT",
+  "blocklist.export_dialog_title": "Save Block List",
+  "error.export_txt_failed": "Failed to save file:\n{0}",
+
+  "support_picker.title": "Support Blocks",
+  "support_picker.hint": "Choose blocks, set weights and distribution mode",
+  "support_picker.btn_add": "Add",
+  "support_picker.btn_save": "Save",
+  "support_picker.btn_cancel": "Cancel",
+  "support_picker.mode_label": "Mode:",
+  "support_picker.mode_random": "Random",
+  "support_picker.mode_sequential": "Sequential",
+  "support_picker.col_block": "Block",
+  "support_picker.col_weight": "Weight",
+  "support_picker.btn_label_multi": "{0} blocks · {1}",
+
+  "support.mode_random": "Random",
+  "support.mode_sequential": "Sequential",
+
+  "variant_picker.title": "Block Variants",
+  "variant_picker.hint": "Set weights and distribution mode for block variants",
+  "variant_picker.btn_tooltip": "Configure block variant distribution",
+  "variant_picker.btn_equal": "⚖ Equal",
+
+  "log.block_removed": "Block removed from palette: {0}",
+  "error.blocks_save_failed": "Failed to save blocks file:\n{0}",
+  "error.no_blocks_selected": "No blocks selected. Open the block picker and select at least one block.",
+
+  "btn.import_schematic": "📥  Import Schematic",
+
+  "dialog.choose_schematic": "Choose Schematic File",
+  "filter.schematics": "Schematics (*.nbt, *.litematic)",
+
+  "import.options_title": "Import Options",
+  "import.options_hint": "Schematic import settings:",
+  "import.add_to_palette": "Add blocks from schematic to palette",
+  "import.order_label": "File layout order:",
+  "import.order_xy": "XY (→ then ↓)",
+  "import.order_yx": "YX (↓ then →)",
+
+  "progress.importing": "Importing schematic...",
+  "progress.import_done": "✓ Schematic imported!",
+  "progress.import_error": "✗ Import error",
+
+  "log.import_start": "Importing schematic: {0}",
+  "log.import_progress": "Reading schematic: {0}",
+  "log.import_done": "✓ Schematic imported: {0}×{1} maps, {2} unique blocks",
+
+  "error.import_palette_failed": "Failed to load palette for import:\n{0}",
+  "error.import_failed": "Schematic import error:\n{0}",
+
+  "import.grid_title": "Map Grid",
+  "import.grid_label": "Specify grid size (width × height in maps):",
+  "import.grid_hint": "Files selected: {0}",
+
+  "log.import_start_multi": "{0} schematic files",
+
+  "import.file.skip": "Skipped file {0}: {1}",
+  "import.file.too_large": "size exceeds 128×128 blocks"
 }

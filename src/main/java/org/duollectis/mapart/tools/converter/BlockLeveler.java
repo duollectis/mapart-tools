@@ -5,6 +5,7 @@ import lombok.Setter;
 
 import java.util.List;
 
+
 public class BlockLeveler {
 
 	private static final String AIR_BLOCK_ID = "minecraft:air";
@@ -118,5 +119,43 @@ public class BlockLeveler {
 
 	private static PaletteEntry airEntry() {
 		return new PaletteEntry(List.of(new BlockData(AIR_BLOCK_ID)), 0, Brightness.HIGH);
+	}
+
+	/**
+	 * Обратный процесс: читает верхний слой блоков из 3D-объёма схемы.
+	 * Для каждой позиции (x, z) находит блок с максимальным Y, который не является воздухом.
+	 * Используется при импорте схематики для восстановления превью карты.
+	 *
+	 * @param volume трёхмерный массив блоков [y][z][x]
+	 * @param sizeX  ширина схемы по X
+	 * @param sizeY  высота схемы по Y
+	 * @param sizeZ  глубина схемы по Z (включает технический ряд Z=0)
+	 * @return двумерный массив верхних блоков [z-1][x], размер (sizeZ-1) × sizeX
+	 */
+	public static BlockData[][] readTopLayer(BlockData[][][] volume, int sizeX, int sizeY, int sizeZ) {
+		int mapZ = sizeZ - 1;
+		BlockData[][] topLayer = new BlockData[mapZ][sizeX];
+		BlockData fallback = new BlockData(AIR_BLOCK_ID);
+
+		for (int z = 1; z < sizeZ; z++) {
+			for (int x = 0; x < sizeX; x++) {
+				BlockData top = fallback;
+
+				for (int y = sizeY - 1; y >= 0; y--) {
+					BlockData block = volume[y][z][x];
+
+					if (block == null || block.getId().equals(AIR_BLOCK_ID)) {
+						continue;
+					}
+
+					top = block;
+					break;
+				}
+
+				topLayer[z - 1][x] = top;
+			}
+		}
+
+		return topLayer;
 	}
 }

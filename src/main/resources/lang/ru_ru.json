@@ -34,9 +34,16 @@
 
   "btn.convert": "▶  Конвертировать",
   "btn.export_nbt": "📦  Экспорт .nbt",
+  "btn.export_litematic": "📦  Экспорт .litematic",
+  "label.format": "Формат:",
+  "format.NBT": ".nbt",
+  "format.LITEMATIC": ".litematic",
   "btn.save_preview": "🖼  Сохранить превью",
+  "btn.block_list": "📋  Список блоков",
   "btn.pick_blocks": "🎨  Выбрать блоки",
   "btn.settings": "⚙  Настройки",
+  "btn.halve_maps": "Уменьшить количество карт в 2 раза",
+  "btn.double_maps": "Увеличить количество карт в 2 раза",
   "btn.auto_fit_maps": "Авто-размер: подобрать количество карт под изображение (⌈ширина/128⌉ × ⌈высота/128⌉)",
 
   "preview.source": "Исходное изображение",
@@ -45,7 +52,10 @@
   "preview.show_grid": "Сетка карт",
   "preview.grid_width": "Толщина:",
   "preview.bg_color": "Цвет фона сетки",
-  "preview.reset_view": "Сбросить вид",
+  "preview.btn_fit": "Fit",
+  "preview.btn_cover": "Cover",
+  "preview.reset_view": "Вписать картинку в сетку целиком",
+  "preview.cover_view": "Заполнить сетку без полей (края обрезаются)",
 
   "crop.STRETCH": "Растянуть",
   "crop.CENTER": "По центру (обрезка)",
@@ -106,10 +116,85 @@
   "picker.colors": "Цвета",
   "picker.blocks": "Блоки",
   "picker.no_blocks": "Нет блоков",
+  "picker.colors_configured": "{0} из {1} цветов настроено",
+  "picker.tab_palette": "Палитра",
+  "picker.tab_support": "Опора",
 
   "settings.title": "Настройки",
   "settings.language": "Язык интерфейса",
   "settings.save": "Сохранить",
   "settings.cancel": "Отмена",
-  "settings.restart_hint": "Изменения вступят в силу после перезапуска."
+  "settings.restart_hint": "Изменения вступят в силу после перезапуска.",
+
+  "blocklist.title": "Список блоков",
+  "blocklist.total": "{0} уникальных блоков",
+  "blocklist.search": "Поиск по ID...",
+  "blocklist.col_id": "Блок",
+  "blocklist.col_count": "Количество",
+  "blocklist.btn_remove": "Удалить",
+  "blocklist.close": "Закрыть",
+  "blocklist.support_label": "[опора]",
+  "blocklist.mode_items": "Штуки",
+  "blocklist.mode_stacks": "Стаки",
+  "blocklist.mode_shulkers": "Шалкеры",
+  "blocklist.mode_shulkers_ceil": "Шалкеры ⌈⌉",
+  "blocklist.btn_export": "📄  Экспорт TXT",
+  "blocklist.export_dialog_title": "Сохранить список блоков",
+  "error.export_txt_failed": "Не удалось сохранить файл:\n{0}",
+
+  "support_picker.title": "Блоки-опоры",
+  "support_picker.hint": "Выберите блоки, задайте веса и режим распределения",
+  "support_picker.btn_add": "Добавить",
+  "support_picker.btn_save": "Сохранить",
+  "support_picker.btn_cancel": "Отмена",
+  "support_picker.mode_label": "Режим:",
+  "support_picker.mode_random": "Случайный",
+  "support_picker.mode_sequential": "Последовательный",
+  "support_picker.col_block": "Блок",
+  "support_picker.col_weight": "Вес",
+  "support_picker.btn_label_multi": "{0} блоков · {1}",
+
+  "support.mode_random": "Случайный",
+  "support.mode_sequential": "Последовательный",
+
+  "variant_picker.title": "Варианты блока",
+  "variant_picker.hint": "Задайте веса и режим распределения для вариантов",
+  "variant_picker.btn_tooltip": "Настроить распределение вариантов блока",
+  "variant_picker.btn_equal": "⚖ Поровну",
+
+  "log.block_removed": "Блок удалён из палитры: {0}",
+  "error.blocks_save_failed": "Не удалось сохранить файл блоков:\n{0}",
+  "error.no_blocks_selected": "Не выбрано ни одного блока. Откройте пикер блоков и выберите хотя бы один.",
+
+  "btn.import_schematic": "📥  Импорт схемы",
+
+  "dialog.choose_schematic": "Выберите файл схемы",
+  "filter.schematics": "Схематики (*.nbt, *.litematic)",
+
+  "import.options_title": "Настройки импорта",
+  "import.options_hint": "Параметры импорта схематики:",
+  "import.add_to_palette": "Добавить блоки из схемы в палитру",
+  "import.order_label": "Порядок развёртки файлов:",
+  "import.order_xy": "XY (→ затем ↓)",
+  "import.order_yx": "YX (↓ затем →)",
+
+  "progress.importing": "Импорт схемы...",
+  "progress.import_done": "✓ Схема импортирована!",
+  "progress.import_error": "✗ Ошибка импорта",
+
+  "log.import_start": "Импорт схемы: {0}",
+  "log.import_progress": "Читаю схему: {0}",
+  "log.import_done": "✓ Схема импортирована: {0}×{1} карт, {2} уникальных блоков",
+
+  "error.import_palette_failed": "Не удалось загрузить палитру для импорта:\n{0}",
+  "error.import_failed": "Ошибка импорта схемы:\n{0}",
+
+  "import.grid_title": "Сетка карт",
+  "import.grid_label": "Укажите размер сетки (ширина × высота в картах):",
+  "import.grid_hint": "Выбрано файлов: {0}",
+
+  "log.import_start_multi": "{0} файлов схем",
+
+  "import.file.skip": "Пропущен файл {0}: {1}",
+  "import.file.too_large": "размер превышает 128×128 блоков"
 }

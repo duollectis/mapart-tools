@@ -2,14 +2,23 @@ package org.duollectis.mapart.tools.gui;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.experimental.UtilityClass;
+import org.duollectis.mapart.tools.converter.BlockData;
 import org.duollectis.mapart.tools.converter.DitherSettings;
+import org.duollectis.mapart.tools.converter.SchematicFormat;
+import org.duollectis.mapart.tools.converter.SupportBlockSettings;
+import org.duollectis.mapart.tools.converter.WeightedSelector;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Сохраняет и восстанавливает настройки GUI между сессиями через JSON-файл
@@ -29,6 +38,7 @@ public class AppPreferences {
 	private static final String KEY_BLOCKS_PATH = "blocks_path";
 	private static final String KEY_OUT_PATH = "out_path";
 	private static final String KEY_SUPPORT_BLOCK = "support_block";
+	private static final String KEY_SUPPORT_SETTINGS = "support_settings";
 	private static final String KEY_LOCALE = "locale";
 	private static final String KEY_BRIGHTNESS = "brightness";
 	private static final String KEY_CONTRAST = "contrast";
@@ -38,6 +48,8 @@ public class AppPreferences {
 	private static final String KEY_AUTO_CONVERT = "auto_convert";
 	private static final String KEY_ERROR_DIFFUSION_RATE = "error_diffusion_rate";
 	private static final String KEY_NOISE_LEVEL = "noise_level";
+	private static final String KEY_BLOCK_SELECTORS = "block_selectors";
+	private static final String KEY_SCHEMATIC_FORMAT = "schematic_format";
 
 	public void saveVersion(String version) {
 		putString(KEY_VERSION, version);
@@ -103,6 +115,86 @@ public class AppPreferences {
 		return getString(KEY_SUPPORT_BLOCK, defaultValue);
 	}
 
+	/**
+	 * Сохраняет настройки блоков-опор в JSON.
+	 * Пустой список сохраняется явно — это позволяет отличить "пользователь снял все блоки"
+	 * от "настройки ещё не сохранялись".
+	 */
+	public void saveSupportSettings(SupportBlockSettings settings) {
+		JsonObject root = readRoot();
+
+		if (settings == null) {
+			root.remove(KEY_SUPPORT_SETTINGS);
+			writeRoot(root);
+			return;
+		}
+
+		JsonObject obj = new JsonObject();
+		obj.addProperty("mode", settings.getMode().name());
+
+		JsonArray arr = new JsonArray();
+
+		for (SupportBlockSettings.Entry entry : settings.getEntries()) {
+			JsonObject item = new JsonObject();
+			item.addProperty("blockId", entry.blockId());
+			item.addProperty("weight", entry.weight());
+			arr.add(item);
+		}
+
+		obj.add("entries", arr);
+		root.add(KEY_SUPPORT_SETTINGS, obj);
+		writeRoot(root);
+	}
+
+	/**
+	 * Загружает настройки блоков-опор из JSON.
+	 * Возвращает пустой {@link SupportBlockSettings} если данных нет — это позволяет
+	 * отличить "пользователь снял все блоки" от "настройки ещё не сохранялись".
+	 * Возвращает {@code null} только если ключ {@code support_settings} отсутствует полностью.
+	 *
+	 * @param defaultBlockId ID блока-опоры по умолчанию (используется только для обратной совместимости)
+	 * @return сохранённые настройки, пустой экземпляр или {@code null} если данных нет
+	 */
+	public SupportBlockSettings loadSupportSettings(String defaultBlockId) {
+		JsonObject root = readRoot();
+
+		if (root.has(KEY_SUPPORT_SETTINGS)) {
+			try {
+				JsonObject obj = root.getAsJsonObject(KEY_SUPPORT_SETTINGS);
+				WeightedSelector.Mode mode = WeightedSelector.Mode.valueOf(
+					obj.get("mode").getAsString()
+				);
+
+				JsonArray arr = obj.getAsJsonArray("entries");
+				List<SupportBlockSettings.Entry> entries = new ArrayList<>();
+
+				for (int i = 0; i < arr.size(); i++) {
+					JsonObject item = arr.get(i).getAsJsonObject();
+					entries.add(new SupportBlockSettings.Entry(
+						normalizeBlockId(item.get("blockId").getAsString()),
+						item.get("weight").getAsInt()
+					));
+				}
+
+				return new SupportBlockSettings(entries, mode);
+			} catch (Exception ignored) {
+				// повреждённые данные — возвращаем null
+			}
+		}
+
+		// Обратная совместимость: читаем старый ключ support_block только если он явно сохранён
+		if (root.has(KEY_SUPPORT_BLOCK)) {
+			String legacyId = normalizeBlockId(getString(KEY_SUPPORT_BLOCK, defaultBlockId));
+			return SupportBlockSettings.single(legacyId);
+		}
+
+		return null;
+	}
+
+	private static String normalizeBlockId(String blockId) {
+		return blockId.contains(":") ? blockId : "minecraft:" + blockId;
+	}
+
 	public void saveLocale(String locale) {
 		putString(KEY_LOCALE, locale);
 	}
@@ -160,6 +252,109 @@ public class AppPreferences {
 	public boolean loadAutoConvert(boolean defaultValue) {
 		JsonObject root = readRoot();
 		return root.has(KEY_AUTO_CONVERT) ? root.get(KEY_AUTO_CONVERT).getAsBoolean() : defaultValue;
+	}
+
+	/**
+	 * Сохраняет пользовательские селекторы весов блоков палитры.
+	 * Ключ — базовый blockId (например "minecraft:stone").
+	 * Значение — список вариантов с uniqueKey и весом.
+	 */
+	public void saveBlockSelectors(Map<String, WeightedSelector<BlockData>> selectors) {
+		JsonObject root = readRoot();
+
+		if (selectors == null || selectors.isEmpty()) {
+			root.remove(KEY_BLOCK_SELECTORS);
+			writeRoot(root);
+			return;
+		}
+
+		JsonObject selectorsObj = new JsonObject();
+
+		for (Map.Entry<String, WeightedSelector<BlockData>> entry : selectors.entrySet()) {
+			WeightedSelector<BlockData> selector = entry.getValue();
+			JsonObject selectorObj = new JsonObject();
+			selectorObj.addProperty("mode", selector.getMode().name());
+
+			JsonArray entriesArr = new JsonArray();
+
+			for (WeightedSelector.Entry<BlockData> e : selector.getEntries()) {
+				JsonObject item = new JsonObject();
+				item.addProperty("uniqueKey", e.value().getUniqueKey());
+				item.addProperty("weight", e.weight());
+				entriesArr.add(item);
+			}
+
+			selectorObj.add("entries", entriesArr);
+			selectorsObj.add(entry.getKey(), selectorObj);
+		}
+
+		root.add(KEY_BLOCK_SELECTORS, selectorsObj);
+		writeRoot(root);
+	}
+
+	/**
+	 * Загружает пользовательские селекторы весов блоков палитры.
+	 * Для восстановления {@link BlockData} используется {@code paletteBlocks} —
+	 * полная карта всех блоков палитры (uniqueKey → BlockData).
+	 *
+	 * @param paletteBlocks карта uniqueKey → BlockData для восстановления объектов
+	 * @return карта baseId → WeightedSelector, или пустая карта если данных нет
+	 */
+	public Map<String, WeightedSelector<BlockData>> loadBlockSelectors(Map<String, BlockData> paletteBlocks) {
+		JsonObject root = readRoot();
+
+		if (!root.has(KEY_BLOCK_SELECTORS)) {
+			return new HashMap<>();
+		}
+
+		Map<String, WeightedSelector<BlockData>> result = new HashMap<>();
+
+		try {
+			JsonObject selectorsObj = root.getAsJsonObject(KEY_BLOCK_SELECTORS);
+
+			for (String baseId : selectorsObj.keySet()) {
+				JsonObject selectorObj = selectorsObj.getAsJsonObject(baseId);
+				WeightedSelector.Mode mode = WeightedSelector.Mode.valueOf(
+					selectorObj.get("mode").getAsString()
+				);
+
+				JsonArray entriesArr = selectorObj.getAsJsonArray("entries");
+				List<WeightedSelector.Entry<BlockData>> entries = new ArrayList<>();
+
+				for (int i = 0; i < entriesArr.size(); i++) {
+					JsonObject item = entriesArr.get(i).getAsJsonObject();
+					String uniqueKey = item.get("uniqueKey").getAsString();
+					int weight = item.get("weight").getAsInt();
+					BlockData block = paletteBlocks.get(uniqueKey);
+
+					if (block != null) {
+						entries.add(new WeightedSelector.Entry<>(block, weight));
+					}
+				}
+
+				if (!entries.isEmpty()) {
+					result.put(baseId, new WeightedSelector<>(entries, mode));
+				}
+			}
+		} catch (Exception ignored) {
+			// повреждённые данные — возвращаем пустую карту
+		}
+
+		return result;
+	}
+
+	public void saveSchematicFormat(SchematicFormat format) {
+		putString(KEY_SCHEMATIC_FORMAT, format.name());
+	}
+
+	public SchematicFormat loadSchematicFormat() {
+		String saved = getString(KEY_SCHEMATIC_FORMAT, SchematicFormat.NBT.name());
+
+		try {
+			return SchematicFormat.valueOf(saved);
+		} catch (IllegalArgumentException ignored) {
+			return SchematicFormat.NBT;
+		}
 	}
 
 	public void saveDitherSettings(DitherSettings settings) {
