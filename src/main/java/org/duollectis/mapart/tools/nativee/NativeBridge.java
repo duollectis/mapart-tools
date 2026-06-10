@@ -85,7 +85,7 @@ public class NativeBridge {
 
 		MethodHandle handle = lib
 			.find(nativeName)
-			.map(addr -> linker.downcallHandle(addr, descriptor, Linker.Option.isTrivial()))
+			.map(addr -> linker.downcallHandle(addr, descriptor))
 			.orElseThrow(() -> new RuntimeException("C++ функция не найдена: " + method.getName()));
 
 		methods.put(method.getName(), handle);

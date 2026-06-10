@@ -36,10 +36,16 @@ public class LitematicSchematicReader extends SchematicReader {
 
 		BlockData[][][] volume = unpackVolume(packedStates, palette, sizeX, sizeY, sizeZ);
 
-		BlockData[][] topLayer = BlockLeveler.readTopLayer(volume, sizeX, sizeY, sizeZ);
+		BlockLeveler.TopLayerResult topLayerResult = BlockLeveler.readTopLayer(volume, sizeX, sizeY, sizeZ);
 		int[] mapCount = computeMapCount(sizeX, sizeZ - 1);
 
-		return new SchematicImportResult(topLayer, mapCount[0], mapCount[1], collectBlockIds(palette));
+		return new SchematicImportResult(
+			topLayerResult.blocks(),
+			topLayerResult.levels(),
+			mapCount[0],
+			mapCount[1],
+			collectBlockIds(palette)
+		);
 	}
 
 	private static List<BlockData> parsePalette(NbtList paletteNbt) {

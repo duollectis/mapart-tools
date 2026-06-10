@@ -1,17 +1,19 @@
 package org.duollectis.mapart.tools.gui;
 
 import javax.swing.JSlider;
+import javax.swing.Timer;
 import javax.swing.plaf.basic.BasicSliderUI;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
  * Кастомный слайдер с ручной отрисовкой трека и ползунка.
- * Стандартный JSlider с setOpaque(false) становится невидимым на тёмной теме,
- * поэтому весь рендеринг реализован через BasicSliderUI с переопределёнными методами.
+ * Thumb анимированно увеличивается при hover через {@link UiAnimator#animateFloat}.
  */
 public class ModernSlider extends JSlider {
 
@@ -21,7 +23,8 @@ public class ModernSlider extends JSlider {
 	private static final Color THUMB_HOVER = new Color(170, 185, 255);
 
 	private static final int TRACK_HEIGHT = 4;
-	private static final int THUMB_SIZE = 12;
+	private static final int THUMB_SIZE_NORMAL = 12;
+	private static final int THUMB_SIZE_HOVER = 16;
 
 	public ModernSlider(int min, int max, int value) {
 		super(min, max, value);
@@ -35,23 +38,38 @@ public class ModernSlider extends JSlider {
 
 	private static class ModernSliderUI extends BasicSliderUI {
 
-		private boolean thumbHovered = false;
+		/** Прогресс анимации hover: 0.0 = normal, 1.0 = hovered */
+		private float hoverProgress = 0f;
+
+		private Timer hoverTimer;
 
 		ModernSliderUI(JSlider slider) {
 			super(slider);
-			slider.addMouseListener(new java.awt.event.MouseAdapter() {
+			slider.addMouseListener(new MouseAdapter() {
 				@Override
-				public void mouseEntered(java.awt.event.MouseEvent e) {
-					thumbHovered = true;
-					slider.repaint();
+				public void mouseEntered(MouseEvent e) {
+					animateHover(true);
 				}
 
 				@Override
-				public void mouseExited(java.awt.event.MouseEvent e) {
-					thumbHovered = false;
-					slider.repaint();
+				public void mouseExited(MouseEvent e) {
+					animateHover(false);
 				}
 			});
+		}
+
+		private void animateHover(boolean toHovered) {
+			if (hoverTimer != null) {
+				hoverTimer.stop();
+			}
+
+			float from = hoverProgress;
+			float to = toHovered ? 1f : 0f;
+
+			hoverTimer = UiAnimator.animateFloat(from, to, 150, progress -> {
+				hoverProgress = progress;
+				slider.repaint();
+			}, null);
 		}
 
 		@Override
@@ -85,10 +103,13 @@ public class ModernSlider extends JSlider {
 
 			int cx = thumbRect.x + thumbRect.width / 2;
 			int cy = thumbRect.y + thumbRect.height / 2;
-			int r = THUMB_SIZE / 2;
 
-			g2.setColor(thumbHovered ? THUMB_HOVER : THUMB_COLOR);
-			g2.fillOval(cx - r, cy - r, THUMB_SIZE, THUMB_SIZE);
+			int size = (int) (THUMB_SIZE_NORMAL + (THUMB_SIZE_HOVER - THUMB_SIZE_NORMAL) * hoverProgress);
+			int r = size / 2;
+
+			Color thumbColor = UiAnimator.lerp(THUMB_COLOR, THUMB_HOVER, hoverProgress);
+			g2.setColor(thumbColor);
+			g2.fillOval(cx - r, cy - r, size, size);
 
 			g2.dispose();
 		}
@@ -100,7 +121,7 @@ public class ModernSlider extends JSlider {
 
 		@Override
 		protected Dimension getThumbSize() {
-			return new Dimension(THUMB_SIZE, THUMB_SIZE);
+			return new Dimension(THUMB_SIZE_HOVER, THUMB_SIZE_HOVER);
 		}
 	}
 }

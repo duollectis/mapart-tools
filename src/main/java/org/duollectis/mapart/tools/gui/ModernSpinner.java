@@ -6,6 +6,7 @@ import javax.swing.JComponent;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerModel;
+import javax.swing.Timer;
 import javax.swing.plaf.basic.BasicSpinnerUI;
 import javax.swing.plaf.basic.BasicTextFieldUI;
 import java.awt.BasicStroke;
@@ -26,12 +27,13 @@ import java.awt.event.MouseEvent;
 public class ModernSpinner extends JSpinner {
 
 	private static final int ARC = 8;
-	private static final Color BG = GuiApp.BG_INPUT;
-	private static final Color BORDER_COLOR = GuiApp.BORDER;
-	private static final Color TEXT = GuiApp.TEXT;
-	private static final Color TEXT_DIM = GuiApp.TEXT_DIM;
-	private static final Color BTN_BG = new Color(38, 42, 60);
-	private static final Color BTN_HOVER = new Color(55, 60, 85);
+
+	private static Color bg() { return GuiApp.BG_INPUT; }
+	private static Color borderColor() { return GuiApp.BORDER; }
+	private static Color text() { return GuiApp.TEXT; }
+	private static Color textDim() { return GuiApp.TEXT_DIM; }
+	private static Color btnBg() { return GuiApp.BG_CARD; }
+	private static Color btnHover() { return GuiApp.BORDER; }
 
 	public ModernSpinner(SpinnerModel model) {
 		super(model);
@@ -47,9 +49,9 @@ public class ModernSpinner extends JSpinner {
 	protected void paintComponent(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g.create();
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g2.setColor(BG);
+		g2.setColor(bg());
 		g2.fillRoundRect(0, 0, getWidth(), getHeight(), ARC, ARC);
-		g2.setColor(BORDER_COLOR);
+		g2.setColor(borderColor());
 		g2.setStroke(new BasicStroke(1f));
 		g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, ARC, ARC);
 		g2.dispose();
@@ -65,8 +67,8 @@ public class ModernSpinner extends JSpinner {
 
 		if (editor instanceof DefaultEditor de) {
 			JTextField field = de.getTextField();
-			field.setBackground(BG);
-			field.setForeground(TEXT);
+			field.setBackground(bg());
+			field.setForeground(text());
 			field.setCaretColor(GuiApp.ACCENT);
 			field.setSelectionColor(GuiApp.SELECTION_BG);
 			field.setFont(new Font("SansSerif", Font.PLAIN, 13));
@@ -111,29 +113,41 @@ public class ModernSpinner extends JSpinner {
 
 		private JButton buildArrowButton(boolean up) {
 			JButton btn = new JButton() {
-				private boolean hovered = false;
+				private float hoverProgress = 0f;
+				private Timer hoverTimer;
 
 				{
 					addMouseListener(new MouseAdapter() {
 						@Override
 						public void mouseEntered(MouseEvent e) {
-							hovered = true;
-							repaint();
+							animateHover(true);
 						}
 
 						@Override
 						public void mouseExited(MouseEvent e) {
-							hovered = false;
-							repaint();
+							animateHover(false);
 						}
 					});
+				}
+
+				private void animateHover(boolean toHovered) {
+					if (hoverTimer != null) {
+						hoverTimer.stop();
+					}
+
+					float from = hoverProgress;
+					float to = toHovered ? 1f : 0f;
+					hoverTimer = UiAnimator.animateFloat(from, to, 150, progress -> {
+						hoverProgress = progress;
+						repaint();
+					}, null);
 				}
 
 				@Override
 				protected void paintComponent(Graphics g) {
 					Graphics2D g2 = (Graphics2D) g.create();
 					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					g2.setColor(hovered ? BTN_HOVER : BTN_BG);
+					g2.setColor(UiAnimator.lerp(btnBg(), btnHover(), hoverProgress));
 					g2.fillRect(0, 0, getWidth(), getHeight());
 
 					int cx = getWidth() / 2;
@@ -141,7 +155,7 @@ public class ModernSpinner extends JSpinner {
 					int w = 6;
 					int h = 4;
 
-					g2.setColor(hovered ? TEXT : TEXT_DIM);
+					g2.setColor(UiAnimator.lerp(textDim(), text(), hoverProgress));
 					g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
 					if (up) {

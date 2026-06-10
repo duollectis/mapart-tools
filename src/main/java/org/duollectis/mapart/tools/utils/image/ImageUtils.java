@@ -15,19 +15,24 @@ public class ImageUtils {
 	 * Подготавливает изображение к дизерингу: вписывает исходник в целевой размер карт
 	 * с учётом пользовательского зума и смещения из {@link CropSettings}.
 	 * <p>
-	 * Поддерживает независимое масштабирование по X и Y для корректного воспроизведения
-	 * деформаций, которые пользователь задал resize'ом в левой панели.
+	 * Возвращает {@link FitResult} с холстом и clip rect реальной области изображения.
+	 * Clip rect передаётся в C++ дизерер для подавления артефактов Floyd-Steinberg
+	 * на границе чёрного фона и реального изображения.
 	 */
-	public BufferedImage prepareImage(BufferedImage source, int targetWidth, int targetHeight, CropSettings crop) {
+	public FitResult prepareImage(BufferedImage source, int targetWidth, int targetHeight, CropSettings crop) {
 		return fitImage(source, targetWidth, targetHeight, crop.offsetX(), crop.offsetY(), crop.scaleX(), crop.scaleY());
 	}
 
 	/**
-	 * Вписывает изображение в холст с чёрным фоном с независимым масштабом по X и Y.
+	 * Вписывает изображение в холст с независимым масштабом по X и Y.
 	 * Базовый fit-scale по каждой оси умножается на соответствующий userScale.
 	 * offsetX/offsetY сдвигают картинку внутри холста в пикселях целевого размера.
+	 * <p>
+	 * Возвращает {@link FitResult}: холст targetWidth×targetHeight с нарисованным
+	 * изображением и clip rect видимой области. Clip rect используется дизерером
+	 * чтобы пиксели чёрного фона не участвовали в диффузии ошибки.
 	 */
-	public BufferedImage fitImage(
+	public FitResult fitImage(
 		BufferedImage source,
 		int targetWidth,
 		int targetHeight,
@@ -40,21 +45,36 @@ public class ImageUtils {
 		double baseScaleY = (double) targetHeight / source.getHeight();
 		double baseScale = Math.min(baseScaleX, baseScaleY);
 
-		int scaledW = (int) Math.round(source.getWidth() * baseScale * userScaleX);
-		int scaledH = (int) Math.round(source.getHeight() * baseScale * userScaleY);
+		int scaledW = Math.max(1, (int) Math.round(source.getWidth() * baseScale * userScaleX));
+		int scaledH = Math.max(1, (int) Math.round(source.getHeight() * baseScale * userScaleY));
 
 		int drawX = (targetWidth - scaledW) / 2 + offsetX;
 		int drawY = (targetHeight - scaledH) / 2 + offsetY;
 
-		BufferedImage result = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_ARGB);
+		int visX1 = Math.max(drawX, 0);
+		int visY1 = Math.max(drawY, 0);
+		int visX2 = Math.min(drawX + scaledW, targetWidth);
+		int visY2 = Math.min(drawY + scaledH, targetHeight);
+
+		BufferedImage result = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+
+		if (visX1 >= visX2 || visY1 >= visY2) {
+			return new FitResult(result, 0, 0, 0, 0);
+		}
+
+		double srcScaleX = (double) source.getWidth() / scaledW;
+		double srcScaleY = (double) source.getHeight() / scaledH;
+		int sx1 = (int) Math.round((visX1 - drawX) * srcScaleX);
+		int sy1 = (int) Math.round((visY1 - drawY) * srcScaleY);
+		int sx2 = Math.min((int) Math.round((visX2 - drawX) * srcScaleX), source.getWidth());
+		int sy2 = Math.min((int) Math.round((visY2 - drawY) * srcScaleY), source.getHeight());
+
 		Graphics2D g2 = result.createGraphics();
-		g2.setColor(Color.BLACK);
-		g2.fillRect(0, 0, targetWidth, targetHeight);
 		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-		g2.drawImage(source, drawX, drawY, scaledW, scaledH, null);
+		g2.drawImage(source, visX1, visY1, visX2, visY2, sx1, sy1, sx2, sy2, null);
 		g2.dispose();
 
-		return result;
+		return new FitResult(result, visX1, visY1, visX2 - visX1, visY2 - visY1);
 	}
 
 	/**
@@ -148,6 +168,6 @@ public class ImageUtils {
 	}
 
 	private int clamp(int value) {
-		return Math.min(255, Math.max(0, value));
+		return Math.clamp(value, 0, 255);
 	}
 }

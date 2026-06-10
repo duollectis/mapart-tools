@@ -3,6 +3,7 @@ package org.duollectis.mapart.tools.gui;
 import org.duollectis.mapart.tools.converter.Ditherer;
 import org.duollectis.mapart.tools.converter.ImageConverter;
 import org.duollectis.mapart.tools.converter.SchematicFormat;
+import org.duollectis.mapart.tools.converter.StaircaseMode;
 import org.duollectis.mapart.tools.converter.SupportBlockSettings;
 
 import javax.swing.SwingWorker;
@@ -23,6 +24,7 @@ public class ExportWorker extends SwingWorker<Void, String> {
 	private final int mapHeight;
 	private final SupportBlockSettings supportSettings;
 	private final SchematicFormat format;
+	private final StaircaseMode staircaseMode;
 	private final Consumer<String> onProgress;
 	private final Runnable onSuccess;
 	private final Consumer<String> onError;
@@ -34,6 +36,7 @@ public class ExportWorker extends SwingWorker<Void, String> {
 		int mapHeight,
 		SupportBlockSettings supportSettings,
 		SchematicFormat format,
+		StaircaseMode staircaseMode,
 		Consumer<String> onProgress,
 		Runnable onSuccess,
 		Consumer<String> onError
@@ -44,6 +47,7 @@ public class ExportWorker extends SwingWorker<Void, String> {
 		this.mapHeight = mapHeight;
 		this.supportSettings = supportSettings;
 		this.format = format;
+		this.staircaseMode = staircaseMode;
 		this.onProgress = onProgress;
 		this.onSuccess = onSuccess;
 		this.onError = onError;
@@ -61,7 +65,8 @@ public class ExportWorker extends SwingWorker<Void, String> {
 			mapWidth,
 			mapHeight,
 			supportSettings,
-			format
+			format,
+			staircaseMode
 		);
 
 		return null;

@@ -1,0 +1,17 @@
+{
+  "bgDeep":             "#0D0D14",
+  "bgCard":             "#161823",
+  "bgInput":            "#1E202E",
+  "border":             "#2D3044",
+  "accent":             "#63B3ED",
+  "accentBright":       "#90CDF4",
+  "text":               "#E2E8F0",
+  "textDim":            "#718096",
+  "success":            "#48C78E",
+  "error":              "#FC8181",
+  "warn":               "#FBbf24",
+  "selectionBg":        "#3182CEB4",
+  "scrollbarThumb":     "#373C55",
+  "scrollbarThumbHover":"#505878",
+  "scrollbarTrack":     "#12121C"
+}

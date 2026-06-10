@@ -6,6 +6,7 @@ import org.duollectis.mapart.tools.converter.schematic.SchematicWriter;
 import org.duollectis.mapart.tools.nativee.NativeHolder;
 import org.duollectis.mapart.tools.utils.JsonHelper;
 import org.duollectis.mapart.tools.utils.RGBUtils;
+import org.duollectis.mapart.tools.utils.image.FitResult;
 import org.duollectis.mapart.tools.utils.image.ImageAdjustments;
 import org.duollectis.mapart.tools.utils.image.ImageUtils;
 
@@ -16,7 +17,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,20 +62,27 @@ public class ImageConverter {
 		ImageAdjustments adjustments,
 		DitherSettings ditherSettings,
 		CropSettings cropSettings,
-		Map<String, WeightedSelector<BlockData>> blockSelectors
+		Map<String, WeightedSelector<BlockData>> blockSelectors,
+		StaircaseMode staircaseMode,
+		java.util.function.IntUnaryOperator onProgress
 	) {
 		Set<String> allowedBlocks = loadAllowedBlocks(blocksFile);
-		loadPalette(paletteJson, allowedBlocks, blockSelectors);
+		loadPalette(paletteJson, allowedBlocks, blockSelectors, staircaseMode);
 
 		try {
-			BufferedImage image = ImageIO.read(imageFile);
-			image = ImageUtils.prepareImage(image, MAP_SIZE * mapWidth, MAP_SIZE * mapHeight, cropSettings);
-			image = ImageUtils.applyAdjustments(image, adjustments);
+			BufferedImage rawImage = ImageIO.read(imageFile);
+			FitResult fit = ImageUtils.prepareImage(rawImage, MAP_SIZE * mapWidth, MAP_SIZE * mapHeight, cropSettings);
+			BufferedImage image = ImageUtils.applyAdjustments(fit.image(), adjustments);
 
-			ditherer.setErrorDiffusionRate(ditherSettings.errorDiffusionRate());
+			ditherer.setErrRateR(ditherSettings.errRateR());
+			ditherer.setErrRateG(ditherSettings.errRateG());
+			ditherer.setErrRateB(ditherSettings.errRateB());
 			ditherer.setNoiseLevel(ditherSettings.noiseLevel());
+			ditherer.setColorMetric(ditherSettings.colorMetric());
 			ditherer.setPalette(palette);
 			ditherer.setAlgorithm(algorithm);
+			ditherer.setOnProgress(onProgress);
+			ditherer.setClipRect(fit.clipX(), fit.clipY(), fit.clipW(), fit.clipH());
 			ditherer.processImage(image);
 		} catch (Exception e) {
 			ditherer.close();
@@ -107,12 +114,13 @@ public class ImageConverter {
 		int mapWidth,
 		int mapHeight,
 		SupportBlockSettings supportSettings,
-		SchematicFormat format
+		SchematicFormat format,
+		StaircaseMode staircaseMode
 	) {
 		this.palette.addAll(palette);
 
 		try {
-			renderSchematics(dithered, resolved, outDir, mapWidth, mapHeight, supportSettings, format);
+			renderSchematics(dithered, resolved, outDir, mapWidth, mapHeight, supportSettings, format, staircaseMode);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -138,15 +146,17 @@ public class ImageConverter {
 		int mapHeight
 	) {
 		Set<String> allowedBlocks = loadAllowedBlocks(blocksFile);
-		loadPalette(paletteJson, allowedBlocks, Collections.emptyMap());
+		loadPalette(paletteJson, allowedBlocks, Map.of(), StaircaseMode.STAIRCASE);
 
 		try {
 			BufferedImage image = ImageIO.read(imageFile);
 			image = ImageUtils.resizeImage(image, MAP_SIZE * mapWidth, MAP_SIZE * mapHeight);
 
 			DitherSettings defaults = DitherSettings.defaults();
-			ditherer.setErrorDiffusionRate(defaults.errorDiffusionRate());
-			ditherer.setNoiseLevel(defaults.noiseLevel());
+				ditherer.setErrRateR(defaults.errRateR());
+				ditherer.setErrRateG(defaults.errRateG());
+				ditherer.setErrRateB(defaults.errRateB());
+				ditherer.setNoiseLevel(defaults.noiseLevel());
 			ditherer.setPalette(palette);
 			ditherer.setAlgorithm(Ditherer.Algorithm.FLOYD_STEINBERG);
 			ditherer.processImage(image);
@@ -158,7 +168,8 @@ public class ImageConverter {
 				mapWidth,
 				mapHeight,
 				SupportBlockSettings.single(DEFAULT_SUPPORT_BLOCK_ID),
-				SchematicFormat.NBT
+				SchematicFormat.NBT,
+				StaircaseMode.STAIRCASE
 			);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -180,7 +191,8 @@ public class ImageConverter {
 	public void loadPalette(
 		String data,
 		Set<String> whitelist,
-		Map<String, WeightedSelector<BlockData>> blockSelectors
+		Map<String, WeightedSelector<BlockData>> blockSelectors,
+		StaircaseMode staircaseMode
 	) {
 		if (!palette.isEmpty()) {
 			throw new RuntimeException("Палитра уже загружена!");
@@ -199,14 +211,16 @@ public class ImageConverter {
 			return entry.getValue().isEmpty();
 		});
 
+		var allowedBrightnesses = staircaseMode.getAllowedBrightnesses();
+
 		paletteMap.forEach((color, blocks) -> {
 			String baseId = blocks.getFirst().getId();
 			WeightedSelector<BlockData> baseSelector = blockSelectors.containsKey(baseId)
 				? blockSelectors.get(baseId)
 				: buildEqualSelector(blocks);
 
-			// Каждая яркость получает независимую копию селектора — свои счётчики SEQUENTIAL
-			for (Brightness brightness : Brightness.values()) {
+			// Каждая разрешённая яркость получает независимую копию селектора — свои счётчики SEQUENTIAL
+			for (Brightness brightness : allowedBrightnesses) {
 				int scaledColor = RGBUtils.scaleRGB(color, brightness.getModifier());
 				palette.add(new PaletteEntry(blocks, scaledColor, brightness, baseSelector.copy()));
 			}
@@ -228,7 +242,8 @@ public class ImageConverter {
 		int mapWidth,
 		int mapHeight,
 		SupportBlockSettings supportSettings,
-		SchematicFormat format
+		SchematicFormat format,
+		StaircaseMode staircaseMode
 	) throws Exception {
 		String primarySupportId = supportSettings.isEmpty()
 			? DEFAULT_SUPPORT_BLOCK_ID
@@ -244,7 +259,7 @@ public class ImageConverter {
 				BlockData[][] resolvedSlice = extractResolvedSlice(resolved, mx, my);
 
 				leveler.setImage(mapSlice);
-				leveler.process(true);
+				leveler.process(staircaseMode.isNormalize(), staircaseMode);
 
 				int schematicHeight = leveler.getProcessedHeight();
 				int offset = needsSupportOffset(leveler.getProcessed());
@@ -270,7 +285,10 @@ public class ImageConverter {
 
 		for (int x = 0; x < MAP_SIZE; x++) {
 			for (int y = 0; y < MAP_SIZE; y++) {
-				slice[y][x] = dithered[my * MAP_SIZE + y][mx * MAP_SIZE + x];
+				int idx = dithered[my * MAP_SIZE + y][mx * MAP_SIZE + x];
+				// Пустые пиксели вне clip_rect (sentinel -1) заменяем индексом 0
+				// для корректного расчёта высот в BlockLeveler
+				slice[y][x] = idx < 0 ? 0 : idx;
 			}
 		}
 
@@ -324,9 +342,11 @@ public class ImageConverter {
 				BlockData block = resolvedSlice[y - 1][x];
 				int level = entry.getLevel() + offset;
 
-				writer.setBlock(x, level, y, block);
+				// Пустые пиксели вне clip_rect (null) заменяем блоком опоры по умолчанию
+				BlockData effectiveBlock = block != null ? block : new BlockData(DEFAULT_SUPPORT_BLOCK_ID);
+				writer.setBlock(x, level, y, effectiveBlock);
 
-				if (block.isNeedSupport()) {
+				if (effectiveBlock.isNeedSupport()) {
 					String supportId = supportSettings.pickBlock(supportIndex.getAndIncrement());
 					BlockData supportBlock = new BlockData(supportId);
 					writer.setBlock(
@@ -342,10 +362,11 @@ public class ImageConverter {
 
 	/**
 	 * Рендерит превью карт-арта из результата импорта схематики.
-	 * Для каждого блока ищет цвет в палитре по blockId и яркости NORMAL.
-	 * Блоки, не найденные в палитре, отображаются серым цветом.
+	 * Яркость каждого пикселя определяется по разнице Y-уровней текущего блока и блока
+	 * предыдущей строки (z-1): выше → HIGH (светлее), ниже → LOW (темнее), равно → NORMAL.
+	 * Это воспроизводит реальное затенение карты Майнкрафта без повторного запуска BlockLeveler.
 	 *
-	 * @param importResult результат импорта схематики с верхним слоем блоков
+	 * @param importResult результат импорта схематики с верхним слоем блоков и Y-уровнями
 	 * @param paletteJson  JSON-строка с палитрой цветов версии Майнкрафта
 	 * @return изображение превью размером sizeX × sizeZ
 	 */
@@ -355,20 +376,33 @@ public class ImageConverter {
 			new TypeToken<Map<Integer, List<BlockData>>>() {}.getType()
 		);
 
-		Map<String, Integer> blockColorMap = buildBlockColorMap(paletteMap);
+		Map<String, Map<Brightness, Integer>> blockColorMap = buildBlockColorMap(paletteMap);
 
 		BlockData[][] blocks = importResult.blocks();
+		int[][] topLevels = importResult.topLevels();
 		int height = blocks.length;
 		int width = height > 0 ? blocks[0].length : 0;
+		int mapHeight = importResult.mapHeight();
+		int tileRows = mapHeight > 0 ? height / mapHeight : height;
 
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
 				BlockData block = blocks[y][x];
-				int color = block == null
+
+				if (block == null) {
+					image.setRGB(x, y, Color.GRAY.getRGB());
+					continue;
+				}
+
+				Brightness brightness = resolveBrightness(topLevels, y, x, tileRows);
+				Map<Brightness, Integer> colorsByBrightness = blockColorMap.get(block.getId());
+
+				int color = colorsByBrightness == null
 					? Color.GRAY.getRGB()
-					: blockColorMap.getOrDefault(block.getId(), Color.GRAY.getRGB());
+					: colorsByBrightness.getOrDefault(brightness, colorsByBrightness.getOrDefault(Brightness.NORMAL, Color.GRAY.getRGB()));
+
 				image.setRGB(x, y, color);
 			}
 		}
@@ -376,14 +410,53 @@ public class ImageConverter {
 		return image;
 	}
 
-	private static Map<String, Integer> buildBlockColorMap(Map<Integer, List<BlockData>> paletteMap) {
-		Map<String, Integer> colorMap = new HashMap<>();
+	/**
+	 * Определяет яркость пикселя карты по разнице Y-уровней текущей и предыдущей строки.
+	 * {@code topLevels} имеет размер [totalHeight+1][width]: индекс 0 — опорный ряд первого тайла,
+	 * индексы 1..totalHeight — реальные строки карты.
+	 * <p>
+	 * На границах тайлов (строки кратные {@code tileRows}) возвращает NORMAL, так как
+	 * Y-уровни соседних тайлов нормализованы независимо и несопоставимы.
+	 */
+	private static Brightness resolveBrightness(int[][] topLevels, int y, int x, int tileRows) {
+		if (topLevels == null || y + 1 >= topLevels.length || x >= topLevels[y + 1].length) {
+			return Brightness.NORMAL;
+		}
+
+		boolean isFirstRowOfTile = tileRows > 0 && y % tileRows == 0 && y > 0;
+		boolean isLastRowOfTile = tileRows > 0 && (y + 1) % tileRows == 0;
+
+		if (isFirstRowOfTile || isLastRowOfTile) {
+			return Brightness.NORMAL;
+		}
+
+		int currentY = topLevels[y + 1][x];
+		int prevY = topLevels[y][x];
+
+		if (currentY > prevY) {
+			return Brightness.HIGH;
+		}
+
+		return currentY < prevY ? Brightness.LOW : Brightness.NORMAL;
+	}
+
+	private static Map<String, Map<Brightness, Integer>> buildBlockColorMap(Map<Integer, List<BlockData>> paletteMap) {
+		Map<String, Map<Brightness, Integer>> colorMap = new HashMap<>();
 
 		paletteMap.forEach((baseColor, blocks) -> {
-			int normalColor = RGBUtils.scaleRGB(baseColor, Brightness.NORMAL.getModifier());
-
 			for (BlockData block : blocks) {
-				colorMap.putIfAbsent(block.getId(), normalColor);
+				colorMap.computeIfAbsent(block.getId(), k -> new HashMap<>()).putIfAbsent(
+					Brightness.LOW,
+					RGBUtils.scaleRGB(baseColor, Brightness.LOW.getModifier())
+				);
+				colorMap.get(block.getId()).putIfAbsent(
+					Brightness.NORMAL,
+					RGBUtils.scaleRGB(baseColor, Brightness.NORMAL.getModifier())
+				);
+				colorMap.get(block.getId()).putIfAbsent(
+					Brightness.HIGH,
+					RGBUtils.scaleRGB(baseColor, Brightness.HIGH.getModifier())
+				);
 			}
 		});
 

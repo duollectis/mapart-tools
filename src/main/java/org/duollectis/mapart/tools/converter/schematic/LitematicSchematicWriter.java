@@ -4,6 +4,7 @@ import net.minecraft.nbt.elements.NbtCompound;
 import net.minecraft.nbt.elements.NbtList;
 import org.duollectis.mapart.tools.converter.BlockData;
 
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -12,6 +13,9 @@ import java.util.Map;
  * Порядок блоков в {@code BlockStates}: {@code index = x + z*sizeX + y*sizeX*sizeZ}.
  * Биты упакованы в {@code long[]} без переноса через границу long:
  * {@code bitsPerBlock = max(4, ceil(log2(paletteSize)))}.
+ * <p>
+ * Воздух регистрируется первым (индекс 0), чтобы незаполненные ячейки
+ * массива blockIndices корректно интерпретировались как воздух.
  */
 public class LitematicSchematicWriter extends SchematicWriter {
 
@@ -19,6 +23,7 @@ public class LitematicSchematicWriter extends SchematicWriter {
 	private static final int LITEMATIC_VERSION = 7;
 	private static final int LITEMATIC_SUB_VERSION = 1;
 	private static final int MIN_BITS_PER_BLOCK = 4;
+	private static final String AIR_BLOCK_ID = "minecraft:air";
 
 	private final int sizeX;
 	private final int sizeY;
@@ -32,6 +37,10 @@ public class LitematicSchematicWriter extends SchematicWriter {
 		this.sizeZ = sizeZ;
 		this.regionName = regionName;
 		this.blockIndices = new int[sizeX * sizeY * sizeZ];
+
+		// Воздух должен быть первым в палитре (индекс 0),
+		// чтобы нули в blockIndices означали воздух, а не случайный блок
+		resolveIndex(new BlockData(AIR_BLOCK_ID));
 	}
 
 	@Override

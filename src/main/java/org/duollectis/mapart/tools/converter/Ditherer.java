@@ -12,23 +12,42 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntUnaryOperator;
 import java.util.stream.Collectors;
 
 public class Ditherer implements AutoCloseable {
 
-	private static final double DEFAULT_ERROR_DIFFUSION_RATE = 1.0;
+	private static final double DEFAULT_ERR_RATE_CHANNEL = 1.0;
 	private static final double DEFAULT_NOISE_LEVEL = 0.0;
 
 	private final ImageDithererWrapper nativeWrapper;
+	private final Arena callbackArena = Arena.ofShared();
 
 	@Setter
-	private double errorDiffusionRate = DEFAULT_ERROR_DIFFUSION_RATE;
+	private double errRateR = DEFAULT_ERR_RATE_CHANNEL;
+
+	@Setter
+	private double errRateG = DEFAULT_ERR_RATE_CHANNEL;
+
+	@Setter
+	private double errRateB = DEFAULT_ERR_RATE_CHANNEL;
 
 	@Setter
 	private double noiseLevel = DEFAULT_NOISE_LEVEL;
+
+	@Setter
+	@NonNull
+	private ColorMetric colorMetric = ColorMetric.LAB;
 
 	@Getter
 	@Setter
@@ -38,6 +57,14 @@ public class Ditherer implements AutoCloseable {
 	@Setter
 	@NonNull
 	private Algorithm algorithm = Algorithm.FLOYD_STEINBERG;
+
+	@Setter
+	private IntUnaryOperator onProgress;
+
+	private int clipX;
+	private int clipY;
+	private int clipW;
+	private int clipH;
 
 	@Getter
 	private int ditherTime;
@@ -55,6 +82,38 @@ public class Ditherer implements AutoCloseable {
 
 	public Ditherer(File lib) {
 		nativeWrapper = NativeBridge.create(ImageDithererWrapper.class, lib);
+	}
+
+	/**
+	 * Создаёт upcall-stub для передачи Java-колбэка прогресса в нативный C++ код.
+	 * Колбэк принимает текущий прогресс (0–100) и возвращает 0 (продолжать) или 1 (отмена).
+	 * Stub живёт в {@code callbackArena} и освобождается при закрытии дизерера.
+	 * Если {@code onProgress} не задан — возвращает нулевой указатель (NULL callback).
+	 */
+	private MemorySegment buildProgressStub() {
+		if (onProgress == null) {
+			return MemorySegment.NULL;
+		}
+
+		try {
+			FunctionDescriptor descriptor = FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT);
+			var handle = MethodHandles.lookup().findVirtual(
+				IntUnaryOperator.class,
+				"applyAsInt",
+				MethodType.methodType(int.class, int.class)
+			).bindTo(onProgress);
+
+			return Linker.nativeLinker().upcallStub(handle, descriptor, callbackArena);
+		} catch (NoSuchMethodException | IllegalAccessException e) {
+			throw new RuntimeException("Не удалось создать upcall-stub для прогресса", e);
+		}
+	}
+
+	public void setClipRect(int x, int y, int w, int h) {
+		clipX = x;
+		clipY = y;
+		clipW = w;
+		clipH = h;
 	}
 
 	public void processImage(BufferedImage image) {
@@ -80,8 +139,16 @@ public class Ditherer implements AutoCloseable {
 			height,
 			dithered,
 			algorithm.getId(),
-			errorDiffusionRate,
-			noiseLevel
+			errRateR,
+			errRateG,
+			errRateB,
+			noiseLevel,
+			colorMetric.getId(),
+			buildProgressStub(),
+			clipX,
+			clipY,
+			clipW,
+			clipH
 		);
 
 		ditherTime = Math.toIntExact(System.currentTimeMillis() - startTime);
@@ -96,6 +163,12 @@ public class Ditherer implements AutoCloseable {
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
 				int paletteIndex = dithered[y][x];
+
+				if (paletteIndex < 0) {
+					resolved[y][x] = null;
+					continue;
+				}
+
 				int counter = perEntryCounters.merge(paletteIndex, 1, Integer::sum) - 1;
 				resolved[y][x] = freshSelectors.get(paletteIndex).pick(counter);
 			}
@@ -105,6 +178,7 @@ public class Ditherer implements AutoCloseable {
 	/**
 	 * Создаёт превью результата дизеринга — изображение, где каждый пиксель
 	 * заменён цветом ближайшего элемента палитры.
+	 * Пиксели вне clip_rect (sentinel -1) отображаются чёрным цветом.
 	 */
 	public BufferedImage createPreview() {
 		if (dithered == null) {
@@ -117,7 +191,9 @@ public class Ditherer implements AutoCloseable {
 
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
-				preview.setRGB(x, y, palette.get(dithered[y][x]).getRgb());
+				int paletteIndex = dithered[y][x];
+				int rgb = paletteIndex < 0 ? 0x000000 : palette.get(paletteIndex).getRgb();
+				preview.setRGB(x, y, rgb);
 			}
 		}
 
@@ -136,6 +212,10 @@ public class Ditherer implements AutoCloseable {
 
 		for (BlockData[] row : resolved) {
 			for (BlockData block : row) {
+				if (block == null) {
+					continue;
+				}
+
 				counts.merge(block, 1, Integer::sum);
 			}
 		}
@@ -162,7 +242,7 @@ public class Ditherer implements AutoCloseable {
 
 		for (BlockData[] row : resolved) {
 			for (BlockData block : row) {
-				if (block.isNeedSupport()) {
+				if (block != null && block.isNeedSupport()) {
 					count++;
 				}
 			}
@@ -184,6 +264,7 @@ public class Ditherer implements AutoCloseable {
 	@Override
 	public void close() {
 		nativeWrapper.close();
+		callbackArena.close();
 	}
 
 	/**
@@ -206,7 +287,7 @@ public class Ditherer implements AutoCloseable {
 
 	@Getter
 	@RequiredArgsConstructor
-	public enum Algorithm {
+	public enum Algorithm implements org.duollectis.mapart.tools.gui.HasDescription {
 		// Диффузия ошибки
 		FLOYD_STEINBERG(0),
 		STUCKI(1),
@@ -224,9 +305,58 @@ public class Ditherer implements AutoCloseable {
 		BAYER_8X8(11),
 
 		// Без дизеринга
-		NONE(12);
+		NONE(12),
+
+		// Расширенный упорядоченный дизеринг
+		BAYER_16X16(13),
+		CLUSTERED_DOT(14),
+		HALFTONE(15),
+		VOID_AND_CLUSTER(16),
+		BAYER_3X3(17),
+		ORDERED_3X3(18),
+		CLUSTERED_DOT_4X4(19),
+		VOID_AND_CLUSTER_14X14(20),
+
+		// Floyd-Steinberg с нестандартными делителями
+		FLOYD_STEINBERG_20(21),
+		FLOYD_STEINBERG_24(22),
+
+		// Однострочные фильтры диффузии
+		FAN(23),
+		SHIAU_FAN(24),
+		SHIAU_FAN_2(25),
+
+		// Дополнительные алгоритмы диффузии ошибки
+		PIGEON(26),
+		NAKANO(27),
+		ZHOU_FANG(28),
+
+		// Дополнительные матрицы упорядоченного дизеринга
+		DISPERSED_DOT_4X4(29),
+		DISPERSED_DOT_8X8(30),
+		BAYER_32X32(31),
+		MAGIC_SQUARE_5X5(32),
+		BLUE_NOISE_16X16(33);
 
 		private final int id;
+
+		@Override
+		public String toString() {
+			try {
+				return org.duollectis.mapart.tools.gui.Lang.t("algorithm." + name());
+			} catch (Exception ignored) {
+				return name();
+			}
+		}
+
+		@Override
+		public String getDescription() {
+			try {
+				return org.duollectis.mapart.tools.gui.Lang.t("algorithm." + name() + ".desc");
+			} catch (Exception ignored) {
+				return null;
+			}
+		}
 	}
 
 	private interface ImageDithererWrapper extends NativeWrapper {
@@ -240,8 +370,16 @@ public class Ditherer implements AutoCloseable {
 			int height,
 			int[][] dithered,
 			int algorithm,
-			double errorDiffusionRate,
-			double noiseLevel
+			double errRateR,
+			double errRateG,
+			double errRateB,
+			double noiseLevel,
+			int colorMetric,
+			MemorySegment onProgress,
+			int clipX,
+			int clipY,
+			int clipW,
+			int clipH
 		);
 	}
 }

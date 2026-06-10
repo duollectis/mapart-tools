@@ -5,7 +5,6 @@ import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -45,7 +44,7 @@ public class BlockData {
 	}
 
 	public Map<String, String> getProperties() {
-		return properties == null ? Collections.emptyMap() : properties;
+		return properties == null ? Map.of() : properties;
 	}
 
 	public boolean isSlab() {

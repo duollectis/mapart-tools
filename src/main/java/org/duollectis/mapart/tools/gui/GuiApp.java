@@ -16,26 +16,54 @@ import java.awt.RenderingHints;
 
 public class GuiApp {
 
-	static final Color BG_DEEP = new Color(13, 13, 20);
-	static final Color BG_CARD = new Color(22, 24, 35);
-	static final Color BG_INPUT = new Color(30, 32, 46);
-	static final Color BORDER = new Color(45, 48, 68);
-	static final Color ACCENT = new Color(99, 179, 237);
-	static final Color ACCENT_BRIGHT = new Color(144, 205, 244);
-	static final Color TEXT = new Color(226, 232, 240);
-	static final Color TEXT_DIM = new Color(113, 128, 150);
-	static final Color SUCCESS = new Color(72, 199, 142);
-	static final Color ERROR = new Color(252, 129, 129);
-	static final Color WARN = new Color(251, 191, 36);
-	static final Color SELECTION_BG = new Color(49, 130, 206, 180);
+	static AppTheme theme = AppTheme.dark();
 
-	private static final Color SCROLLBAR_THUMB = new Color(55, 60, 85);
-	private static final Color SCROLLBAR_THUMB_HOVER = new Color(80, 88, 120);
-	private static final Color SCROLLBAR_TRACK = new Color(18, 18, 28);
+	static Color BG_DEEP;
+	static Color BG_CARD;
+	static Color BG_INPUT;
+	static Color BORDER;
+	static Color ACCENT;
+	static Color ACCENT_BRIGHT;
+	static Color TEXT;
+	static Color TEXT_DIM;
+	static Color SUCCESS;
+	static Color ERROR;
+	static Color WARN;
+	static Color SELECTION_BG;
+
+	private static Color SCROLLBAR_THUMB;
+	private static Color SCROLLBAR_THUMB_HOVER;
+	private static Color SCROLLBAR_TRACK;
 
 	public static void launch() {
-		applyTheme();
+		String savedTheme = AppPreferences.loadTheme("dark");
+		applyTheme(savedTheme);
 		SwingUtilities.invokeLater(MainWindow::new);
+	}
+
+	static void applyTheme(String themeName) {
+		theme = AppTheme.load(themeName);
+		syncColorFields();
+		applyLookAndFeel();
+		applyUiDefaults();
+	}
+
+	private static void syncColorFields() {
+		BG_DEEP = theme.bgDeep();
+		BG_CARD = theme.bgCard();
+		BG_INPUT = theme.bgInput();
+		BORDER = theme.border();
+		ACCENT = theme.accent();
+		ACCENT_BRIGHT = theme.accentBright();
+		TEXT = theme.text();
+		TEXT_DIM = theme.textDim();
+		SUCCESS = theme.success();
+		ERROR = theme.error();
+		WARN = theme.warn();
+		SELECTION_BG = theme.selectionBg();
+		SCROLLBAR_THUMB = theme.scrollbarThumb();
+		SCROLLBAR_THUMB_HOVER = theme.scrollbarThumbHover();
+		SCROLLBAR_TRACK = theme.scrollbarTrack();
 	}
 
 	/**
@@ -100,7 +128,7 @@ public class GuiApp {
 		};
 	}
 
-	private static void applyTheme() {
+	private static void applyLookAndFeel() {
 		try {
 			for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
 				if ("Nimbus".equals(info.getName())) {
@@ -108,11 +136,10 @@ public class GuiApp {
 					break;
 				}
 			}
-		} catch (Exception ignored) {
+		}
+		catch (Exception ignored) {
 			// Оставляем стандартный L&F если Nimbus недоступен
 		}
-
-		applyUiDefaults();
 	}
 
 	private static void applyUiDefaults() {

@@ -93,6 +93,8 @@ public class ImportWorker extends SwingWorker<ImportWorker.Result, String> {
 		int totalWidth = gridWidth * MAP_SIZE;
 		int totalHeight = gridHeight * MAP_SIZE;
 		BlockData[][] merged = new BlockData[totalHeight][totalWidth];
+		// +1 строка: индекс 0 — опорный ряд первого тайла, индексы 1..totalHeight — реальные строки
+		int[][] mergedLevels = new int[totalHeight + 1][totalWidth];
 		Set<String> allBlockIds = new HashSet<>();
 
 		List<File> sorted = schematicFiles.stream()
@@ -109,6 +111,7 @@ public class ImportWorker extends SwingWorker<ImportWorker.Result, String> {
 				SchematicImportResult single = format.createReader().read(file);
 
 				BlockData[][] src = single.blocks();
+				int[][] srcLevels = single.topLevels();
 				int srcRows = src.length;
 				int srcCols = srcRows > 0 ? src[0].length : 0;
 
@@ -151,12 +154,41 @@ public class ImportWorker extends SwingWorker<ImportWorker.Result, String> {
 						merged[offsetY + y][offsetX + x] = src[y][x];
 					}
 				}
+
+				if (srcLevels == null) {
+					continue;
+				}
+
+				// srcLevels[0] — опорный ряд z=0, srcLevels[1..srcRows] — реальные строки.
+				// Реальные строки копируем в mergedLevels[offsetY+1..offsetY+srcRows].
+				// В позицию mergedLevels[offsetY] (предшественник первой строки тайла) записываем
+				// srcLevels[1] (первую реальную строку тайла) — это даёт NORMAL для первой строки
+				// каждого тайла и устраняет артефакты на границах между картами.
+				int rowWidth0 = srcLevels.length > 1 ? Math.min(srcLevels[1].length, MAP_SIZE) : 0;
+
+				for (int x = 0; x < rowWidth0; x++) {
+					mergedLevels[offsetY][offsetX + x] = srcLevels[1][x];
+				}
+
+				for (int lz = 1; lz < srcLevels.length; lz++) {
+					int destRow = offsetY + lz;
+
+					if (destRow >= mergedLevels.length) {
+						break;
+					}
+
+					int rowWidth = Math.min(srcLevels[lz].length, MAP_SIZE);
+
+					for (int x = 0; x < rowWidth; x++) {
+						mergedLevels[destRow][offsetX + x] = srcLevels[lz][x];
+					}
+				}
 			} catch (Exception e) {
 				publish(Lang.t("import.file.skip", file.getName(), e.getMessage()));
 			}
 		}
 
-		return new SchematicImportResult(merged, gridWidth, gridHeight, allBlockIds);
+		return new SchematicImportResult(merged, mergedLevels, gridWidth, gridHeight, allBlockIds);
 	}
 
 	@Override

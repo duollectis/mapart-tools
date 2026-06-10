@@ -398,7 +398,7 @@ public class BlockListDialog extends JDialog {
 				})
 				.toList();
 
-			if (withShulkers.isEmpty() == false) {
+			if (!withShulkers.isEmpty()) {
 				writer.println("=== Шалкеры ===");
 
 				for (BlockRow row : withShulkers) {
@@ -408,7 +408,7 @@ public class BlockListDialog extends JDialog {
 				}
 			}
 
-			if (withRemainders.isEmpty() == false) {
+			if (!withRemainders.isEmpty()) {
 				writer.println();
 				writer.println("=== Остатки ===");
 
@@ -419,8 +419,8 @@ public class BlockListDialog extends JDialog {
 				}
 			}
 
-			if (stacksOnly.isEmpty() == false) {
-				if (withShulkers.isEmpty() == false) {
+			if (!stacksOnly.isEmpty()) {
+				if (!withShulkers.isEmpty()) {
 					writer.println();
 				}
 
@@ -506,7 +506,7 @@ public class BlockListDialog extends JDialog {
 		StringBuilder result = new StringBuilder();
 
 		for (String word : words) {
-			if (result.length() > 0) {
+			if (!result.isEmpty()) {
 				result.append(' ');
 			}
 

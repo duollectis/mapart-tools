@@ -9,8 +9,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +119,7 @@ public class BlockTextureLoader {
 	public static Optional<BlockTextureLoader> create(String version) {
 		File archiveFile = new File(ARCHIVE_PREFIX + version + ARCHIVE_SUFFIX);
 
-		if (archiveFile.isFile() == false) {
+		if (!archiveFile.isFile()) {
 			return Optional.empty();
 		}
 
@@ -152,7 +150,7 @@ public class BlockTextureLoader {
 	 * @param blockId id блока в формате "minecraft:stone" или "stone"
 	 */
 	public Optional<ImageIcon> loadIcon(String blockId) {
-		return loadIcon(blockId, Collections.emptyMap());
+		return loadIcon(blockId, Map.of());
 	}
 
 	/**
@@ -344,7 +342,7 @@ public class BlockTextureLoader {
 	 */
 	private Optional<ImageIcon> findByMaterialPrefix(String textureName) {
 		for (String suffix : BLOCK_SUFFIXES) {
-			if (textureName.endsWith(suffix) == false) {
+			if (!textureName.endsWith(suffix)) {
 				continue;
 			}
 

@@ -23,39 +23,45 @@ import java.awt.RenderingHints;
 
 /**
  * Диалог настроек приложения.
- * Позволяет выбрать язык интерфейса. Изменения применяются после перезапуска.
+ * Позволяет выбрать язык интерфейса и тему оформления. Изменения применяются после перезапуска.
  */
 public class SettingsDialog extends JDialog {
-
-	private static final Color BG = GuiApp.BG_DEEP;
-	private static final Color CARD = GuiApp.BG_CARD;
-	private static final Color INPUT = GuiApp.BG_INPUT;
-	private static final Color BORDER = GuiApp.BORDER;
-	private static final Color ACCENT = GuiApp.ACCENT;
-	private static final Color TEXT = GuiApp.TEXT;
-	private static final Color TEXT_DIM = GuiApp.TEXT_DIM;
-	private static final Color SUCCESS = GuiApp.SUCCESS;
 
 	private static final String[][] LANGUAGES = {
 		{"ru_ru", "Русский"},
 		{"en_us", "English"}
 	};
 
+	private static final String[][] THEMES = {
+		{"dark", null},
+		{"light", null}
+	};
+
 	private ModernComboBox<String> langCombo;
+	private ModernComboBox<String> themeCombo;
+	private String initialLocale;
+
 	@Getter
 	private boolean confirmed = false;
 
 	public SettingsDialog(JFrame parent) {
 		super(parent, Lang.t("settings.title"), true);
+		initialLocale = AppPreferences.loadLocale("ru_ru");
 		buildUi();
-		setSize(360, 180);
+		setSize(360, 240);
 		setResizable(false);
 		setLocationRelativeTo(parent);
 		setVisible(true);
 	}
 
+	public boolean isLocaleChanged() {
+		int idx = langCombo.getSelectedIndex();
+		String selected = (idx >= 0 && idx < LANGUAGES.length) ? LANGUAGES[idx][0] : initialLocale;
+		return !selected.equals(initialLocale);
+	}
+
 	private void buildUi() {
-		getContentPane().setBackground(BG);
+		getContentPane().setBackground(GuiApp.BG_DEEP);
 		setLayout(new BorderLayout());
 
 		add(buildContent(), BorderLayout.CENTER);
@@ -66,11 +72,31 @@ public class SettingsDialog extends JDialog {
 		JPanel card = buildCard();
 		card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
 
-		JLabel langLabel = new JLabel(Lang.t("settings.language"));
-		langLabel.setForeground(TEXT_DIM);
-		langLabel.setFont(new Font("SansSerif", Font.BOLD, 11));
-		langLabel.setAlignmentX(LEFT_ALIGNMENT);
+		card.add(buildRowLabel("settings.language"));
+		card.add(Box.createVerticalStrut(6));
+		card.add(buildLangCombo());
+		card.add(Box.createVerticalStrut(12));
+		card.add(buildRowLabel("settings.theme"));
+		card.add(Box.createVerticalStrut(6));
+		card.add(buildThemeCombo());
 
+		JPanel wrapper = new JPanel(new BorderLayout());
+		wrapper.setBackground(GuiApp.BG_DEEP);
+		wrapper.setBorder(BorderFactory.createEmptyBorder(10, 12, 6, 12));
+		wrapper.add(card, BorderLayout.CENTER);
+
+		return wrapper;
+	}
+
+	private JLabel buildRowLabel(String langKey) {
+		JLabel label = new JLabel(Lang.t(langKey));
+		label.setForeground(GuiApp.TEXT_DIM);
+		label.setFont(new Font("SansSerif", Font.BOLD, 11));
+		label.setAlignmentX(LEFT_ALIGNMENT);
+		return label;
+	}
+
+	private ModernComboBox<String> buildLangCombo() {
 		String[] displayNames = new String[LANGUAGES.length];
 
 		for (int i = 0; i < LANGUAGES.length; i++) {
@@ -90,29 +116,42 @@ public class SettingsDialog extends JDialog {
 			}
 		}
 
-		card.add(langLabel);
-		card.add(Box.createVerticalStrut(6));
-		card.add(langCombo);
+		return langCombo;
+	}
 
-		JPanel wrapper = new JPanel(new BorderLayout());
-		wrapper.setBackground(BG);
-		wrapper.setBorder(BorderFactory.createEmptyBorder(10, 12, 6, 12));
-		wrapper.add(card, BorderLayout.CENTER);
+	private ModernComboBox<String> buildThemeCombo() {
+		THEMES[0][1] = Lang.t("settings.theme_dark");
+		THEMES[1][1] = Lang.t("settings.theme_light");
 
-		return wrapper;
+		String[] displayNames = {THEMES[0][1], THEMES[1][1]};
+
+		themeCombo = new ModernComboBox<>(displayNames);
+		themeCombo.setAlignmentX(LEFT_ALIGNMENT);
+		themeCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+
+		String savedTheme = AppPreferences.loadTheme("dark");
+
+		for (int i = 0; i < THEMES.length; i++) {
+			if (THEMES[i][0].equals(savedTheme)) {
+				themeCombo.setSelectedIndex(i);
+				break;
+			}
+		}
+
+		return themeCombo;
 	}
 
 	private JPanel buildBottomBar() {
-		JButton saveBtn = buildPrimaryButton(Lang.t("settings.save"), ACCENT, BG);
-		JButton cancelBtn = buildAccentButton(Lang.t("settings.cancel"), INPUT, TEXT_DIM);
+		JButton saveBtn = buildPrimaryButton(Lang.t("settings.save"), GuiApp.ACCENT, GuiApp.BG_DEEP);
+		JButton cancelBtn = buildAccentButton(Lang.t("settings.cancel"), GuiApp.BG_INPUT, GuiApp.TEXT_DIM);
 
 		saveBtn.addActionListener(e -> onSave());
 		cancelBtn.addActionListener(e -> dispose());
 
 		JPanel bar = new JPanel(new BorderLayout(8, 0));
-		bar.setBackground(BG);
+		bar.setBackground(GuiApp.BG_DEEP);
 		bar.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER),
+			BorderFactory.createMatteBorder(1, 0, 0, 0, GuiApp.BORDER),
 			BorderFactory.createEmptyBorder(10, 12, 10, 12)
 		));
 		bar.add(cancelBtn, BorderLayout.WEST);
@@ -122,10 +161,16 @@ public class SettingsDialog extends JDialog {
 	}
 
 	private void onSave() {
-		int idx = langCombo.getSelectedIndex();
+		int langIdx = langCombo.getSelectedIndex();
 
-		if (idx >= 0 && idx < LANGUAGES.length) {
-			AppPreferences.saveLocale(LANGUAGES[idx][0]);
+		if (langIdx >= 0 && langIdx < LANGUAGES.length) {
+			AppPreferences.saveLocale(LANGUAGES[langIdx][0]);
+		}
+
+		int themeIdx = themeCombo.getSelectedIndex();
+
+		if (themeIdx >= 0 && themeIdx < THEMES.length) {
+			AppPreferences.saveTheme(THEMES[themeIdx][0]);
 		}
 
 		confirmed = true;
@@ -133,7 +178,6 @@ public class SettingsDialog extends JDialog {
 	}
 
 	private JPanel buildCard() {
-
 		return new JPanel() {
 			{
 				setOpaque(false);
@@ -144,9 +188,9 @@ public class SettingsDialog extends JDialog {
 			protected void paintComponent(Graphics g) {
 				Graphics2D g2 = (Graphics2D) g.create();
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(CARD);
+				g2.setColor(GuiApp.BG_CARD);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-				g2.setColor(BORDER);
+				g2.setColor(GuiApp.BORDER);
 				g2.setStroke(new BasicStroke(1f));
 				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 16, 16);
 				g2.dispose();
@@ -192,7 +236,7 @@ public class SettingsDialog extends JDialog {
 					: (getModel().isRollover() ? bgColor.brighter() : bgColor);
 				g2.setColor(base);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-				g2.setColor(BORDER);
+				g2.setColor(GuiApp.BORDER);
 				g2.setStroke(new BasicStroke(1f));
 				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
 				g2.dispose();

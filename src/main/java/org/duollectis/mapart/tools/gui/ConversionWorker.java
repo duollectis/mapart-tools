@@ -5,6 +5,7 @@ import org.duollectis.mapart.tools.converter.CropSettings;
 import org.duollectis.mapart.tools.converter.Ditherer;
 import org.duollectis.mapart.tools.converter.DitherSettings;
 import org.duollectis.mapart.tools.converter.ImageConverter;
+import org.duollectis.mapart.tools.converter.StaircaseMode;
 import org.duollectis.mapart.tools.converter.WeightedSelector;
 import org.duollectis.mapart.tools.utils.image.ImageAdjustments;
 
@@ -20,6 +21,9 @@ import java.util.function.Consumer;
  * <p>
  * Принимает уже загруженный {@code paletteJson} — повторное чтение ZIP
  * из classpath не происходит, что устраняет задержку при повторных запусках.
+ * <p>
+ * Прогресс дизеринга (0–100) публикуется через {@link SwingWorker#setProgress},
+ * что позволяет GUI обновлять {@code JProgressBar} без блокировки EDT.
  */
 public class ConversionWorker extends SwingWorker<Ditherer, String> {
 
@@ -33,9 +37,11 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 	private final DitherSettings ditherSettings;
 	private final CropSettings cropSettings;
 	private final Map<String, WeightedSelector<BlockData>> blockSelectors;
-	private final Consumer<String> onProgress;
+	private final StaircaseMode staircaseMode;
+	private final Consumer<String> onLog;
 	private final Consumer<Ditherer> onSuccess;
 	private final Consumer<String> onError;
+	private final Runnable onCancelled;
 
 	public ConversionWorker(
 		String paletteJson,
@@ -48,9 +54,11 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 		DitherSettings ditherSettings,
 		CropSettings cropSettings,
 		Map<String, WeightedSelector<BlockData>> blockSelectors,
-		Consumer<String> onProgress,
+		StaircaseMode staircaseMode,
+		Consumer<String> onLog,
 		Consumer<Ditherer> onSuccess,
-		Consumer<String> onError
+		Consumer<String> onError,
+		Runnable onCancelled
 	) {
 		this.paletteJson = paletteJson;
 		this.imageFile = imageFile;
@@ -62,9 +70,11 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 		this.ditherSettings = ditherSettings;
 		this.cropSettings = cropSettings;
 		this.blockSelectors = blockSelectors;
-		this.onProgress = onProgress;
+		this.staircaseMode = staircaseMode;
+		this.onLog = onLog;
 		this.onSuccess = onSuccess;
 		this.onError = onError;
+		this.onCancelled = onCancelled;
 	}
 
 	@Override
@@ -82,17 +92,27 @@ public class ConversionWorker extends SwingWorker<Ditherer, String> {
 			adjustments,
 			ditherSettings,
 			cropSettings,
-			blockSelectors
+			blockSelectors,
+			staircaseMode,
+			percent -> {
+				setProgress(percent);
+				return isCancelled() ? 1 : 0;
+			}
 		);
 	}
 
 	@Override
 	protected void process(java.util.List<String> chunks) {
-		chunks.forEach(onProgress);
+		chunks.forEach(onLog);
 	}
 
 	@Override
 	protected void done() {
+		if (isCancelled()) {
+			onCancelled.run();
+			return;
+		}
+
 		try {
 			onSuccess.accept(get());
 		} catch (Exception e) {

@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.experimental.UtilityClass;
 import org.duollectis.mapart.tools.converter.BlockData;
+import org.duollectis.mapart.tools.converter.ColorMetric;
 import org.duollectis.mapart.tools.converter.DitherSettings;
 import org.duollectis.mapart.tools.converter.SchematicFormat;
 import org.duollectis.mapart.tools.converter.SupportBlockSettings;
@@ -46,10 +47,15 @@ public class AppPreferences {
 	private static final String KEY_GAMMA = "gamma";
 	private static final String KEY_HUE = "hue";
 	private static final String KEY_AUTO_CONVERT = "auto_convert";
-	private static final String KEY_ERROR_DIFFUSION_RATE = "error_diffusion_rate";
+	private static final String KEY_ERR_RATE_R = "err_rate_r";
+	private static final String KEY_ERR_RATE_G = "err_rate_g";
+	private static final String KEY_ERR_RATE_B = "err_rate_b";
 	private static final String KEY_NOISE_LEVEL = "noise_level";
+	private static final String KEY_ERR_RATE_LINKED = "err_rate_linked";
+	private static final String KEY_COLOR_METRIC = "color_metric";
 	private static final String KEY_BLOCK_SELECTORS = "block_selectors";
 	private static final String KEY_SCHEMATIC_FORMAT = "schematic_format";
+	private static final String KEY_THEME = "theme";
 
 	public void saveVersion(String version) {
 		putString(KEY_VERSION, version);
@@ -343,6 +349,14 @@ public class AppPreferences {
 		return result;
 	}
 
+	public void saveTheme(String themeName) {
+		putString(KEY_THEME, themeName);
+	}
+
+	public String loadTheme(String defaultValue) {
+		return getString(KEY_THEME, defaultValue);
+	}
+
 	public void saveSchematicFormat(SchematicFormat format) {
 		putString(KEY_SCHEMATIC_FORMAT, format.name());
 	}
@@ -359,21 +373,51 @@ public class AppPreferences {
 
 	public void saveDitherSettings(DitherSettings settings) {
 		JsonObject root = readRoot();
-		root.addProperty(KEY_ERROR_DIFFUSION_RATE, settings.errorDiffusionRate());
+		root.addProperty(KEY_ERR_RATE_R, settings.errRateR());
+		root.addProperty(KEY_ERR_RATE_G, settings.errRateG());
+		root.addProperty(KEY_ERR_RATE_B, settings.errRateB());
 		root.addProperty(KEY_NOISE_LEVEL, settings.noiseLevel());
+		root.addProperty(KEY_COLOR_METRIC, settings.colorMetric().name());
 		writeRoot(root);
+	}
+
+	public void saveErrRateLinked(boolean linked) {
+		JsonObject root = readRoot();
+		root.addProperty(KEY_ERR_RATE_LINKED, linked);
+		writeRoot(root);
+	}
+
+	public boolean loadErrRateLinked() {
+		JsonObject root = readRoot();
+		return root.has(KEY_ERR_RATE_LINKED) && root.get(KEY_ERR_RATE_LINKED).getAsBoolean();
 	}
 
 	public DitherSettings loadDitherSettings() {
 		DitherSettings defaults = DitherSettings.defaults();
 		JsonObject root = readRoot();
-		double errorRate = root.has(KEY_ERROR_DIFFUSION_RATE)
-				? root.get(KEY_ERROR_DIFFUSION_RATE).getAsDouble()
-				: defaults.errorDiffusionRate();
+		double errRateR = root.has(KEY_ERR_RATE_R)
+			? root.get(KEY_ERR_RATE_R).getAsDouble()
+			: defaults.errRateR();
+		double errRateG = root.has(KEY_ERR_RATE_G)
+			? root.get(KEY_ERR_RATE_G).getAsDouble()
+			: defaults.errRateG();
+		double errRateB = root.has(KEY_ERR_RATE_B)
+			? root.get(KEY_ERR_RATE_B).getAsDouble()
+			: defaults.errRateB();
 		double noiseLevel = root.has(KEY_NOISE_LEVEL)
-				? root.get(KEY_NOISE_LEVEL).getAsDouble()
-				: defaults.noiseLevel();
-		return new DitherSettings(errorRate, noiseLevel);
+			? root.get(KEY_NOISE_LEVEL).getAsDouble()
+			: defaults.noiseLevel();
+		ColorMetric metric = defaults.colorMetric();
+
+		if (root.has(KEY_COLOR_METRIC)) {
+			try {
+				metric = ColorMetric.valueOf(root.get(KEY_COLOR_METRIC).getAsString());
+			} catch (IllegalArgumentException ignored) {
+				// неизвестная метрика — оставляем дефолт
+			}
+		}
+
+		return new DitherSettings(errRateR, errRateG, errRateB, noiseLevel, metric);
 	}
 
 	private void putString(String key, String value) {

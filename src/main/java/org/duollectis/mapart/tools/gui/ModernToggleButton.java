@@ -1,11 +1,13 @@
 package org.duollectis.mapart.tools.gui;
 
+import javax.swing.Timer;
 import javax.swing.JToggleButton;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -14,20 +16,33 @@ import java.awt.event.MouseEvent;
 
 /**
  * Кастомная кнопка-переключатель в стиле pill:
- * скруглённый фон, акцентный цвет при активации, hover-эффект.
+ * скруглённый фон, акцентный цвет при активации.
+ * Переход on/off анимирован через {@link UiAnimator#animateFloat} с easeOutCubic.
  */
 public class ModernToggleButton extends JToggleButton {
 
-	private static final Color BG_OFF = GuiApp.BG_INPUT;
-	private static final Color BG_ON = GuiApp.ACCENT;
-	private static final Color BG_HOVER_OFF = new Color(40, 44, 64);
-	private static final Color BG_HOVER_ON = new Color(116, 192, 252);
-	private static final Color BORDER_OFF = GuiApp.BORDER;
-	private static final Color BORDER_ON = GuiApp.ACCENT;
-	private static final Color TEXT_OFF = GuiApp.TEXT_DIM;
+	private static Color bgOff() { return GuiApp.BG_INPUT; }
+
+	private static Color bgOn() { return GuiApp.ACCENT; }
+
+	private static Color bgHoverOff() { return GuiApp.BG_CARD; }
+
+	private static Color bgHoverOn() { return GuiApp.ACCENT_BRIGHT; }
+
+	private static Color borderOff() { return GuiApp.BORDER; }
+
+	private static Color borderOn() { return GuiApp.ACCENT; }
+
+	private static Color textOff() { return GuiApp.TEXT_DIM; }
+
 	private static final Color TEXT_ON = Color.WHITE;
 
 	private boolean hovered = false;
+
+	/** Прогресс анимации toggle: 0.0 = off, 1.0 = on */
+	private float toggleProgress;
+
+	private Timer toggleTimer;
 
 	public ModernToggleButton(String text) {
 		super(text);
@@ -37,6 +52,8 @@ public class ModernToggleButton extends JToggleButton {
 		setFocusPainted(false);
 		setFont(new Font("SansSerif", Font.PLAIN, 12));
 		setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+		toggleProgress = 0f;
 
 		addMouseListener(new MouseAdapter() {
 			@Override
@@ -51,6 +68,31 @@ public class ModernToggleButton extends JToggleButton {
 				repaint();
 			}
 		});
+
+		addActionListener(e -> animateToggle(isSelected()));
+	}
+
+	/**
+		* Синхронизирует визуальный прогресс анимации с текущим состоянием кнопки
+		* без анимации — нужно вызывать после программного setSelected().
+		*/
+	public void syncVisualState() {
+		toggleProgress = isSelected() ? 1f : 0f;
+		repaint();
+	}
+
+	private void animateToggle(boolean toOn) {
+		if (toggleTimer != null) {
+			toggleTimer.stop();
+		}
+
+		float from = toggleProgress;
+		float to = toOn ? 1f : 0f;
+
+		toggleTimer = UiAnimator.animateFloat(from, to, 180, progress -> {
+			toggleProgress = progress;
+			repaint();
+		}, null);
 	}
 
 	@Override
@@ -59,12 +101,11 @@ public class ModernToggleButton extends JToggleButton {
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-		boolean on = isSelected();
-		Color bg = on
-				? (hovered ? BG_HOVER_ON : BG_ON)
-				: (hovered ? BG_HOVER_OFF : BG_OFF);
-		Color border = on ? BORDER_ON : BORDER_OFF;
-		Color fg = on ? TEXT_ON : TEXT_OFF;
+		Color bgFrom = hovered ? bgHoverOff() : bgOff();
+		Color bgTo = hovered ? bgHoverOn() : bgOn();
+		Color bg = UiAnimator.lerp(bgFrom, bgTo, toggleProgress);
+		Color border = UiAnimator.lerp(borderOff(), borderOn(), toggleProgress);
+		Color fg = UiAnimator.lerp(textOff(), TEXT_ON, toggleProgress);
 
 		g2.setColor(bg);
 		g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
@@ -75,7 +116,7 @@ public class ModernToggleButton extends JToggleButton {
 
 		g2.setColor(fg);
 		g2.setFont(getFont());
-		java.awt.FontMetrics fm = g2.getFontMetrics();
+		FontMetrics fm = g2.getFontMetrics();
 		int tx = (getWidth() - fm.stringWidth(getText())) / 2;
 		int ty = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
 		g2.drawString(getText(), tx, ty);
@@ -85,7 +126,7 @@ public class ModernToggleButton extends JToggleButton {
 
 	@Override
 	public Dimension getPreferredSize() {
-		java.awt.FontMetrics fm = getFontMetrics(getFont());
+		FontMetrics fm = getFontMetrics(getFont());
 		int w = fm.stringWidth(getText()) + 24;
 		return new Dimension(w, 28);
 	}
