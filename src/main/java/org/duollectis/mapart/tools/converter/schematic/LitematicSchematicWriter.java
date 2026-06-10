@@ -87,8 +87,10 @@ public class LitematicSchematicWriter extends SchematicWriter {
 		NbtCompound region = new NbtCompound();
 		region.put("BlockStatePalette", buildPaletteNbt());
 		region.putLongArray("BlockStates", packBlockStates());
-		region.put("Size", buildVectorNbt(sizeX, sizeY, sizeZ));
-		region.put("Position", buildVectorNbt(0, 0, 0));
+		// Litematica кодирует направление региона знаком: отрицательный Z означает
+		// что регион идёт в сторону убывания Z от точки Position
+		region.put("Size", buildVectorNbt(sizeX, sizeY, -sizeZ));
+		region.put("Position", buildVectorNbt(0, 0, sizeZ - 1));
 		region.put("Entities", new NbtList());
 		region.put("TileEntities", new NbtList());
 		region.put("PendingBlockTicks", new NbtList());
@@ -98,23 +100,33 @@ public class LitematicSchematicWriter extends SchematicWriter {
 	}
 
 	/**
-	 * Упаковывает индексы блоков в long[].
-	 * Каждый long хранит несколько индексов без переноса через границу long.
+	 * Упаковывает индексы блоков в long[] с переносом через границу long.
+	 * Стандарт Minecraft 1.16+: индекс блока i занимает биты [i*bpp .. (i+1)*bpp),
+	 * при этом один индекс может быть разбит между двумя соседними long-ами.
+	 * Размер массива: {@code ceil(totalBlocks * bitsPerBlock / 64)}.
 	 */
 	private long[] packBlockStates() {
 		int paletteSize = Math.max(1, paletteList.size());
 		int bitsPerBlock = Math.max(MIN_BITS_PER_BLOCK, ceilLog2(paletteSize));
-		int blocksPerLong = 64 / bitsPerBlock;
 		int totalBlocks = sizeX * sizeY * sizeZ;
-		int longCount = (totalBlocks + blocksPerLong - 1) / blocksPerLong;
+		int longCount = (totalBlocks * bitsPerBlock + 63) / 64;
 
 		long[] longs = new long[longCount];
 		long mask = (1L << bitsPerBlock) - 1;
 
 		for (int i = 0; i < totalBlocks; i++) {
-			int longIndex = i / blocksPerLong;
-			int bitOffset = (i % blocksPerLong) * bitsPerBlock;
-			longs[longIndex] |= ((long) blockIndices[i] & mask) << bitOffset;
+			int bitStart = i * bitsPerBlock;
+			int longIndex = bitStart / 64;
+			int bitOffset = bitStart % 64;
+			long value = (long) blockIndices[i] & mask;
+
+			longs[longIndex] |= value << bitOffset;
+
+			int bitsInFirstLong = 64 - bitOffset;
+
+			if (bitsInFirstLong < bitsPerBlock) {
+				longs[longIndex + 1] |= value >>> bitsInFirstLong;
+			}
 		}
 
 		return longs;

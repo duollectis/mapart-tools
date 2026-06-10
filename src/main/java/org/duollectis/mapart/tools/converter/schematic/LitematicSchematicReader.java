@@ -12,9 +12,10 @@ import java.util.List;
  * Читает схематику формата Litematica (.litematic).
  * <p>
  * Структура: {@code Regions.{name}.BlockStatePalette}, {@code BlockStates} (packed long[]),
- * {@code Size} → {x, y, z}. Индекс блока: {@code x + z*sizeX + y*sizeX*sizeZ}.
- * Биты упакованы без переноса через границу long:
- * {@code bitsPerBlock = max(4, ceil(log2(paletteSize)))}.
+ * {@code Size} → {x, y, z} (z может быть отрицательным — Litematica кодирует направление знаком).
+ * Индекс блока: {@code x + z*sizeX + y*sizeX*sizeZ}.
+ * Биты упакованы с переносом через границу long (стандарт Minecraft 1.16+):
+ * {@code bitsPerBlock = max(4, ceil(log2(paletteSize)))}, размер массива {@code ceil(total*bpp/64)}.
  */
 public class LitematicSchematicReader extends SchematicReader {
 
@@ -60,7 +61,7 @@ public class LitematicSchematicReader extends SchematicReader {
 
 	/**
 	 * Распаковывает packed long[] в трёхмерный объём блоков.
-	 * Каждый long хранит несколько индексов без переноса через границу long.
+	 * Стандарт Minecraft 1.16+: биты упакованы с переносом через границу long.
 	 * Индекс блока в массиве: {@code x + z*sizeX + y*sizeX*sizeZ}.
 	 */
 	private static BlockData[][][] unpackVolume(
@@ -72,7 +73,6 @@ public class LitematicSchematicReader extends SchematicReader {
 	) {
 		int paletteSize = Math.max(1, palette.size());
 		int bitsPerBlock = Math.max(MIN_BITS_PER_BLOCK, ceilLog2(paletteSize));
-		int blocksPerLong = 64 / bitsPerBlock;
 		long mask = (1L << bitsPerBlock) - 1;
 
 		int totalBlocks = sizeX * sizeY * sizeZ;
@@ -80,14 +80,21 @@ public class LitematicSchematicReader extends SchematicReader {
 		BlockData[][][] volume = new BlockData[sizeY][sizeZ][sizeX];
 
 		for (int i = 0; i < totalBlocks; i++) {
-			int longIndex = i / blocksPerLong;
-			int bitOffset = (i % blocksPerLong) * bitsPerBlock;
+			int bitStart = i * bitsPerBlock;
+			int longIndex = bitStart / 64;
+			int bitOffset = bitStart % 64;
 
-			int paletteIndex = longIndex < packedStates.length
-				? (int) ((packedStates[longIndex] >> bitOffset) & mask)
-				: 0;
+			long raw = longIndex < packedStates.length ? packedStates[longIndex] : 0L;
+			long value = (raw >>> bitOffset) & mask;
 
-			BlockData block = paletteIndex < palette.size() ? palette.get(paletteIndex) : air;
+			int bitsInFirstLong = 64 - bitOffset;
+
+			if (bitsInFirstLong < bitsPerBlock && longIndex + 1 < packedStates.length) {
+				value |= (packedStates[longIndex + 1] << bitsInFirstLong) & mask;
+			}
+
+			int paletteIdx = (int) value;
+			BlockData block = paletteIdx < palette.size() ? palette.get(paletteIdx) : air;
 
 			// Индекс i = x + z*sizeX + y*sizeX*sizeZ → обратное преобразование
 			int x = i % sizeX;
