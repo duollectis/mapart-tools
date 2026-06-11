@@ -11,18 +11,15 @@ import org.duollectis.mapart.tools.utils.image.ImageAdjustments;
 import org.duollectis.mapart.tools.utils.image.ImageUtils;
 
 import javax.imageio.ImageIO;
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntUnaryOperator;
 
 public class ImageConverter {
 
@@ -34,6 +31,11 @@ public class ImageConverter {
 
 	public ImageConverter() {
 		ditherer = new Ditherer(NativeHolder.getLib());
+	}
+
+	/** Конструктор для unit-тестов: не инициализирует нативный дизерер. */
+	ImageConverter(Ditherer ditherer) {
+		this.ditherer = ditherer;
 	}
 
 	/**
@@ -64,7 +66,7 @@ public class ImageConverter {
 		CropSettings cropSettings,
 		Map<String, WeightedSelector<BlockData>> blockSelectors,
 		StaircaseMode staircaseMode,
-		java.util.function.IntUnaryOperator onProgress
+		IntUnaryOperator onProgress
 	) {
 		Set<String> allowedBlocks = loadAllowedBlocks(blocksFile);
 		loadPalette(paletteJson, allowedBlocks, blockSelectors, staircaseMode);
@@ -225,6 +227,10 @@ public class ImageConverter {
 				palette.add(new PaletteEntry(blocks, scaledColor, brightness, baseSelector.copy()));
 			}
 		});
+	}
+
+	public int getPaletteSize() {
+		return palette.size();
 	}
 
 	private static WeightedSelector<BlockData> buildEqualSelector(List<BlockData> blocks) {

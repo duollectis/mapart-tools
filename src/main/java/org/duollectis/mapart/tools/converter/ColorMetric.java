@@ -2,8 +2,8 @@ package org.duollectis.mapart.tools.converter;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.duollectis.mapart.tools.gui.HasDescription;
 import org.duollectis.mapart.tools.gui.Lang;
+import org.duollectis.mapart.tools.gui.widget.HasDescription;
 
 /**
  * Метрика цветового расстояния, используемая при поиске ближайшего цвета в палитре.

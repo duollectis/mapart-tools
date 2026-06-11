@@ -42,9 +42,16 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.14.0'
     implementation 'info.picocli:picocli:4.7.7'
     implementation 'com.google.guava:guava:33.4.8-jre'
+    implementation 'com.formdev:svgSalamander:1.1.4'
 
     compileOnly 'org.projectlombok:lombok:1.18.38'
     annotationProcessor 'org.projectlombok:lombok:1.18.38'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testImplementation 'org.assertj:assertj-core:3.27.3'
+    testCompileOnly 'org.projectlombok:lombok:1.18.38'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.38'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 jar {
@@ -69,6 +76,12 @@ jar {
 
     // Промежуточный fat-JAR кладём во временную папку — финальным будет shrunk
     destinationDirectory = file("${buildDir}/libs-temp")
+}
+
+test {
+    useJUnitPlatform()
+    jvmArgs += '--enable-preview'
+    jvmArgs += '--enable-native-access=ALL-UNNAMED'
 }
 
 tasks.withType(JavaCompile).configureEach {

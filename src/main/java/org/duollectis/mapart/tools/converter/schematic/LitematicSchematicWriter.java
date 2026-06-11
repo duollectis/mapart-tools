@@ -4,7 +4,6 @@ import net.minecraft.nbt.elements.NbtCompound;
 import net.minecraft.nbt.elements.NbtList;
 import org.duollectis.mapart.tools.converter.BlockData;
 
-import java.util.Arrays;
 import java.util.Map;
 
 /**

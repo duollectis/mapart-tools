@@ -1,17 +1,8 @@
 package org.duollectis.mapart.tools.gui;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import lombok.experimental.UtilityClass;
-import org.duollectis.mapart.tools.converter.BlockData;
-import org.duollectis.mapart.tools.converter.ColorMetric;
-import org.duollectis.mapart.tools.converter.DitherSettings;
-import org.duollectis.mapart.tools.converter.SchematicFormat;
-import org.duollectis.mapart.tools.converter.SupportBlockSettings;
-import org.duollectis.mapart.tools.converter.WeightedSelector;
+import org.duollectis.mapart.tools.converter.*;
 
 import java.io.IOException;
 import java.nio.file.Files;

@@ -4,19 +4,17 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.duollectis.mapart.tools.gui.Lang;
+import org.duollectis.mapart.tools.gui.widget.HasDescription;
 import org.duollectis.mapart.tools.nativee.NativeBridge;
 import org.duollectis.mapart.tools.nativee.NativeMethod;
 import org.duollectis.mapart.tools.nativee.NativeWrapper;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.LinkedHashMap;
@@ -287,7 +285,7 @@ public class Ditherer implements AutoCloseable {
 
 	@Getter
 	@RequiredArgsConstructor
-	public enum Algorithm implements org.duollectis.mapart.tools.gui.HasDescription {
+	public enum Algorithm implements HasDescription {
 		// Диффузия ошибки
 		FLOYD_STEINBERG(0),
 		STUCKI(1),
@@ -343,7 +341,7 @@ public class Ditherer implements AutoCloseable {
 		@Override
 		public String toString() {
 			try {
-				return org.duollectis.mapart.tools.gui.Lang.t("algorithm." + name());
+				return Lang.t("algorithm." + name());
 			} catch (Exception ignored) {
 				return name();
 			}
@@ -352,7 +350,7 @@ public class Ditherer implements AutoCloseable {
 		@Override
 		public String getDescription() {
 			try {
-				return org.duollectis.mapart.tools.gui.Lang.t("algorithm." + name() + ".desc");
+				return Lang.t("algorithm." + name() + ".desc");
 			} catch (Exception ignored) {
 				return null;
 			}

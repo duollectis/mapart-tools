@@ -6,7 +6,6 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class BlockLeveler {
 
 	private static final String AIR_BLOCK_ID = "minecraft:air";
@@ -171,16 +170,6 @@ public class BlockLeveler {
 
 			plateaus.remove(0);
 			prevNonPlateauShift[0] = prevNonPlateauShift[1];
-		}
-	}
-
-	private void shiftSegment(int x, int fromY, int toY, int shift) {
-		if (shift == 0) {
-			return;
-		}
-
-		for (int y = fromY; y <= toY; y++) {
-			processed[y][x].addLevel(shift);
 		}
 	}
 

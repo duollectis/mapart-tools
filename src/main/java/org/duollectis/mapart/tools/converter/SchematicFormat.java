@@ -1,11 +1,6 @@
 package org.duollectis.mapart.tools.converter;
 
-import org.duollectis.mapart.tools.converter.schematic.LitematicSchematicReader;
-import org.duollectis.mapart.tools.converter.schematic.LitematicSchematicWriter;
-import org.duollectis.mapart.tools.converter.schematic.NbtSchematicReader;
-import org.duollectis.mapart.tools.converter.schematic.NbtSchematicWriter;
-import org.duollectis.mapart.tools.converter.schematic.SchematicReader;
-import org.duollectis.mapart.tools.converter.schematic.SchematicWriter;
+import org.duollectis.mapart.tools.converter.schematic.*;
 
 /**
  * Формат схематики карт-арта.
@@ -35,6 +30,18 @@ public enum SchematicFormat {
 		@Override
 		public SchematicReader createReader() {
 			return new LitematicSchematicReader();
+		}
+	},
+
+	SCHEM(".schem") {
+		@Override
+		public SchematicWriter createWriter(int sizeX, int sizeY, int sizeZ, String name) {
+			return new SpongeSchematicWriter(sizeX, sizeY, sizeZ, name);
+		}
+
+		@Override
+		public SchematicReader createReader() {
+			return new SpongeSchematicReader();
 		}
 	};
 

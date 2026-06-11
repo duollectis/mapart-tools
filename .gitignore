@@ -33,3 +33,4 @@ src/main/resources/native/libmt-ditherer.so
 settings.json
 blocks.txt
 /scripts
+/local/

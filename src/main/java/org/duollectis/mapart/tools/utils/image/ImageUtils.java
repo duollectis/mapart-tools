@@ -3,9 +3,7 @@ package org.duollectis.mapart.tools.utils.image;
 import lombok.experimental.UtilityClass;
 import org.duollectis.mapart.tools.converter.CropSettings;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 
 @UtilityClass

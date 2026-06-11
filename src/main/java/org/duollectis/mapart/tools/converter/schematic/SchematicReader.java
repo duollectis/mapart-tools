@@ -6,11 +6,7 @@ import net.minecraft.nbt.utils.NbtSizeTracker;
 import org.duollectis.mapart.tools.converter.BlockData;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Базовый класс для чтения схематик карт-артов.
