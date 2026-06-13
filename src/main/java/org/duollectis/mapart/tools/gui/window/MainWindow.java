@@ -1,23 +1,32 @@
 package org.duollectis.mapart.tools.gui.window;
 
+import org.duollectis.mapart.tools.app.DiscordRpc;
+import org.duollectis.mapart.tools.app.SingleInstanceGuard;
 import org.duollectis.mapart.tools.converter.*;
 import org.duollectis.mapart.tools.converter.schematic.SchematicImportResult;
+import org.duollectis.mapart.tools.gui.AppLocale;
+import org.duollectis.mapart.tools.gui.AppPreferences;
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.Lang;
 import org.duollectis.mapart.tools.gui.dialog.BlockListDialog;
-import org.duollectis.mapart.tools.gui.util.ThemeEventBus;
+import org.duollectis.mapart.tools.gui.keybind.KeyBindAction;
+import org.duollectis.mapart.tools.gui.keybind.KeyBindManager;
+import org.duollectis.mapart.tools.gui.util.UiStateRegistry;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.*;
+import org.duollectis.mapart.tools.gui.widget.AnimatedPanel;
+import org.duollectis.mapart.tools.gui.widget.LayerListPanel;
+import org.duollectis.mapart.tools.gui.widget.SliderRow;
 import org.duollectis.mapart.tools.gui.worker.ConversionWorker;
 import org.duollectis.mapart.tools.gui.worker.ExportWorker;
 import org.duollectis.mapart.tools.gui.worker.ImportWorker;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -30,71 +39,94 @@ public class MainWindow extends JFrame {
 	static final int SPINNER_MIN = 1;
 	static final int SPINNER_MAX = 32;
 	static final int CARD_RADIUS = 12;
-	static final int SETTINGS_MIN_WIDTH = 350;
+	static final int SETTINGS_MIN_WIDTH = 280;
 	static final int SETTINGS_MAX_WIDTH = 550;
 	static final String DEFAULT_SUPPORT_BLOCK = "minecraft:stone";
 
 	// ── Цвета (method-getters для live-смены темы) ─────────────────────────────
 
-	static Color BG() { return GuiApp.theme.getBgDeep(); }
-	static Color CARD() { return GuiApp.theme.getBgCard(); }
-	static Color INPUT() { return GuiApp.theme.getBgInput(); }
-	static Color BORDER() { return GuiApp.theme.getBorder(); }
-	static Color ACCENT() { return GuiApp.theme.getAccent(); }
-	static Color TEXT() { return GuiApp.theme.getText(); }
-	static Color TEXT_DIM() { return GuiApp.theme.getTextDim(); }
-	static Color SUCCESS() { return GuiApp.theme.getSuccess(); }
-	static Color ERROR() { return GuiApp.theme.getError(); }
-	static Color WARN() { return GuiApp.theme.getWarn(); }
+	public static Color BG() {return GuiApp.theme.getBgDeep();}
+
+	public static Color CARD() {return GuiApp.theme.getBgCard();}
+
+	public static Color INPUT() {return GuiApp.theme.getBgInput();}
+
+	public static Color BORDER() {return GuiApp.theme.getBorder();}
+
+	public static Color ACCENT() {return GuiApp.theme.getAccent();}
+
+	public static Color TEXT() {return GuiApp.theme.getText();}
+
+	public static Color TEXT_DIM() {return GuiApp.theme.getTextDim();}
+
+	public static Color SUCCESS() {return GuiApp.theme.getSuccess();}
+
+	public static Color ERROR() {return GuiApp.theme.getError();}
+
+	public static Color WARN() {return GuiApp.theme.getWarn();}
+
+	public static Color TEXT_ON_ACCENT() {return GuiApp.theme.getTextOnAccent();}
+
+	public static Color PROGRESS_BAR() {return GuiApp.theme.getProgressBarFg() != null ? GuiApp.theme.getProgressBarFg() : GuiApp.theme.getAccent();}
+
+	public void addHoverEffect(JButton btn) {
+		actions.addHoverEffect(btn);
+	}
 
 	// ── UI-компоненты (package-private для доступа из builder-классов) ─────────
 
-	DropDown<String> versionCombo;
-	ModernSpinner widthSpinner;
-	ModernSpinner heightSpinner;
-	JTextField imagePathField;
+	SelectionPanel<String> versionCombo;
+	MapSizeControl mapSizeControl;
 	JTextField blocksPathField;
 	JTextField outPathField;
 	SupportBlockSettings supportSettings;
-	DropDown<Object> algorithmCombo;
-	DropDown<Object> colorMetricCombo;
+	SelectionPanel<Object> algorithmCombo;
+	SelectionPanel<Object> colorMetricCombo;
 	JPanel ditherSettingsPanel;
-	StyledSlider noiseLevelSlider;
-	StyledSlider errRateRSlider;
-	StyledSlider errRateGSlider;
-	StyledSlider errRateBSlider;
-	JLabel noiseLevelLabel;
-	JLabel errRateRLabel;
-	JLabel errRateGLabel;
-	JLabel errRateBLabel;
-	ModernToggleButton errRateLinkButton;
+	SliderRow noiseLevelRow;
+	SliderRow errRateStrengthRow;
+	SliderRow errRateRRow;
+	SliderRow errRateGRow;
+	SliderRow errRateBRow;
+	RgbChannelsButton errRateLinkButton;
+	AnimatedPanel errRateStrengthPanel;
+	AnimatedPanel errRateRPanel;
+	AnimatedPanel errRateRgbPanel;
 	ModernToggleButton autoConvertToggle;
-	StyledSlider brightnessSlider;
-	StyledSlider contrastSlider;
-	StyledSlider saturationSlider;
-	StyledSlider gammaSlider;
-	StyledSlider hueSlider;
-	JLabel brightnessLabel;
-	JLabel contrastLabel;
-	JLabel saturationLabel;
-	JLabel gammaLabel;
-	JLabel hueLabel;
-	DropDown<SchematicFormat> formatCombo;
-	DropDown<Object> staircaseModeCombo;
-	JButton convertButton;
+	SliderRow brightnessRow;
+	SliderRow contrastRow;
+	SliderRow saturationRow;
+	SliderRow gammaRow;
+	SliderRow hueRow;
+	SelectionPanel<SchematicFormat> formatCombo;
+	SelectionPanel<Object> staircaseModeCombo;
+	SelectionPanel<AppLocale> langCombo;
+	SelectionPanel<Object> themeCombo;
+	RippleButton convertButton;
 	JButton exportButton;
 	JButton blockListButton;
 	JButton pickBlocksButton;
 	JLabel blocksCountLabel;
-	JProgressBar progressBar;
+	AnimatedProgressBar progressBar;
 	AppLogPane logArea;
 	ImagePreviewPanel sourcePreview;
 	ImagePreviewPanel resultPreview;
+	LayerListPanel layerListPanel;
 	ModernToggleButton showGridButton;
+	ModernToggleButton snapButton;
 	JButton gridBgColorButton;
 	JButton importButton;
 	StyledSlider blurSlider;
 	JLabel blurLabel;
+
+	AccordionPanel appSettingsAccordion;
+	AccordionPanel imageAccordion;
+	AccordionPanel blocksAccordion;
+	AccordionPanel ditheringAccordion;
+	AccordionPanel importAccordion;
+	AccordionPanel exportAccordion;
+
+	boolean importAddToBlocks;
 
 	// ── Состояние ──────────────────────────────────────────────────────────────
 
@@ -122,136 +154,118 @@ public class MainWindow extends JFrame {
 	// ── Конструктор ────────────────────────────────────────────────────────────
 
 	public MainWindow() {
-		super(Lang.t("app.title"));
+		super(UpdatableRegistry.translate("app.title"));
 		actions = new MainWindowActions(this);
 		prefs = new MainWindowPreferences(this);
-		buildUi(true);
+		buildUi();
 		prefs.restorePreferences();
 		actions.tryAutoLoadBlocks();
+		UiStateRegistry.bindWindow("main_window", this);
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				prefs.savePreferences();
+				setVisible(false);
+				dispose();
+				SingleInstanceGuard.release();
+				DiscordRpc.registerShutdownHook();
+				System.exit(0);
 			}
 		});
+
 		setVisible(true);
 	}
 
-	// ── Пересборка UI (при смене темы/языка) ───────────────────────────────────
+	private void buildUi() {
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
-	void rebuildUi() {
-		prefs.savePreferences();
-		ThemeEventBus.clear();
+		setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+		setMinimumSize(new Dimension(900, 560));
+		setLocationRelativeTo(null);
 
-		getContentPane().removeAll();
-		setLayout(new BorderLayout(0, 0));
-
-		buildUi(false);
-		prefs.restorePreferences();
-
-		revalidate();
-		repaint();
-	}
-
-	// ── Построение UI ──────────────────────────────────────────────────────────
-
-	private void buildUi(boolean isInitial) {
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-		if (isInitial) {
-			setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-			setMinimumSize(new Dimension(920, 620));
-			setLocationRelativeTo(null);
-		}
-
-		((JComponent) getContentPane()).setOpaque(true);
-		getContentPane().setBackground(BG());
-		setLayout(new BorderLayout(0, 0));
-		ThemeEventBus.register(() -> getContentPane().setBackground(BG()));
+		JPanel contentPane = new JPanel(new BorderLayout(0, 0)) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				g.setColor(BG());
+				g.fillRect(0, 0, getWidth(), getHeight());
+			}
+		};
+		contentPane.setOpaque(true);
+		setContentPane(contentPane);
+		UpdatableRegistry.setAnimWindow(this);
 
 		add(buildCenterPanel(), BorderLayout.CENTER);
 
+		actions.setupWindowDropTarget(getContentPane());
 		actions.syncSourcePreviewMapCount();
 
-		java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager()
-			.addKeyEventDispatcher(event -> {
-				if (event.getID() != KeyEvent.KEY_PRESSED || !event.isControlDown()) {
-					return false;
-				}
-
-				boolean focusInTextField = event.getComponent() instanceof JTextField;
-
-				return switch (event.getKeyCode()) {
-					case KeyEvent.VK_V -> {
-						if (focusInTextField) {
-							yield false;
-						}
-						actions.pasteImageFromClipboard();
-						yield true;
-					}
-					case KeyEvent.VK_O -> {
-						if (focusInTextField) {
-							yield false;
-						}
-						actions.chooseImage();
-						yield true;
-					}
-					case KeyEvent.VK_ENTER -> {
-						actions.startConversion();
-						yield true;
-					}
-					case KeyEvent.VK_E -> {
-						if (focusInTextField) {
-							yield false;
-						}
-						actions.startExport();
-						yield true;
-					}
-					case KeyEvent.VK_I -> {
-						if (focusInTextField) {
-							yield false;
-						}
-						actions.startImport();
-						yield true;
-					}
-					case KeyEvent.VK_S -> {
-						if (focusInTextField) {
-							yield false;
-						}
-						actions.savePreview();
-						yield true;
-					}
-					default -> false;
-				};
-			});
+		Map<KeyBindAction, Runnable> handlers = new EnumMap<>(KeyBindAction.class);
+		handlers.put(KeyBindAction.CONVERT, actions::startConversion);
+		handlers.put(KeyBindAction.OPEN_IMAGE, actions::chooseImage);
+		handlers.put(KeyBindAction.PASTE_IMAGE, actions::pasteImageFromClipboard);
+		handlers.put(KeyBindAction.EXPORT, actions::startExport);
+		handlers.put(KeyBindAction.IMPORT, actions::startImport);
+		handlers.put(KeyBindAction.SAVE_PREVIEW, actions::savePreview);
+		handlers.put(KeyBindAction.MERGE_LAYERS, layerListPanel::mergeSelectedLayers);
+		handlers.put(KeyBindAction.DELETE_LAYER, layerListPanel::deleteSelectedLayers);
+		KeyBindManager.install(handlers);
 	}
 
 	private JPanel buildCenterPanel() {
-		JPanel rightColumn = new JPanel(new BorderLayout(0, 0));
-		rightColumn.setBackground(BG());
+		JPanel rightColumn = new JPanel(new BorderLayout(0, 0)) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				g.setColor(BG());
+				g.fillRect(0, 0, getWidth(), getHeight());
+			}
+		};
+		rightColumn.setOpaque(false);
 		rightColumn.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 12));
 		rightColumn.add(PreviewPanelBuilder.buildPreviewPanel(this), BorderLayout.CENTER);
 		rightColumn.add(PreviewPanelBuilder.buildBottomPanel(this), BorderLayout.SOUTH);
-		ThemeEventBus.register(() -> rightColumn.setBackground(BG()));
 
 		JPanel settingsPanel = SettingsPanelBuilder.buildSettingsPanel(this);
 
-		JPanel center = new JPanel(new BorderLayout(10, 0));
-		center.setBackground(BG());
+		JPanel center = new JPanel(new BorderLayout(10, 0)) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				g.setColor(BG());
+				g.fillRect(0, 0, getWidth(), getHeight());
+			}
+		};
+		center.setOpaque(false);
 		center.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 0));
 		center.add(settingsPanel, BorderLayout.WEST);
 		center.add(rightColumn, BorderLayout.CENTER);
-		ThemeEventBus.register(() -> center.setBackground(BG()));
 
 		// Динамически ограничиваем ширину левой панели: растёт пропорционально окну,
 		// но не выходит за пределы [SETTINGS_MIN_WIDTH, SETTINGS_MAX_WIDTH].
+		// invokeLater гарантирует что к моменту пересчёта аккордеонов EDT уже завершил
+		// layout-проход после revalidate() и settingsPanel имеет финальную ширину —
+		// GridBagLayout вернёт корректный preferredSize.
 		center.addComponentListener(new java.awt.event.ComponentAdapter() {
+			private int lastSettingsWidth = -1;
+
 			@Override
 			public void componentResized(java.awt.event.ComponentEvent e) {
 				int targetWidth = (int) (center.getWidth() * 0.28);
-					int clampedWidth = Math.clamp(targetWidth, SETTINGS_MIN_WIDTH, SETTINGS_MAX_WIDTH);
-					settingsPanel.setPreferredSize(new Dimension(clampedWidth, 0));
+				int clampedWidth = Math.clamp(targetWidth, SETTINGS_MIN_WIDTH, SETTINGS_MAX_WIDTH);
+				settingsPanel.setPreferredSize(new Dimension(clampedWidth, 0));
 				center.revalidate();
+
+				if (clampedWidth == lastSettingsWidth) {
+					return;
+				}
+
+				lastSettingsWidth = clampedWidth;
+				SwingUtilities.invokeLater(() -> {
+					appSettingsAccordion.refreshContentSize();
+					imageAccordion.refreshContentSize();
+					blocksAccordion.refreshContentSize();
+					ditheringAccordion.refreshContentSize();
+					importAccordion.refreshContentSize();
+					exportAccordion.refreshContentSize();
+				});
 			}
 		});
 

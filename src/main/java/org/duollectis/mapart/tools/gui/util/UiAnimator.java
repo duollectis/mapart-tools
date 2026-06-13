@@ -19,18 +19,33 @@ public class UiAnimator {
 
 	private static final int FRAME_MS = 16;
 
+	/** Глобальный флаг анимаций. При {@code false} все переходы выполняются мгновенно. */
+	public static boolean animationsEnabled = true;
+
 	/**
 	 * Анимирует float-значение от {@code from} до {@code to} за {@code durationMs} мс
 	 * с кривой easeOutCubic. На каждом кадре вызывает {@code onValue}, в конце — {@code onDone}.
+	 * Если {@link #animationsEnabled} равен {@code false}, значение применяется мгновенно.
 	 *
 	 * @param from       начальное значение
 	 * @param to         конечное значение
 	 * @param durationMs длительность в мс
 	 * @param onValue    колбэк с текущим значением на каждом кадре
 	 * @param onDone     колбэк по завершении (может быть null)
-	 * @return запущенный таймер
+	 * @return запущенный таймер (уже остановленный, если анимации отключены)
 	 */
 	public static Timer animateFloat(float from, float to, int durationMs, Consumer<Float> onValue, Runnable onDone) {
+		if (!animationsEnabled) {
+			onValue.accept(to);
+
+			if (onDone != null) {
+				onDone.run();
+			}
+
+			Timer stub = new Timer(Integer.MAX_VALUE, null);
+			return stub;
+		}
+
 		int[] elapsed = {0};
 
 		Timer timer = new Timer(FRAME_MS, e -> {
@@ -113,6 +128,10 @@ public class UiAnimator {
 	 * @return новый RippleState с запущенным таймером
 	 */
 	public static RippleState startRipple(int x, int y, JComponent component) {
+		if (!animationsEnabled) {
+			return null;
+		}
+
 		RippleState state = new RippleState(x, y);
 
 		state.timer = animateFloat(0f, 1f, 500, progress -> {

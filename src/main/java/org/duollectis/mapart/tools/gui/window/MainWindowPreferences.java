@@ -3,9 +3,20 @@ package org.duollectis.mapart.tools.gui.window;
 import com.google.gson.reflect.TypeToken;
 import org.duollectis.mapart.tools.converter.*;
 import org.duollectis.mapart.tools.gui.AppPreferences;
+import org.duollectis.mapart.tools.gui.AppPreferences.LayerState;
+import org.duollectis.mapart.tools.gui.util.UiStateRegistry;
+import org.duollectis.mapart.tools.gui.util.AppIcon;
+import org.duollectis.mapart.tools.gui.widget.ImageLayer;
+import org.duollectis.mapart.tools.gui.widget.ImagePreviewPanel;
 import org.duollectis.mapart.tools.utils.JsonHelper;
 import org.duollectis.mapart.tools.utils.image.ImageAdjustments;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,20 +40,22 @@ class MainWindowPreferences {
 	 * сохранённые блоки опоры — удаляет ID которых нет в текущей версии.
 	 */
 	void restorePreferences() {
+		UiStateRegistry.restoreWindow("main_window", w, false);
+
 		String savedVersion = AppPreferences.loadVersion(null);
 
 		if (savedVersion != null) {
 			w.versionCombo.setSelectedItem(savedVersion);
 		}
 
-		w.widthSpinner.setValue(AppPreferences.loadMapWidth(1));
-		w.heightSpinner.setValue(AppPreferences.loadMapHeight(1));
+		w.mapSizeControl.setMapWidth(AppPreferences.loadMapWidth(1));
+		w.mapSizeControl.setMapHeight(AppPreferences.loadMapHeight(1));
 
 		String savedAlgorithm = AppPreferences.loadAlgorithm(null);
 
 		if (savedAlgorithm != null) {
 			try {
-				w.algorithmCombo.setSelectedItem(Ditherer.Algorithm.valueOf(savedAlgorithm));
+				w.algorithmCombo.setSelectedItem(DitherAlgorithm.valueOf(savedAlgorithm));
 			} catch (IllegalArgumentException ignored) {
 				// неизвестный алгоритм — оставляем дефолт
 			}
@@ -52,26 +65,30 @@ class MainWindowPreferences {
 		w.autoConvertToggle.setSelected(AppPreferences.loadAutoConvert(false));
 
 		DitherSettings savedDither = AppPreferences.loadDitherSettings();
+		double savedStrength = AppPreferences.loadErrRateStrength(savedDither.errRateR());
 
-		if (w.errRateRSlider != null) {
-			w.errRateRSlider.setValue((int) (savedDither.errRateR() * 100));
+		if (w.errRateStrengthRow != null) {
+			w.errRateStrengthRow.setValue((int) (savedStrength * 100));
 		}
 
-		if (w.errRateGSlider != null) {
-			w.errRateGSlider.setValue((int) (savedDither.errRateG() * 100));
+		if (w.errRateRRow != null) {
+			w.errRateRRow.setValue((int) (savedDither.errRateR() * 100));
 		}
 
-		if (w.errRateBSlider != null) {
-			w.errRateBSlider.setValue((int) (savedDither.errRateB() * 100));
+		if (w.errRateGRow != null) {
+			w.errRateGRow.setValue((int) (savedDither.errRateG() * 100));
+		}
+
+		if (w.errRateBRow != null) {
+			w.errRateBRow.setValue((int) (savedDither.errRateB() * 100));
 		}
 
 		if (w.errRateLinkButton != null) {
 			w.errRateLinkButton.setSelected(AppPreferences.loadErrRateLinked());
-			w.errRateLinkButton.syncVisualState();
 		}
 
-		if (w.noiseLevelSlider != null) {
-			w.noiseLevelSlider.setValue((int) (savedDither.noiseLevel() * 100));
+		if (w.noiseLevelRow != null) {
+			w.noiseLevelRow.setValue((int) (savedDither.noiseLevel() * 100));
 		}
 
 		if (w.colorMetricCombo != null) {
@@ -79,29 +96,13 @@ class MainWindowPreferences {
 		}
 
 		ImageAdjustments defaults = ImageAdjustments.defaults();
-		w.brightnessSlider.setValue(AppPreferences.loadBrightness(defaults.brightness()));
-		w.contrastSlider.setValue(AppPreferences.loadContrast(defaults.contrast()));
-		w.saturationSlider.setValue(AppPreferences.loadSaturation(defaults.saturation()));
-		w.gammaSlider.setValue(AppPreferences.loadGamma(defaults.gamma()));
-		w.hueSlider.setValue(AppPreferences.loadHue(defaults.hue()));
+		w.brightnessRow.setValue(AppPreferences.loadBrightness(defaults.brightness()));
+		w.contrastRow.setValue(AppPreferences.loadContrast(defaults.contrast()));
+		w.saturationRow.setValue(AppPreferences.loadSaturation(defaults.saturation()));
+		w.gammaRow.setValue(AppPreferences.loadGamma(defaults.gamma()));
+		w.hueRow.setValue(AppPreferences.loadHue(defaults.hue()));
 
-		String imagePath = AppPreferences.loadImagePath();
-
-		if (!imagePath.isBlank()) {
-			w.imagePathField.setText(imagePath);
-			java.io.File imageFile = new java.io.File(imagePath);
-
-			if (imageFile.exists() && imageFile.isFile()) {
-				w.selectedImageFile = imageFile;
-
-				try {
-					w.rawSourceImage = javax.imageio.ImageIO.read(imageFile);
-					w.actions.scheduleSourcePreview();
-				} catch (java.io.IOException ignored) {
-					// не критично — просто не показываем превью
-				}
-			}
-		}
+		restoreLayers();
 
 		String blocksPath = AppPreferences.loadBlocksPath();
 
@@ -123,6 +124,9 @@ class MainWindowPreferences {
 			w.actions.syncExportButtonLabel();
 		}
 
+		restoreUiState();
+		DitheringsSectionBuilder.refreshDitherSettingsPanel(w);
+
 		String version = (String) w.versionCombo.getSelectedItem();
 		Map<String, BlockData> paletteBlocks = parsePaletteBlocks(version);
 
@@ -139,31 +143,150 @@ class MainWindowPreferences {
 		w.blockSelectors = new HashMap<>(AppPreferences.loadBlockSelectors(paletteBlocks));
 	}
 
+	/**
+		* Восстанавливает визуальное состояние UI из {@code ui_state.json}:
+		* аккордеоны, тоглы, цвет фона, слайдер размытия.
+		* Вызывается после загрузки бизнес-настроек, чтобы не конкурировать с ними.
+		*/
+	private void restoreUiState() {
+		UiStateRegistry.restoreAccordion("accordion.app_settings", w.appSettingsAccordion, false);
+		UiStateRegistry.restoreAccordion("accordion.image", w.imageAccordion, false);
+		UiStateRegistry.restoreAccordion("accordion.blocks", w.blocksAccordion, false);
+		UiStateRegistry.restoreAccordion("accordion.dithering", w.ditheringAccordion, false);
+		UiStateRegistry.restoreAccordion("accordion.import", w.importAccordion, false);
+		UiStateRegistry.restoreAccordion("accordion.export", w.exportAccordion, false);
+
+		UiStateRegistry.restoreToggle("preview.snap", w.snapButton, false);
+		UiStateRegistry.restoreToggle("preview.show_grid", w.showGridButton, false);
+
+		Color savedBgColor = UiStateRegistry.restoreColor("preview.bg_color_rgb", null);
+
+		if (savedBgColor != null) {
+			w.sourcePreview.setGridBackgroundColor(savedBgColor);
+			w.sourcePreview.setShowGridBackground(true);
+		}
+
+		UiStateRegistry.restoreSlider("preview.blur", w.blurSlider, 0);
+
+		double blurRadius = w.blurSlider.getValue() / 100.0 * ImagePreviewPanel.MAX_BLUR_RADIUS;
+		w.blurLabel.setText(String.format("%.1f", blurRadius));
+		w.resultPreview.setBlurRadius(blurRadius);
+
+		boolean showGrid = w.showGridButton.isSelected();
+		w.sourcePreview.setShowGrid(showGrid);
+		w.resultPreview.setShowGrid(showGrid);
+		w.sourcePreview.setSnapEnabled(w.snapButton.isSelected());
+
+		Color snapIconColor = w.snapButton.isSelected() ? MainWindow.ACCENT() : MainWindow.TEXT_DIM();
+		w.snapButton.setIcon(AppIcon.MAGNET.colored(snapIconColor));
+		w.snapButton.syncVisualState();
+
+		Color gridIconColor = w.showGridButton.isSelected() ? MainWindow.ACCENT() : MainWindow.TEXT_DIM();
+		w.showGridButton.setIcon(AppIcon.GRID.colored(gridIconColor));
+		w.showGridButton.syncVisualState();
+	}
+
+	private void restoreLayers() {
+		List<LayerState> states = AppPreferences.loadLayerStates();
+
+		if (states.isEmpty()) {
+			restoreLegacyImagePath();
+			return;
+		}
+
+		for (LayerState state : states) {
+			File file = new File(state.path());
+
+			if (!file.exists() || !file.isFile()) {
+				continue;
+			}
+
+			try {
+				BufferedImage image = ImageIO.read(file);
+
+				if (image == null) {
+					continue;
+				}
+
+				w.sourcePreview.addLayerNormalized(
+					image,
+					state.name(),
+					state.visible(),
+					state.normW(),
+					state.normH(),
+					state.normOffsetX(),
+					state.normOffsetY()
+				);
+				w.sourcePreview.setActiveLayerSourcePath(file.getAbsolutePath());
+			} catch (IOException e) {
+				System.err.println("Не удалось загрузить слой: " + file.getAbsolutePath() + " — " + e.getMessage());
+			}
+		}
+
+		int savedActive = AppPreferences.loadActiveLayerIndex(0);
+		w.sourcePreview.setActiveLayerIndex(savedActive);
+
+		if (!w.sourcePreview.getLayers().isEmpty()) {
+			w.selectedImageFile = new File(states.get(w.sourcePreview.getActiveLayerIndex()).path());
+			w.actions.scheduleSourcePreview();
+		}
+	}
+
+	private void restoreLegacyImagePath() {
+		String imagePath = AppPreferences.loadImagePath();
+
+		if (imagePath.isBlank()) {
+			return;
+		}
+
+		File imageFile = new File(imagePath);
+
+		if (!imageFile.exists() || !imageFile.isFile()) {
+			return;
+		}
+
+		try {
+			BufferedImage image = ImageIO.read(imageFile);
+
+			if (image == null) {
+				return;
+			}
+
+			w.selectedImageFile = imageFile;
+			w.rawSourceImage = image;
+			w.sourcePreview.addLayer(image, imageFile.getName());
+			w.sourcePreview.setActiveLayerSourcePath(imageFile.getAbsolutePath());
+			w.actions.scheduleSourcePreview();
+		} catch (IOException e) {
+			System.err.println("Не удалось загрузить изображение: " + imageFile.getAbsolutePath() + " — " + e.getMessage());
+		}
+	}
+
 	void savePreferences() {
 		AppPreferences.saveVersion((String) w.versionCombo.getSelectedItem());
-		AppPreferences.saveMapWidth((int) w.widthSpinner.getValue());
-		AppPreferences.saveMapHeight((int) w.heightSpinner.getValue());
+		AppPreferences.saveMapWidth(w.mapSizeControl.getMapWidth());
+		AppPreferences.saveMapHeight(w.mapSizeControl.getMapHeight());
 		Object selectedAlgorithm = w.algorithmCombo.getSelectedItem();
 
-		if (selectedAlgorithm instanceof Ditherer.Algorithm algorithm) {
+		if (selectedAlgorithm instanceof DitherAlgorithm algorithm) {
 			AppPreferences.saveAlgorithm(algorithm.name());
 		}
-		AppPreferences.saveImagePath(w.imagePathField.getText().strip());
 		AppPreferences.saveBlocksPath(w.blocksPathField.getText().strip());
 		AppPreferences.saveOutPath(w.outPathField.getText().strip());
 		AppPreferences.saveSupportSettings(w.supportSettings);
-		AppPreferences.saveBrightness(w.brightnessSlider.getValue());
-		AppPreferences.saveContrast(w.contrastSlider.getValue());
-		AppPreferences.saveSaturation(w.saturationSlider.getValue());
-		AppPreferences.saveGamma(w.gammaSlider.getValue());
-		AppPreferences.saveHue(w.hueSlider.getValue());
+		AppPreferences.saveBrightness(w.brightnessRow.getValue());
+		AppPreferences.saveContrast(w.contrastRow.getValue());
+		AppPreferences.saveSaturation(w.saturationRow.getValue());
+		AppPreferences.saveGamma(w.gammaRow.getValue());
+		AppPreferences.saveHue(w.hueRow.getValue());
 		AppPreferences.saveAutoConvert(w.autoConvertToggle.isSelected());
-		AppPreferences.saveDitherSettings(w.actions.buildDitherSettingsFromUi());
+		saveDitherSliders();
 
 		if (w.errRateLinkButton != null) {
 			AppPreferences.saveErrRateLinked(w.errRateLinkButton.isSelected());
 		}
 
+		saveLayerStates();
 		AppPreferences.saveBlockSelectors(w.blockSelectors);
 
 		if (w.formatCombo != null) {
@@ -185,6 +308,61 @@ class MainWindowPreferences {
 		} catch (Exception ignored) {
 			return Map.of();
 		}
+	}
+
+	private void saveDitherSliders() {
+		DitherSettings defaults = DitherSettings.defaults();
+		double errRateR = w.errRateRRow != null ? w.errRateRRow.getValue() / 100.0 : defaults.errRateR();
+		double errRateG = w.errRateGRow != null ? w.errRateGRow.getValue() / 100.0 : defaults.errRateG();
+		double errRateB = w.errRateBRow != null ? w.errRateBRow.getValue() / 100.0 : defaults.errRateB();
+		double noiseLevel = w.noiseLevelRow != null ? w.noiseLevelRow.getValue() / 100.0 : defaults.noiseLevel();
+		ColorMetric metric = w.colorMetricCombo != null
+			? (ColorMetric) w.colorMetricCombo.getSelectedItem()
+			: defaults.colorMetric();
+
+		AppPreferences.saveDitherSettings(new DitherSettings(errRateR, errRateG, errRateB, noiseLevel, metric));
+
+		if (w.errRateStrengthRow != null) {
+			AppPreferences.saveErrRateStrength(w.errRateStrengthRow.getValue() / 100.0);
+		}
+	}
+
+	private void saveLayerStates() {
+		List<ImageLayer> layers = w.sourcePreview.getLayers();
+		int[] grid = w.sourcePreview.getGridBounds();
+		int gridW = grid[2];
+		int gridH = grid[3];
+
+		if (gridW == 0 || gridH == 0) {
+			return;
+		}
+
+		List<LayerState> states = new ArrayList<>();
+
+		for (ImageLayer layer : layers) {
+			String path = layer.getSourcePath();
+
+			if (path == null || path.isBlank()) {
+				continue;
+			}
+
+			double normW = layer.getScaleX() * layer.getImage().getWidth() / gridW;
+			double normH = layer.getScaleY() * layer.getImage().getHeight() / gridH;
+			double normOffsetX = layer.getOffsetX() / gridW;
+			double normOffsetY = layer.getOffsetY() / gridH;
+
+			states.add(new LayerState(
+				path,
+				layer.getName(),
+				layer.isVisible(),
+				normW,
+				normH,
+				normOffsetX,
+				normOffsetY
+			));
+		}
+
+		AppPreferences.saveLayerStates(states, w.sourcePreview.getActiveLayerIndex());
 	}
 
 	Set<String> loadValidSupportIds(String version) {

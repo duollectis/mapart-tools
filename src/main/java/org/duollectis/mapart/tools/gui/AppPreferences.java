@@ -41,12 +41,19 @@ public class AppPreferences {
 	private static final String KEY_ERR_RATE_R = "err_rate_r";
 	private static final String KEY_ERR_RATE_G = "err_rate_g";
 	private static final String KEY_ERR_RATE_B = "err_rate_b";
+	private static final String KEY_ERR_RATE_STRENGTH = "err_rate_strength";
 	private static final String KEY_NOISE_LEVEL = "noise_level";
 	private static final String KEY_ERR_RATE_LINKED = "err_rate_linked";
 	private static final String KEY_COLOR_METRIC = "color_metric";
 	private static final String KEY_BLOCK_SELECTORS = "block_selectors";
 	private static final String KEY_SCHEMATIC_FORMAT = "schematic_format";
 	private static final String KEY_THEME = "theme";
+	private static final String KEY_KEYBINDS = "keybinds";
+	private static final String KEY_DISCORD_RPC = "discord_rpc";
+	private static final String KEY_ANIMATIONS = "animations";
+	private static final String KEY_LAYERS = "layers";
+	private static final String KEY_ACTIVE_LAYER = "active_layer";
+	private static final String KEY_IMPORT_ADD_TO_BLOCKS = "import_add_to_blocks";
 
 	public void saveVersion(String version) {
 		putString(KEY_VERSION, version);
@@ -372,6 +379,19 @@ public class AppPreferences {
 		writeRoot(root);
 	}
 
+	public void saveErrRateStrength(double value) {
+		JsonObject root = readRoot();
+		root.addProperty(KEY_ERR_RATE_STRENGTH, value);
+		writeRoot(root);
+	}
+
+	public double loadErrRateStrength(double defaultValue) {
+		JsonObject root = readRoot();
+		return root.has(KEY_ERR_RATE_STRENGTH)
+			? root.get(KEY_ERR_RATE_STRENGTH).getAsDouble()
+			: defaultValue;
+	}
+
 	public void saveErrRateLinked(boolean linked) {
 		JsonObject root = readRoot();
 		root.addProperty(KEY_ERR_RATE_LINKED, linked);
@@ -444,6 +464,152 @@ public class AppPreferences {
 		} catch (IOException | IllegalStateException ignored) {
 			return new JsonObject();
 		}
+	}
+
+	public void saveAnimations(boolean enabled) {
+		JsonObject root = readRoot();
+		root.addProperty(KEY_ANIMATIONS, enabled);
+		writeRoot(root);
+	}
+
+	public boolean loadAnimations(boolean defaultValue) {
+		JsonObject root = readRoot();
+		return root.has(KEY_ANIMATIONS) ? root.get(KEY_ANIMATIONS).getAsBoolean() : defaultValue;
+	}
+
+	public void saveDiscordRpc(boolean enabled) {
+		JsonObject root = readRoot();
+		root.addProperty(KEY_DISCORD_RPC, enabled);
+		writeRoot(root);
+	}
+
+	public boolean loadDiscordRpc(boolean defaultValue) {
+		JsonObject root = readRoot();
+		return root.has(KEY_DISCORD_RPC) ? root.get(KEY_DISCORD_RPC).getAsBoolean() : defaultValue;
+	}
+
+	/**
+	 * Сохраняет состояние всех слоёв sourcePreview: путь к файлу, имя, видимость и трансформ.
+	 * Активный слой сохраняется отдельным ключом.
+	 *
+	 * @param layers список записей слоёв (path, name, visible, scaleX, scaleY, offsetX, offsetY)
+	 * @param activeIndex индекс активного слоя
+	 */
+	public void saveLayerStates(List<LayerState> layers, int activeIndex) {
+		JsonObject root = readRoot();
+		JsonArray arr = new JsonArray();
+
+		for (LayerState state : layers) {
+			JsonObject obj = new JsonObject();
+			obj.addProperty("path", state.path());
+			obj.addProperty("name", state.name());
+			obj.addProperty("visible", state.visible());
+			obj.addProperty("normW", state.normW());
+			obj.addProperty("normH", state.normH());
+			obj.addProperty("normOffsetX", state.normOffsetX());
+			obj.addProperty("normOffsetY", state.normOffsetY());
+			arr.add(obj);
+		}
+
+		root.add(KEY_LAYERS, arr);
+		root.addProperty(KEY_ACTIVE_LAYER, activeIndex);
+		root.remove(KEY_IMAGE_PATH);
+		writeRoot(root);
+	}
+
+	/**
+	 * Загружает сохранённые состояния слоёв. Возвращает пустой список если данных нет.
+	 *
+	 * @return список записей слоёв в порядке снизу вверх
+	 */
+	public List<LayerState> loadLayerStates() {
+		JsonObject root = readRoot();
+
+		if (!root.has(KEY_LAYERS)) {
+			return List.of();
+		}
+
+		List<LayerState> result = new ArrayList<>();
+
+		try {
+			JsonArray arr = root.getAsJsonArray(KEY_LAYERS);
+
+			for (int i = 0; i < arr.size(); i++) {
+				JsonObject obj = arr.get(i).getAsJsonObject();
+				result.add(new LayerState(
+					obj.get("path").getAsString(),
+					obj.get("name").getAsString(),
+					obj.get("visible").getAsBoolean(),
+					obj.get("normW").getAsDouble(),
+					obj.get("normH").getAsDouble(),
+					obj.get("normOffsetX").getAsDouble(),
+					obj.get("normOffsetY").getAsDouble()
+				));
+			}
+		} catch (Exception ignored) {
+			return List.of();
+		}
+
+		return result;
+	}
+
+	public int loadActiveLayerIndex(int defaultValue) {
+		JsonObject root = readRoot();
+		return root.has(KEY_ACTIVE_LAYER) ? root.get(KEY_ACTIVE_LAYER).getAsInt() : defaultValue;
+	}
+
+	/**
+	 * Снимок состояния одного слоя для сериализации в settings.json.
+	 * Трансформ хранится в нормализованных координатах относительно размера сетки:
+	 * normW = scaleX * imageW / gridW, normOffsetX = offsetX / gridW.
+	 * Это позволяет корректно восстанавливать позицию при любом размере окна.
+	 */
+	public record LayerState(
+		String path,
+		String name,
+		boolean visible,
+		double normW,
+		double normH,
+		double normOffsetX,
+		double normOffsetY
+	) {}
+
+	public void saveKeyBinds(Map<String, String> binds) {
+		JsonObject root = readRoot();
+		JsonObject obj = new JsonObject();
+		binds.forEach(obj::addProperty);
+		root.add(KEY_KEYBINDS, obj);
+		writeRoot(root);
+	}
+
+	public Map<String, String> loadKeyBinds() {
+		JsonObject root = readRoot();
+		Map<String, String> result = new HashMap<>();
+
+		if (!root.has(KEY_KEYBINDS)) {
+			return result;
+		}
+
+		JsonObject obj = root.getAsJsonObject(KEY_KEYBINDS);
+
+		for (String key : obj.keySet()) {
+			result.put(key, obj.get(key).getAsString());
+		}
+
+		return result;
+	}
+
+	public void saveImportAddToBlocks(boolean value) {
+		JsonObject root = readRoot();
+		root.addProperty(KEY_IMPORT_ADD_TO_BLOCKS, value);
+		writeRoot(root);
+	}
+
+	public boolean loadImportAddToBlocks(boolean defaultValue) {
+		JsonObject root = readRoot();
+		return root.has(KEY_IMPORT_ADD_TO_BLOCKS)
+			? root.get(KEY_IMPORT_ADD_TO_BLOCKS).getAsBoolean()
+			: defaultValue;
 	}
 
 	private void writeRoot(JsonObject root) {

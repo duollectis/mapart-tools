@@ -29,5 +29,11 @@
   "btn_import_fg": "#5B21B6",
   "btn_hover_bg": "#D0D8E8",
   "hover_bg_overlay": "#00000014",
-  "importing_progress_fg": "#7C3AED"
+  "importing_progress_fg": "#7C3AED",
+  "dropdown_bg": "#F8F9FC",
+  "dropdown_item_bg": "#FFFFFF",
+  "preview_placeholder_bg": "#E4E8F0",
+  "progress_bar_fg": "#2563EB",
+  "contrast_light": "#FFFFFF",
+  "contrast_dark": "#111827"
 }

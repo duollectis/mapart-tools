@@ -2,7 +2,7 @@ package org.duollectis.mapart.tools.converter;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.duollectis.mapart.tools.gui.Lang;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.HasDescription;
 
 /**
@@ -66,7 +66,7 @@ public enum ColorMetric implements HasDescription {
 	@Override
 	public String toString() {
 		try {
-			return Lang.t("metric." + name());
+			return UpdatableRegistry.translate("metric." + name());
 		} catch (Exception ignored) {
 			return name();
 		}
@@ -75,7 +75,7 @@ public enum ColorMetric implements HasDescription {
 	@Override
 	public String getDescription() {
 		try {
-			return Lang.t("metric." + name() + ".desc");
+			return UpdatableRegistry.translate("metric." + name() + ".desc");
 		} catch (Exception ignored) {
 			return null;
 		}

@@ -8,7 +8,7 @@
   "text":                  "#E2E8F0",
   "text_dim":              "#718096",
   "success":               "#48C78E",
-  "error":                 "#FC8181",
+  "error":                 "#EF4444",
   "warn":                  "#FBbf24",
   "selection_bg":          "#3182CEB4",
   "scrollbar_thumb":       "#373C55",
@@ -29,5 +29,11 @@
   "btn_import_fg":         "#B48CF0",
   "btn_hover_bg":          "#3A3F5C",
   "hover_bg_overlay":      "#FFFFFF14",
-  "importing_progress_fg": "#8C64DC"
+  "importing_progress_fg": "#8C64DC",
+  "dropdown_bg":           "#1A1D2E",
+  "dropdown_item_bg":      "#1E2133",
+  "preview_placeholder_bg": "#111320",
+  "progress_bar_fg": "#63B3ED",
+  "contrast_light": "#FFFFFF",
+  "contrast_dark": "#0D0D14"
 }

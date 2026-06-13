@@ -7,34 +7,29 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
+import org.duollectis.mapart.tools.gui.util.AppIcon;
 
 /**
- * Кастомная кнопка-переключатель в стиле pill:
- * скруглённый фон, акцентный цвет при активации.
- * Переход on/off анимирован через {@link UiAnimator#animateFloat} с easeOutCubic.
+ * Универсальная кнопка-переключатель с плавными анимациями hover и toggle.
+ * Поддерживает иконку через {@code putClientProperty("appIcon", AppIcon.XXX)},
+ * текст, или их комбинацию. При selected=true фон подсвечивается акцентным цветом.
  */
 public class ModernToggleButton extends JToggleButton {
 
-	private static Color bgOff() { return GuiApp.theme.getBgInput(); }
+	private static Color bgOff() { return GuiApp.theme.getBgCard(); }
 
 	private static Color bgOn() { return GuiApp.theme.getAccent(); }
 
-	private static Color bgHoverOff() { return GuiApp.theme.getBgCard(); }
+	private static Color bgHoverOff() { return GuiApp.theme.getBtnHoverBg(); }
 
 	private static Color bgHoverOn() { return GuiApp.theme.getAccentBright(); }
 
-	private static Color borderOff() { return GuiApp.theme.getBorder(); }
-
-	private static Color borderOn() { return GuiApp.theme.getAccent(); }
-
-	private static Color textOff() { return GuiApp.theme.getTextDim(); }
-
-	private boolean hovered = false;
-
-	/** Прогресс анимации toggle: 0.0 = off, 1.0 = on */
-	private float toggleProgress;
-
+	private float hoverProgress = 0f;
+	private Timer hoverTimer;
+	private float toggleProgress = 0f;
 	private Timer toggleTimer;
+	private UiAnimator.RippleState ripple;
 
 	public ModernToggleButton(String text) {
 		super(text);
@@ -45,19 +40,20 @@ public class ModernToggleButton extends JToggleButton {
 		setFont(new Font("SansSerif", Font.PLAIN, 12));
 		setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-		toggleProgress = 0f;
-
 		addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseEntered(MouseEvent e) {
-				hovered = true;
-				repaint();
+				animateHover(true);
 			}
 
 			@Override
 			public void mouseExited(MouseEvent e) {
-				hovered = false;
-				repaint();
+				animateHover(false);
+			}
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				ripple = UiAnimator.startRipple(e.getX(), e.getY(), ModernToggleButton.this);
 			}
 		});
 
@@ -65,12 +61,26 @@ public class ModernToggleButton extends JToggleButton {
 	}
 
 	/**
-		* Синхронизирует визуальный прогресс анимации с текущим состоянием кнопки
-		* без анимации — нужно вызывать после программного setSelected().
-		*/
+	 * Синхронизирует визуальный прогресс анимации с текущим состоянием кнопки
+	 * без анимации — нужно вызывать после программного setSelected().
+	 */
 	public void syncVisualState() {
 		toggleProgress = isSelected() ? 1f : 0f;
 		repaint();
+	}
+
+	private void animateHover(boolean toHovered) {
+		if (hoverTimer != null) {
+			hoverTimer.stop();
+		}
+
+		float from = hoverProgress;
+		float to = toHovered ? 1f : 0f;
+
+		hoverTimer = UiAnimator.animateFloat(from, to, 150, progress -> {
+			hoverProgress = progress;
+			repaint();
+		}, null);
 	}
 
 	private void animateToggle(boolean toOn) {
@@ -93,33 +103,69 @@ public class ModernToggleButton extends JToggleButton {
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-		Color bgFrom = hovered ? bgHoverOff() : bgOff();
-		Color bgTo = hovered ? bgHoverOn() : bgOn();
-		Color bg = UiAnimator.lerp(bgFrom, bgTo, toggleProgress);
-		Color border = UiAnimator.lerp(borderOff(), borderOn(), toggleProgress);
-		Color fg = UiAnimator.lerp(textOff(), GuiApp.theme.getTextOnAccent(), toggleProgress);
+		Color bgBase = UiAnimator.lerp(bgOff(), bgOn(), toggleProgress);
+		Color bgHover = UiAnimator.lerp(bgHoverOff(), bgHoverOn(), toggleProgress);
+		Color bg = UiAnimator.lerp(bgBase, bgHover, hoverProgress);
 
 		g2.setColor(bg);
 		g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
 
-		g2.setColor(border);
-		g2.setStroke(new BasicStroke(1f));
-		g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+		UiAnimator.paintRipple(g2, ripple, getWidth(), getHeight());
 
-		g2.setColor(fg);
-		g2.setFont(getFont());
-		FontMetrics fm = g2.getFontMetrics();
-		int tx = (getWidth() - fm.stringWidth(getText())) / 2;
-		int ty = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
-		g2.drawString(getText(), tx, ty);
+		Color fg = ContrastTextRenderer.contrastLerp(bgBase, bgHover, hoverProgress);
+		Object appIconProp = getClientProperty("appIcon");
+		Icon icon = appIconProp instanceof AppIcon ai ? ai.colored(fg) : getIcon();
+		String text = getText();
+		boolean hasIcon = icon != null;
+		boolean hasText = text != null && !text.isEmpty();
+
+		if (hasIcon && !hasText) {
+			int ix = (getWidth() - icon.getIconWidth()) / 2;
+			int iy = (getHeight() - icon.getIconHeight()) / 2;
+			icon.paintIcon(this, g2, ix, iy);
+		} else if (hasIcon) {
+			int gap = 4;
+			FontMetrics fm = g2.getFontMetrics(getFont());
+			int totalW = icon.getIconWidth() + gap + fm.stringWidth(text);
+			int startX = (getWidth() - totalW) / 2;
+			int iy = (getHeight() - icon.getIconHeight()) / 2;
+			icon.paintIcon(this, g2, startX, iy);
+
+			g2.setColor(fg);
+			g2.setFont(getFont());
+			int ty = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+			g2.drawString(text, startX + icon.getIconWidth() + gap, ty);
+		} else if (hasText) {
+			g2.setColor(fg);
+			g2.setFont(getFont());
+			FontMetrics fm = g2.getFontMetrics();
+			int tx = (getWidth() - fm.stringWidth(text)) / 2;
+			int ty = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+			g2.drawString(text, tx, ty);
+		}
 
 		g2.dispose();
 	}
 
 	@Override
 	public Dimension getPreferredSize() {
+		Icon icon = getIcon();
+		Object appIconProp = getClientProperty("appIcon");
+		if (appIconProp instanceof AppIcon ai) {
+			icon = ai.colored(Color.BLACK);
+		}
+
+		String text = getText();
+		boolean hasIcon = icon != null;
+		boolean hasText = text != null && !text.isEmpty();
+
+		if (hasIcon && !hasText) {
+			return new Dimension(icon.getIconWidth() + 16, 28);
+		}
+
 		FontMetrics fm = getFontMetrics(getFont());
-		int w = fm.stringWidth(getText()) + 24;
-		return new Dimension(w, 28);
+		int textW = hasText ? fm.stringWidth(text) : 0;
+		int iconW = hasIcon ? icon.getIconWidth() + 4 : 0;
+		return new Dimension(textW + iconW + 24, 28);
 	}
 }

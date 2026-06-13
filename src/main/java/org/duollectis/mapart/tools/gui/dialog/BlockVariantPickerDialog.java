@@ -4,7 +4,8 @@ import org.duollectis.mapart.tools.converter.BlockData;
 import org.duollectis.mapart.tools.converter.SupportBlockSettings;
 import org.duollectis.mapart.tools.converter.WeightedSelector;
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.Lang;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
+import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.widget.InertialScrollPane;
 
 import javax.swing.*;
@@ -18,6 +19,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
 
 /**
  * Универсальный диалог настройки процентного распределения блоков.
@@ -25,7 +27,7 @@ import java.util.List;
  * — PALETTE (зелёный акцент): настройка вариантов блока палитры.
  * — SUPPORT (голубой акцент): настройка блоков опоры.
  * Проценты дробные (шаг 0.1), всегда в сумме дают 100%.
- * Кнопка 🔒 фиксирует строку. Кнопка "Поровну" сбрасывает к равному распределению.
+ * Кнопка блокировки фиксирует строку. Кнопка "Поровну" сбрасывает к равному распределению.
  */
 public class BlockVariantPickerDialog extends JDialog {
 
@@ -50,8 +52,6 @@ public class BlockVariantPickerDialog extends JDialog {
 	/** Голубой акцент для режима опоры. */
 	private static final Color ACCENT_SUPPORT = new Color(56, 189, 248);
 
-	private static final String ICON_LOCKED = "🔒";
-	private static final String ICON_UNLOCKED = "🔓";
 	private static final int MIN_UNLOCKED_FOR_LOCK = 2;
 
 	private final List<EntryRow> rows = new ArrayList<>();
@@ -67,7 +67,7 @@ public class BlockVariantPickerDialog extends JDialog {
 		List<BlockData> activeBlocks,
 		WeightedSelector<BlockData> initial
 	) {
-		super(parent, Lang.t("variant_picker.title"), true);
+		super(parent, UpdatableRegistry.translate("variant_picker.title"), true);
 		this.accent = GuiApp.theme.getAccent();
 		this.supportMode = false;
 
@@ -86,7 +86,7 @@ public class BlockVariantPickerDialog extends JDialog {
 		List<BlockData> supportBlocks,
 		SupportBlockSettings initial
 	) {
-		super(parent, Lang.t("variant_picker.title"), true);
+		super(parent, UpdatableRegistry.translate("variant_picker.title"), true);
 		this.accent = ACCENT_SUPPORT;
 		this.supportMode = true;
 
@@ -329,11 +329,11 @@ public class BlockVariantPickerDialog extends JDialog {
 			BorderFactory.createEmptyBorder(12, 16, 12, 16)
 		));
 
-		JLabel title = new JLabel(Lang.t("variant_picker.title"));
+		JLabel title = new JLabel(UpdatableRegistry.translate("variant_picker.title"));
 		title.setForeground(TEXT);
 		title.setFont(new Font("SansSerif", Font.BOLD, 14));
 
-		JLabel hint = new JLabel(Lang.t("variant_picker.hint"));
+		JLabel hint = new JLabel(UpdatableRegistry.translate("variant_picker.hint"));
 		hint.setForeground(TEXT_DIM);
 		hint.setFont(new Font("SansSerif", Font.PLAIN, 11));
 
@@ -413,8 +413,8 @@ public class BlockVariantPickerDialog extends JDialog {
 	}
 
 	private JPanel buildFooter(WeightedSelector.Mode initialMode) {
-		randomRadio = new JRadioButton(Lang.t("support_picker.mode_random"));
-		JRadioButton sequentialRadio = new JRadioButton(Lang.t("support_picker.mode_sequential"));
+		randomRadio = new JRadioButton(UpdatableRegistry.translate("support_picker.mode_random"));
+		JRadioButton sequentialRadio = new JRadioButton(UpdatableRegistry.translate("support_picker.mode_sequential"));
 
 		randomRadio.setOpaque(false);
 		sequentialRadio.setOpaque(false);
@@ -433,7 +433,7 @@ public class BlockVariantPickerDialog extends JDialog {
 			sequentialRadio.setSelected(true);
 		}
 
-		JLabel modeLabel = new JLabel(Lang.t("support_picker.mode_label"));
+		JLabel modeLabel = new JLabel(UpdatableRegistry.translate("support_picker.mode_label"));
 		modeLabel.setForeground(TEXT_DIM);
 		modeLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
 
@@ -443,16 +443,17 @@ public class BlockVariantPickerDialog extends JDialog {
 		modePanel.add(randomRadio);
 		modePanel.add(sequentialRadio);
 
-		JButton equalBtn = buildSmallButton(Lang.t("variant_picker.btn_equal"));
+		JButton equalBtn = buildSmallButton(UpdatableRegistry.translate("variant_picker.btn_equal"));
+		equalBtn.setIcon(AppIcon.BALANCE.colored(TEXT));
 		equalBtn.addActionListener(e -> resetToEqual());
 
-		JButton saveBtn = buildPrimaryButton(Lang.t("support_picker.btn_save"));
+		JButton saveBtn = buildPrimaryButton(UpdatableRegistry.translate("support_picker.btn_save"));
 		saveBtn.addActionListener(e -> {
 			confirmed = true;
 			dispose();
 		});
 
-		JButton cancelBtn = buildSmallButton(Lang.t("support_picker.btn_cancel"));
+		JButton cancelBtn = buildSmallButton(UpdatableRegistry.translate("support_picker.btn_cancel"));
 		cancelBtn.addActionListener(e -> dispose());
 
 		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -513,7 +514,7 @@ public class BlockVariantPickerDialog extends JDialog {
 		@Override
 		public String getColumnName(int col) {
 			return switch (col) {
-				case 0 -> Lang.t("support_picker.col_block");
+				case 0 -> UpdatableRegistry.translate("support_picker.col_block");
 				case 1 -> "%";
 				default -> "";
 			};
@@ -618,12 +619,14 @@ public class BlockVariantPickerDialog extends JDialog {
 			long unlockedCount = dialog.rows.stream().filter(r -> !r.locked).count();
 			boolean canLock = locked || unlockedCount > MIN_UNLOCKED_FOR_LOCK;
 
-			JLabel label = new JLabel(locked ? ICON_LOCKED : ICON_UNLOCKED);
+			Color iconColor = locked
+				? new Color(255, 200, 50)
+				: (canLock ? TEXT_DIM : GuiApp.theme.getBgInput());
+			JLabel label = new JLabel();
+			label.setIcon(locked ? AppIcon.LOCK.colored(iconColor) : AppIcon.UNLOCK.colored(iconColor));
 			label.setHorizontalAlignment(SwingConstants.CENTER);
-			label.setFont(new Font("SansSerif", Font.PLAIN, 14));
 			label.setOpaque(true);
 			label.setBackground(selected ? table.getSelectionBackground() : BG);
-			label.setForeground(locked ? new Color(255, 200, 50) : (canLock ? TEXT_DIM : new Color(60, 65, 80)));
 			label.setCursor(canLock ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : Cursor.getDefaultCursor());
 			return label;
 		}
@@ -638,7 +641,6 @@ public class BlockVariantPickerDialog extends JDialog {
 		private LockCellEditor(BlockVariantPickerDialog dialog) {
 			this.dialog = dialog;
 			label.setHorizontalAlignment(SwingConstants.CENTER);
-			label.setFont(new Font("SansSerif", Font.PLAIN, 14));
 			label.setOpaque(true);
 			label.setBackground(BG);
 			label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -660,8 +662,8 @@ public class BlockVariantPickerDialog extends JDialog {
 		) {
 			editingRow = row;
 			boolean locked = value instanceof Boolean b && b;
-			label.setText(locked ? ICON_LOCKED : ICON_UNLOCKED);
-			label.setForeground(locked ? new Color(255, 200, 50) : TEXT_DIM);
+			Color iconColor = locked ? new Color(255, 200, 50) : TEXT_DIM;
+			label.setIcon(locked ? AppIcon.LOCK.colored(iconColor) : AppIcon.UNLOCK.colored(iconColor));
 			return label;
 		}
 
@@ -800,11 +802,12 @@ public class BlockVariantPickerDialog extends JDialog {
 					g2.setColor(base);
 					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
 					g2.dispose();
+					setForeground(ContrastTextRenderer.contrastFor(base));
 					super.paintComponent(g);
 				}
 			};
-	
-			btn.setForeground(BG);
+		
+			btn.setForeground(ContrastTextRenderer.contrastFor(accent));
 			btn.setFont(new Font("SansSerif", Font.BOLD, 12));
 			btn.setFocusPainted(false);
 			btn.setContentAreaFilled(false);
@@ -822,19 +825,20 @@ public class BlockVariantPickerDialog extends JDialog {
 					Graphics2D g2 = (Graphics2D) g.create();
 					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 					Color base = getModel().isPressed()
-						? new Color(60, 65, 80)
-						: (getModel().isRollover() ? new Color(55, 60, 75) : new Color(45, 50, 65));
+						? GuiApp.theme.getBtnHoverBg().darker()
+						: (getModel().isRollover() ? GuiApp.theme.getBtnHoverBg() : GuiApp.theme.getBgInput());
 					g2.setColor(base);
 					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
 					g2.setColor(BORDER);
 					g2.setStroke(new BasicStroke(1f));
 					g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
 					g2.dispose();
+					setForeground(ContrastTextRenderer.contrastFor(base));
 					super.paintComponent(g);
 				}
 			};
-	
-			btn.setForeground(TEXT);
+		
+			btn.setForeground(ContrastTextRenderer.contrastFor(GuiApp.theme.getBgInput()));
 			btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
 			btn.setFocusPainted(false);
 			btn.setContentAreaFilled(false);

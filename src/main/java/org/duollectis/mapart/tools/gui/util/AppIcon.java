@@ -40,7 +40,32 @@ public enum AppIcon {
 	DOUBLE("double"),
 	COLOR_PICKER("color_picker"),
 	PLAY("play"),
-	STOP("stop");
+	STOP("stop"),
+	LINK("link"),
+	LIST("list"),
+	GRID("grid"),
+	SAVE("save"),
+	BLOCK("block"),
+	BALANCE("balance"),
+	WARNING("warning"),
+	CHECK("check"),
+	LOCK("lock"),
+	UNLOCK("unlock"),
+	PALETTE("palette"),
+	EDIT("edit"),
+	MAGNET("magnet"),
+	FIT("fit"),
+	COVER("cover"),
+	EXPORT("export"),
+	IMPORT_FILE("import_file"),
+	CROSS("cross"),
+	EYE("eye"),
+	EYE_OFF("eye_off"),
+	IMAGE("image"),
+	FOLDER_OPEN("folder_open"),
+	TXT_FILE("txt_file"),
+	SUN("sun"),
+	MOON("moon");
 
 	private static final int DEFAULT_SIZE = 16;
 	private static final ConcurrentMap<Long, Icon> CACHE = new ConcurrentHashMap<>();
@@ -49,6 +74,21 @@ public enum AppIcon {
 
 	AppIcon(String resourceName) {
 		this.resourceName = resourceName;
+	}
+
+	/**
+	 * Прогревает кэш всех иконок для заданного набора цветов.
+	 * Вызывается синхронно до показа окна, чтобы первый paintComponent()
+	 * не блокировал EDT парсингом SVG через SVGUniverse.
+	 *
+	 * @param colors цвета темы для прогрева (текст, акцент, фон и т.д.)
+	 */
+	public static void warmupCache(Color... colors) {
+		for (AppIcon icon : values()) {
+			for (Color color : colors) {
+				icon.colored(DEFAULT_SIZE, color);
+			}
+		}
 	}
 
 	/**

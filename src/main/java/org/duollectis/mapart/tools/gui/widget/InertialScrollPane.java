@@ -1,5 +1,7 @@
 package org.duollectis.mapart.tools.gui.widget;
 
+import org.duollectis.mapart.tools.gui.util.UiAnimator;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseWheelEvent;
@@ -20,16 +22,26 @@ public class InertialScrollPane extends JScrollPane {
 	private static final int FRAME_MS = 16;
 	private static final double PIXELS_PER_NOTCH = 10.0;
 
+	private final boolean horizontal;
 	private double scrollVelocity = 0.0;
 	private boolean atEdge = false;
 	private Timer inertiaTimer;
 
+	/** Вертикальный режим (по умолчанию). */
 	public InertialScrollPane(Component view) {
+		this(view, false);
+	}
+
+	/**
+	 * @param horizontal {@code true} — горизонтальная прокрутка, {@code false} — вертикальная
+	 */
+	public InertialScrollPane(Component view, boolean horizontal) {
 		super(
 			view,
 			JScrollPane.VERTICAL_SCROLLBAR_NEVER,
 			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
 		);
+		this.horizontal = horizontal;
 		setOpaque(false);
 		getViewport().setOpaque(false);
 		setBorder(BorderFactory.createEmptyBorder());
@@ -56,7 +68,7 @@ public class InertialScrollPane extends JScrollPane {
 	private void onMouseWheel(MouseWheelEvent e) {
 		e.consume();
 
-		var bar = getVerticalScrollBar();
+		var bar = scrollBar();
 		boolean hasNoScroll = bar.getMaximum() - bar.getVisibleAmount() <= bar.getMinimum();
 
 		if (hasNoScroll) {
@@ -73,18 +85,35 @@ public class InertialScrollPane extends JScrollPane {
 			return;
 		}
 
+		if (!UiAnimator.animationsEnabled) {
+			applyInstantScroll(impulse);
+			return;
+		}
+
 		scrollVelocity += impulse;
 		startInertiaIfNeeded();
 	}
 
+	private void applyInstantScroll(double impulse) {
+		var bar = scrollBar();
+		int maxValue = bar.getMaximum() - bar.getVisibleAmount();
+		int newValue = (int) Math.round(bar.getValue() + impulse);
+		bar.setValue(Math.clamp(newValue, bar.getMinimum(), maxValue));
+		atEdge = bar.getValue() == bar.getMinimum() || bar.getValue() >= maxValue;
+	}
+
 	private boolean isMovingTowardEdge(double impulse) {
-		var bar = getVerticalScrollBar();
+		var bar = scrollBar();
 		int maxValue = bar.getMaximum() - bar.getVisibleAmount();
 
-		boolean atTop = bar.getValue() <= bar.getMinimum();
-		boolean atBottom = bar.getValue() >= maxValue;
+		boolean atStart = bar.getValue() <= bar.getMinimum();
+		boolean atEnd = bar.getValue() >= maxValue;
 
-		return (atTop && impulse < 0) || (atBottom && impulse > 0);
+		return (atStart && impulse < 0) || (atEnd && impulse > 0);
+	}
+
+	private JScrollBar scrollBar() {
+		return horizontal ? getHorizontalScrollBar() : getVerticalScrollBar();
 	}
 
 	private void startInertiaIfNeeded() {
@@ -103,7 +132,7 @@ public class InertialScrollPane extends JScrollPane {
 			return;
 		}
 
-		var bar = getVerticalScrollBar();
+		var bar = scrollBar();
 		int oldValue = bar.getValue();
 		int maxValue = bar.getMaximum() - bar.getVisibleAmount();
 		int newValue = (int) Math.round(oldValue + scrollVelocity);

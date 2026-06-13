@@ -57,15 +57,15 @@ public class BlockLeveler {
 				PaletteEntry entry = palette.get(image[y][x]);
 
 				if (y < height - 1) {
-					level += levelDelta(processed[y + 2][x].getEntry().getBrightness());
+					level += processed[y + 2][x].getEntry().getBrightness().getLevelDelta();
 				}
 
 				processed[y + 1][x] = new LeveledEntry(entry, level);
 			}
 
 			Brightness topBrightness = processed[1][x].getEntry().getBrightness();
-			level += levelDelta(topBrightness);
-
+			level += topBrightness.getLevelDelta();
+	
 			processed[0][x] = topBrightness == Brightness.HIGH
 				? new LeveledEntry(airEntry(), level)
 				: new LeveledEntry(stoneEntry, level);
@@ -199,14 +199,6 @@ public class BlockLeveler {
 		}
 
 		processedHeight = 1;
-	}
-
-	private static int levelDelta(Brightness brightness) {
-		return switch (brightness) {
-			case LOW -> 1;
-			case HIGH -> -1;
-			default -> 0;
-		};
 	}
 
 	private static PaletteEntry airEntry() {

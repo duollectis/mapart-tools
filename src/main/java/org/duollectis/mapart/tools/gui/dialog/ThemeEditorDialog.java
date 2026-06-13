@@ -2,7 +2,10 @@ package org.duollectis.mapart.tools.gui.dialog;
 
 import org.duollectis.mapart.tools.gui.AppTheme;
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.Lang;
+import org.duollectis.mapart.tools.gui.util.AppIcon;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
+import org.duollectis.mapart.tools.gui.widget.ColorPickerPopup;
+import org.duollectis.mapart.tools.gui.widget.InertialScrollPane;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,6 +13,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
 
 /**
  * Диалог редактора темы оформления.
@@ -20,15 +24,25 @@ import java.util.Map;
 public class ThemeEditorDialog extends JDialog {
 
 	private static final int SWATCH_SIZE = 28;
-	private static final int DIALOG_WIDTH = 560;
+	private static final int PREVIEW_WIDTH = 56;
+	private static final int PREVIEW_HEIGHT = 28;
+	private static final int DIALOG_WIDTH = 620;
 	private static final int DIALOG_HEIGHT = 680;
 
-	private final Map<String, Color[]> colorValues = new LinkedHashMap<>();
+	private final Map<String, ColorEntry> colorEntries = new LinkedHashMap<>();
+	private final Runnable onSaved;
+	private final String editingThemeId;
 	private JTextField nameField;
 
-	public ThemeEditorDialog(JFrame parent) {
-		super(parent, Lang.t("theme_editor.title"), true);
-		initColorValues();
+	public ThemeEditorDialog(JFrame parent, Runnable onSaved) {
+		this(parent, null, onSaved);
+	}
+
+	public ThemeEditorDialog(JFrame parent, String themeId, Runnable onSaved) {
+		super(parent, UpdatableRegistry.translate("theme_editor.title"), true);
+		this.onSaved = onSaved;
+		this.editingThemeId = themeId;
+		initColorEntries();
 		buildUi();
 		setSize(DIALOG_WIDTH, DIALOG_HEIGHT);
 		setResizable(true);
@@ -36,39 +50,206 @@ public class ThemeEditorDialog extends JDialog {
 		setVisible(true);
 	}
 
-	private void initColorValues() {
-		AppTheme t = GuiApp.theme;
-		colorValues.put("bg_deep", new Color[]{t.getBgDeep()});
-		colorValues.put("bg_card", new Color[]{t.getBgCard()});
-		colorValues.put("bg_input", new Color[]{t.getBgInput()});
-		colorValues.put("border", new Color[]{t.getBorder()});
-		colorValues.put("accent", new Color[]{t.getAccent()});
-		colorValues.put("accent_bright", new Color[]{t.getAccentBright()});
-		colorValues.put("text", new Color[]{t.getText()});
-		colorValues.put("text_dim", new Color[]{t.getTextDim()});
-		colorValues.put("success", new Color[]{t.getSuccess()});
-		colorValues.put("error", new Color[]{t.getError()});
-		colorValues.put("warn", new Color[]{t.getWarn()});
-		colorValues.put("selection_bg", new Color[]{t.getSelectionBg()});
-		colorValues.put("scrollbar_thumb", new Color[]{t.getScrollbarThumb()});
-		colorValues.put("scrollbar_thumb_hover", new Color[]{t.getScrollbarThumbHover()});
-		colorValues.put("scrollbar_track", new Color[]{t.getScrollbarTrack()});
-		colorValues.put("slider_track_bg", new Color[]{t.getSliderTrackBg()});
-		colorValues.put("slider_track_fill", new Color[]{t.getSliderTrackFill()});
-		colorValues.put("slider_thumb", new Color[]{t.getSliderThumb()});
-		colorValues.put("slider_thumb_hover", new Color[]{t.getSliderThumbHover()});
-		colorValues.put("text_on_accent", new Color[]{t.getTextOnAccent()});
-		colorValues.put("tooltip_bg", new Color[]{t.getTooltipBg()});
-		colorValues.put("nimbus_base", new Color[]{t.getNimbusBase()});
-		colorValues.put("btn_export_bg", new Color[]{t.getBtnExportBg()});
-		colorValues.put("btn_export_fg", new Color[]{t.getBtnExportFg()});
-		colorValues.put("btn_blocks_bg", new Color[]{t.getBtnBlocksBg()});
-		colorValues.put("btn_blocks_fg", new Color[]{t.getBtnBlocksFg()});
-		colorValues.put("btn_import_bg", new Color[]{t.getBtnImportBg()});
-		colorValues.put("btn_import_fg", new Color[]{t.getBtnImportFg()});
-		colorValues.put("btn_hover_bg", new Color[]{t.getBtnHoverBg()});
-		colorValues.put("hover_bg_overlay", new Color[]{t.getHoverBgOverlay()});
-		colorValues.put("importing_progress_fg", new Color[]{t.getImportingProgressFg()});
+	private void initColorEntries() {
+		AppTheme t = editingThemeId != null ? AppTheme.load(editingThemeId) : GuiApp.theme;
+
+		addEntry("bg_deep", t.getBgDeep(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRect(0, 0, w, h);
+		});
+		addEntry("bg_card", t.getBgCard(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 2, w - 4, h - 4, 6, 6);
+		});
+		addEntry("bg_input", t.getBgInput(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 4, w - 4, h - 8, 4, 4);
+			g.setColor(new Color(120, 120, 120, 80));
+			g.setStroke(new BasicStroke(1f));
+			g.drawRoundRect(2, 4, w - 5, h - 9, 4, 4);
+		});
+		addEntry("border", t.getBorder(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.setStroke(new BasicStroke(1.5f));
+			g.drawRoundRect(2, 2, w - 5, h - 5, 5, 5);
+		});
+		addEntry("accent", t.getAccent(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+		});
+		addEntry("accent_bright", t.getAccentBright(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.setStroke(new BasicStroke(2f));
+			g.drawLine(w / 2, 4, w / 2, h - 4);
+		});
+		addEntry("text", t.getText(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.setFont(new Font("SansSerif", Font.PLAIN, 11));
+			g.drawString("Aa", 8, h / 2 + 4);
+		});
+		addEntry("text_dim", t.getTextDim(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.setFont(new Font("SansSerif", Font.PLAIN, 11));
+			g.drawString("Aa", 8, h / 2 + 4);
+		});
+		addEntry("success", t.getSuccess(), (g, w, h, c) -> {
+			AppIcon.CHECK.colored(16, c[0]).paintIcon(null, g, 8, h / 2 - 8);
+		});
+		addEntry("error", t.getError(), (g, w, h, c) -> {
+			AppIcon.CROSS.colored(16, c[0]).paintIcon(null, g, 8, h / 2 - 8);
+		});
+		addEntry("warn", t.getWarn(), (g, w, h, c) -> {
+			AppIcon.WARNING.colored(16, c[0]).paintIcon(null, g, 8, h / 2 - 8);
+		});
+		addEntry("selection_bg", t.getSelectionBg(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(4, h / 2 - 5, w - 8, 10, 3, 3);
+		});
+		addEntry("scrollbar_thumb", t.getScrollbarThumb(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(w / 2 - 3, 4, 6, h - 8, 4, 4);
+		});
+		addEntry("scrollbar_thumb_hover", t.getScrollbarThumbHover(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(w / 2 - 4, 4, 8, h - 8, 4, 4);
+		});
+		addEntry("scrollbar_track", t.getScrollbarTrack(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(w / 2 - 5, 2, 10, h - 4, 5, 5);
+		});
+		addEntry("slider_track_bg", t.getSliderTrackBg(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(4, h / 2 - 2, w - 8, 4, 3, 3);
+		});
+		addEntry("slider_track_fill", t.getSliderTrackFill(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(4, h / 2 - 2, (w - 8) / 2, 4, 3, 3);
+		});
+		addEntry("slider_thumb", t.getSliderThumb(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillOval(w / 2 - 5, h / 2 - 5, 10, 10);
+		});
+		addEntry("slider_thumb_hover", t.getSliderThumbHover(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillOval(w / 2 - 6, h / 2 - 6, 12, 12);
+		});
+		addEntry("text_on_accent", t.getTextOnAccent(), (g, w, h, c) -> {
+			g.setColor(t.getAccent());
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+			g.setColor(c[0]);
+			g.setFont(new Font("SansSerif", Font.BOLD, 9));
+			g.drawString("Btn", 9, h / 2 + 3);
+		});
+		addEntry("tooltip_bg", t.getTooltipBg(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 4, w - 4, h - 8, 4, 4);
+			g.setColor(new Color(120, 120, 120, 80));
+			g.setStroke(new BasicStroke(1f));
+			g.drawRoundRect(2, 4, w - 5, h - 9, 4, 4);
+		});
+		addEntry("nimbus_base", t.getNimbusBase(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 4, w - 4, h - 8, 4, 4);
+		});
+		addEntry("btn_export_bg", t.getBtnExportBg(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+		});
+		addEntry("btn_export_fg", t.getBtnExportFg(), (g, w, h, c) -> {
+			g.setColor(t.getBtnExportBg());
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+			g.setColor(c[0]);
+			g.setFont(new Font("SansSerif", Font.BOLD, 9));
+			g.drawString("Exp", 8, h / 2 + 3);
+		});
+		addEntry("btn_blocks_bg", t.getBtnBlocksBg(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+		});
+		addEntry("btn_blocks_fg", t.getBtnBlocksFg(), (g, w, h, c) -> {
+			g.setColor(t.getBtnBlocksBg());
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+			g.setColor(c[0]);
+			g.setFont(new Font("SansSerif", Font.BOLD, 9));
+			g.drawString("Blk", 8, h / 2 + 3);
+		});
+		addEntry("btn_import_bg", t.getBtnImportBg(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+		});
+		addEntry("btn_import_fg", t.getBtnImportFg(), (g, w, h, c) -> {
+			g.setColor(t.getBtnImportBg());
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+			g.setColor(c[0]);
+			g.setFont(new Font("SansSerif", Font.BOLD, 9));
+			g.drawString("Imp", 8, h / 2 + 3);
+		});
+		addEntry("btn_hover_bg", t.getBtnHoverBg(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+		});
+		addEntry("hover_bg_overlay", t.getHoverBgOverlay(), (g, w, h, c) -> {
+			g.setColor(new Color(80, 80, 80, 60));
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+		});
+		addEntry("importing_progress_fg", t.getImportingProgressFg(), (g, w, h, c) -> {
+			g.setColor(new Color(60, 60, 60, 120));
+			g.fillRoundRect(2, h / 2 - 3, w - 4, 6, 3, 3);
+			g.setColor(c[0]);
+			g.fillRoundRect(2, h / 2 - 3, (w - 4) * 2 / 3, 6, 3, 3);
+		});
+		addEntry("dropdown_bg", t.getDropdownBg(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 2, w - 4, h - 4, 6, 6);
+			g.setColor(new Color(120, 120, 120, 80));
+			g.setFont(g.getFont().deriveFont(Font.PLAIN, 9f));
+			g.drawString("▾", w / 2 - 4, h / 2 + 4);
+		});
+		addEntry("dropdown_item_bg", t.getDropdownItemBg(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 4, w - 4, h - 8, 4, 4);
+			g.setColor(new Color(120, 120, 120, 100));
+			g.setFont(g.getFont().deriveFont(Font.PLAIN, 9f));
+			g.drawString("Item", 6, h / 2 + 3);
+		});
+		addEntry("preview_placeholder_bg", t.getPreviewPlaceholderBg(), (g, w, h, c) -> {
+			g.setColor(c[0]);
+			g.fillRoundRect(2, 2, w - 4, h - 4, 4, 4);
+			g.setColor(new Color(120, 120, 120, 100));
+			g.setFont(g.getFont().deriveFont(Font.PLAIN, 8f));
+			g.drawString("IMG", w / 2 - 8, h / 2 + 3);
+		});
+		Color pbFg = t.getProgressBarFg() != null ? t.getProgressBarFg() : t.getAccent();
+		addEntry("progress_bar_fg", pbFg, (g, w, h, c) -> {
+			g.setColor(new Color(60, 60, 60, 80));
+			g.fillRoundRect(2, h / 2 - 4, w - 4, 8, 4, 4);
+			g.setColor(c[0]);
+			g.fillRoundRect(2, h / 2 - 4, (w - 4) * 2 / 3, 8, 4, 4);
+		});
+
+		Color contrastLight = t.getContrastLight() != null ? t.getContrastLight() : Color.WHITE;
+		addEntry("contrast_light", contrastLight, (g, w, h, c) -> {
+			g.setColor(new Color(80, 80, 80, 60));
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+			g.setColor(c[0]);
+			g.setFont(new Font("SansSerif", Font.BOLD, 9));
+			g.drawString("Aa", 8, h / 2 + 3);
+		});
+
+		Color contrastDark = t.getContrastDark() != null ? t.getContrastDark() : Color.BLACK;
+		addEntry("contrast_dark", contrastDark, (g, w, h, c) -> {
+			g.setColor(new Color(200, 200, 200, 80));
+			g.fillRoundRect(2, 4, w - 4, h - 8, 6, 6);
+			g.setColor(c[0]);
+			g.setFont(new Font("SansSerif", Font.BOLD, 9));
+			g.drawString("Aa", 8, h / 2 + 3);
+		});
+	}
+
+	private void addEntry(String key, Color initial, PreviewPainter painter) {
+		colorEntries.put(key, new ColorEntry(new Color[]{initial}, painter));
 	}
 
 	private void buildUi() {
@@ -85,11 +266,15 @@ public class ThemeEditorDialog extends JDialog {
 		row.setBackground(GuiApp.theme.getBgDeep());
 		row.setBorder(BorderFactory.createEmptyBorder(10, 12, 6, 12));
 
-		JLabel label = new JLabel(Lang.t("theme_editor.theme_name_label"));
+		JLabel label = new JLabel(UpdatableRegistry.translate("theme_editor.theme_name_label"));
 		label.setForeground(GuiApp.theme.getTextDim());
 		label.setFont(new Font("SansSerif", Font.BOLD, 11));
 
-		nameField = new JTextField(Lang.t("theme_editor.theme_name_hint"));
+		String initialName = editingThemeId != null
+			? AppTheme.load(editingThemeId).getName()
+			: UpdatableRegistry.translate("theme_editor.theme_name_hint");
+
+		nameField = new JTextField(initialName != null ? initialName : editingThemeId);
 		nameField.setBackground(GuiApp.theme.getBgInput());
 		nameField.setForeground(GuiApp.theme.getText());
 		nameField.setCaretColor(GuiApp.theme.getAccent());
@@ -105,51 +290,87 @@ public class ThemeEditorDialog extends JDialog {
 		return row;
 	}
 
-	private JScrollPane buildScrollableColorGrid() {
+	private InertialScrollPane buildScrollableColorGrid() {
 		JPanel grid = new JPanel(new GridBagLayout());
 		grid.setBackground(GuiApp.theme.getBgCard());
 		grid.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
 
-		GridBagConstraints labelConstraints = new GridBagConstraints();
-		labelConstraints.anchor = GridBagConstraints.WEST;
-		labelConstraints.fill = GridBagConstraints.HORIZONTAL;
-		labelConstraints.weightx = 1.0;
-		labelConstraints.insets = new Insets(3, 4, 3, 8);
+		GridBagConstraints labelGbc = new GridBagConstraints();
+		labelGbc.anchor = GridBagConstraints.WEST;
+		labelGbc.fill = GridBagConstraints.HORIZONTAL;
+		labelGbc.weightx = 1.0;
+		labelGbc.insets = new Insets(3, 4, 3, 8);
 
-		GridBagConstraints swatchConstraints = new GridBagConstraints();
-		swatchConstraints.anchor = GridBagConstraints.EAST;
-		swatchConstraints.insets = new Insets(3, 0, 3, 4);
+		GridBagConstraints previewGbc = new GridBagConstraints();
+		previewGbc.anchor = GridBagConstraints.EAST;
+		previewGbc.insets = new Insets(3, 0, 3, 6);
+
+		GridBagConstraints swatchGbc = new GridBagConstraints();
+		swatchGbc.anchor = GridBagConstraints.EAST;
+		swatchGbc.insets = new Insets(3, 0, 3, 4);
 
 		int row = 0;
 
-		for (Map.Entry<String, Color[]> entry : colorValues.entrySet()) {
+		for (Map.Entry<String, ColorEntry> entry : colorEntries.entrySet()) {
 			String key = entry.getKey();
-			Color[] colorRef = entry.getValue();
+			ColorEntry colorEntry = entry.getValue();
 
-			JLabel label = new JLabel(Lang.t("theme_editor.field_" + key));
+			JLabel label = new JLabel(UpdatableRegistry.translate("theme_editor.field_" + key));
 			label.setForeground(GuiApp.theme.getText());
 			label.setFont(new Font("SansSerif", Font.PLAIN, 12));
 
-			JButton swatch = buildColorSwatch(colorRef);
+			JPanel preview = buildPreviewPanel(colorEntry);
+			JButton swatch = buildColorSwatch(colorEntry, preview);
 
-			labelConstraints.gridx = 0;
-			labelConstraints.gridy = row;
-			grid.add(label, labelConstraints);
+			labelGbc.gridx = 0;
+			labelGbc.gridy = row;
+			grid.add(label, labelGbc);
 
-			swatchConstraints.gridx = 1;
-			swatchConstraints.gridy = row;
-			grid.add(swatch, swatchConstraints);
+			previewGbc.gridx = 1;
+			previewGbc.gridy = row;
+			grid.add(preview, previewGbc);
+
+			swatchGbc.gridx = 2;
+			swatchGbc.gridy = row;
+			grid.add(swatch, swatchGbc);
 
 			row++;
 		}
 
-		JScrollPane scroll = new JScrollPane(grid);
-		scroll.setBackground(GuiApp.theme.getBgDeep());
+		InertialScrollPane scroll = new InertialScrollPane(grid);
 		scroll.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, GuiApp.theme.getBorder()));
 		return scroll;
 	}
 
-	private JButton buildColorSwatch(Color[] colorRef) {
+	private JPanel buildPreviewPanel(ColorEntry entry) {
+		// Фиксируем цвета фона и рамки на момент открытия диалога,
+		// чтобы изменение bg_deep или border не перекрашивало все превью сразу.
+		Color fixedBg = GuiApp.theme.getBgDeep();
+		Color fixedBorder = GuiApp.theme.getBorder();
+
+		JPanel panel = new JPanel() {
+			@Override
+			protected void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+				entry.painter().paint(g2, getWidth(), getHeight(), entry.colorRef());
+				g2.dispose();
+			}
+		};
+		panel.setPreferredSize(new Dimension(PREVIEW_WIDTH, PREVIEW_HEIGHT));
+		panel.setMinimumSize(new Dimension(PREVIEW_WIDTH, PREVIEW_HEIGHT));
+		panel.setMaximumSize(new Dimension(PREVIEW_WIDTH, PREVIEW_HEIGHT));
+		panel.setBackground(fixedBg);
+		panel.setOpaque(true);
+		panel.setBorder(BorderFactory.createLineBorder(fixedBorder, 1));
+		return panel;
+	}
+
+	private JButton buildColorSwatch(ColorEntry entry, JPanel preview) {
+		Color[] colorRef = entry.colorRef();
+
 		JButton btn = new JButton() {
 			@Override
 			protected void paintComponent(Graphics g) {
@@ -173,20 +394,21 @@ public class ThemeEditorDialog extends JDialog {
 		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
 		btn.addActionListener(e -> {
-			Color chosen = JColorChooser.showDialog(this, "", colorRef[0], false);
-
-			if (chosen != null) {
+			Point anchor = btn.getLocationOnScreen();
+			anchor.translate(btn.getWidth() / 2, btn.getHeight());
+			ColorPickerPopup.show(this, colorRef[0], anchor, chosen -> {
 				colorRef[0] = chosen;
 				btn.repaint();
-			}
+				preview.repaint();
+			});
 		});
 
 		return btn;
 	}
 
 	private JPanel buildBottomBar() {
-		JButton saveBtn = buildPrimaryButton(Lang.t("theme_editor.save"), GuiApp.theme.getAccent(), GuiApp.theme.getBgDeep());
-		JButton cancelBtn = buildAccentButton(Lang.t("theme_editor.cancel"), GuiApp.theme.getBgInput(), GuiApp.theme.getTextDim());
+		JButton saveBtn = buildPrimaryButton(UpdatableRegistry.translate("theme_editor.save"), GuiApp.theme.getAccent(), GuiApp.theme.getBgDeep());
+		JButton cancelBtn = buildAccentButton(UpdatableRegistry.translate("theme_editor.cancel"), GuiApp.theme.getBgInput(), GuiApp.theme.getTextDim());
 
 		saveBtn.addActionListener(e -> onSave());
 		cancelBtn.addActionListener(e -> dispose());
@@ -204,34 +426,39 @@ public class ThemeEditorDialog extends JDialog {
 	}
 
 	private void onSave() {
-		String themeName = nameField.getText().trim();
+		String displayName = nameField.getText().trim();
 
-		if (themeName.isBlank()) {
+		if (displayName.isBlank()) {
 			JOptionPane.showMessageDialog(
 				this,
-				Lang.t("theme_editor.theme_name_label"),
-				Lang.t("theme_editor.title"),
+				UpdatableRegistry.translate("theme_editor.theme_name_label"),
+				UpdatableRegistry.translate("theme_editor.title"),
 				JOptionPane.WARNING_MESSAGE
 			);
 			return;
 		}
 
-		AppTheme theme = buildThemeFromValues();
+		AppTheme theme = buildThemeFromValues(displayName);
 
 		try {
-			AppTheme.save(theme, themeName);
+			String savedAs = AppTheme.save(theme);
 			JOptionPane.showMessageDialog(
 				this,
-				Lang.t("theme_editor.save_success", themeName),
-				Lang.t("theme_editor.title"),
+				UpdatableRegistry.translate("theme_editor.save_success", savedAs),
+				UpdatableRegistry.translate("theme_editor.title"),
 				JOptionPane.INFORMATION_MESSAGE
 			);
+
+			if (onSaved != null) {
+				onSaved.run();
+			}
+
 			dispose();
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(
 				this,
-				Lang.t("theme_editor.error_save_failed", ex.getMessage()),
-				Lang.t("theme_editor.title"),
+				UpdatableRegistry.translate("theme_editor.error_save_failed", ex.getMessage()),
+				UpdatableRegistry.translate("theme_editor.title"),
 				JOptionPane.ERROR_MESSAGE
 			);
 		}
@@ -240,17 +467,28 @@ public class ThemeEditorDialog extends JDialog {
 	/**
 	 * Собирает объект {@link AppTheme} из текущих значений цветов в редакторе
 	 * через рефлексию — маппит snake_case ключи на camelCase поля.
+	 * Поле {@code name} устанавливается из переданного отображаемого имени.
+	 *
+	 * @param displayName отображаемое имя темы, сохраняется в поле {@code name}
 	 */
-	private AppTheme buildThemeFromValues() {
+	private AppTheme buildThemeFromValues(String displayName) {
 		AppTheme theme = new AppTheme();
 
-		for (Map.Entry<String, Color[]> entry : colorValues.entrySet()) {
+		try {
+			Field nameField = AppTheme.class.getDeclaredField("name");
+			nameField.setAccessible(true);
+			nameField.set(theme, displayName);
+		} catch (NoSuchFieldException | IllegalAccessException ignored) {
+			// поле не найдено — пропускаем
+		}
+
+		for (Map.Entry<String, ColorEntry> entry : colorEntries.entrySet()) {
 			String fieldName = snakeToCamel(entry.getKey());
 
 			try {
 				Field field = AppTheme.class.getDeclaredField(fieldName);
 				field.setAccessible(true);
-				field.set(theme, entry.getValue()[0]);
+				field.set(theme, entry.getValue().colorRef()[0]);
 			} catch (NoSuchFieldException | IllegalAccessException ignored) {
 				// поле не найдено — пропускаем
 			}
@@ -289,10 +527,11 @@ public class ThemeEditorDialog extends JDialog {
 				g2.setColor(base);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
 				g2.dispose();
+				setForeground(ContrastTextRenderer.contrastFor(base));
 				super.paintComponent(g);
 			}
 		};
-		btn.setForeground(fgColor);
+		btn.setForeground(ContrastTextRenderer.contrastFor(bgColor));
 		btn.setFont(new Font("SansSerif", Font.BOLD, 13));
 		btn.setFocusPainted(false);
 		btn.setContentAreaFilled(false);
@@ -319,10 +558,11 @@ public class ThemeEditorDialog extends JDialog {
 				g2.setStroke(new BasicStroke(1f));
 				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
 				g2.dispose();
+				setForeground(ContrastTextRenderer.contrastFor(base));
 				super.paintComponent(g);
 			}
 		};
-		btn.setForeground(fgColor);
+		btn.setForeground(ContrastTextRenderer.contrastFor(bgColor));
 		btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
 		btn.setFocusPainted(false);
 		btn.setContentAreaFilled(false);
@@ -332,4 +572,11 @@ public class ThemeEditorDialog extends JDialog {
 
 		return btn;
 	}
+
+	@FunctionalInterface
+	private interface PreviewPainter {
+		void paint(Graphics2D g, int width, int height, Color[] colorRef);
+	}
+
+	private record ColorEntry(Color[] colorRef, PreviewPainter painter) {}
 }

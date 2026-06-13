@@ -4,6 +4,8 @@ import org.duollectis.mapart.tools.gui.GuiApp;
 import org.duollectis.mapart.tools.nativee.NativeHolder;
 import picocli.CommandLine;
 
+import javax.swing.*;
+
 public class MTBootstrap {
 
 	public static void main(String[] args) {
@@ -18,6 +20,10 @@ public class MTBootstrap {
 		NativeHolder.init();
 
 		if (args.length == 0) {
+			if (!SingleInstanceGuard.tryAcquire()) {
+				System.exit(0);
+			}
+
 			GuiApp.launch();
 			return;
 		}

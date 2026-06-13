@@ -23,8 +23,38 @@ import java.awt.image.BufferedImage;
 @UtilityClass
 public class ThemeTransition {
 
-	private static final int FADE_DURATION_MS = 280;
-	private static final int COLOR_DURATION_MS = 400;
+	private static final int FADE_DURATION_MS = 200;
+	private static final int COLOR_DURATION_MS = 220;
+
+	// Активный таймер цветового перехода — останавливается при повторном вызове
+	private static Timer activeColorTimer;
+
+	/**
+	 * Запускает плавный цветовой переход без пересборки UI.
+	 * Если предыдущая анимация ещё идёт — останавливает её и начинает новую.
+	 *
+	 * @param window    окно для перерисовки
+	 * @param themeName имя новой темы
+	 */
+	public static void applyColorOnly(JFrame window, String themeName) {
+		if (activeColorTimer != null) {
+			activeColorTimer.stop();
+		}
+
+		GuiApp.applyTheme(themeName);
+		GuiApp.setColorProgress(0f);
+		UpdatableRegistry.beginThemeAnim();
+
+		activeColorTimer = UiAnimator.animateFloat(0f, 1f, COLOR_DURATION_MS, progress -> {
+			GuiApp.setColorProgress(progress);
+			UpdatableRegistry.fireThemeAnimFrame();
+		}, () -> {
+			GuiApp.setColorProgress(1f);
+			UpdatableRegistry.endThemeAnim();
+			UpdatableRegistry.fireTheme(window);
+			activeColorTimer = null;
+		});
+	}
 
 	/**
 	 * Запускает анимацию смены темы для указанного окна.
@@ -44,12 +74,17 @@ public class ThemeTransition {
 
 		SwingUtilities.invokeLater(() -> {
 			GuiApp.setColorProgress(0f);
+			UpdatableRegistry.beginThemeAnim();
 			rebuildAction.run();
 
 			UiAnimator.animateFloat(0f, 1f, COLOR_DURATION_MS, progress -> {
 				GuiApp.setColorProgress(progress);
-				ThemeEventBus.fire(window);
-			}, () -> GuiApp.setColorProgress(1f));
+				UpdatableRegistry.fireThemeAnimFrame();
+			}, () -> {
+				GuiApp.setColorProgress(1f);
+				UpdatableRegistry.endThemeAnim();
+				UpdatableRegistry.fireTheme(window);
+			});
 
 			UiAnimator.animateFloat(1f, 0f, FADE_DURATION_MS, alpha -> {
 				overlay.setAlpha(alpha);

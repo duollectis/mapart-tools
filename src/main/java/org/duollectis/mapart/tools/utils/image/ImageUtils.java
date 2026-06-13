@@ -18,7 +18,16 @@ public class ImageUtils {
 	 * на границе чёрного фона и реального изображения.
 	 */
 	public FitResult prepareImage(BufferedImage source, int targetWidth, int targetHeight, CropSettings crop) {
-		return fitImage(source, targetWidth, targetHeight, crop.offsetX(), crop.offsetY(), crop.scaleX(), crop.scaleY());
+		return fitImage(
+			source,
+			targetWidth,
+			targetHeight,
+			crop.offsetX(),
+			crop.offsetY(),
+			crop.scaleX(),
+			crop.scaleY(),
+			crop.bgColor()
+		);
 	}
 
 	/**
@@ -39,6 +48,19 @@ public class ImageUtils {
 		double userScaleX,
 		double userScaleY
 	) {
+		return fitImage(source, targetWidth, targetHeight, offsetX, offsetY, userScaleX, userScaleY, Color.BLACK);
+	}
+
+	public FitResult fitImage(
+		BufferedImage source,
+		int targetWidth,
+		int targetHeight,
+		int offsetX,
+		int offsetY,
+		double userScaleX,
+		double userScaleY,
+		Color bgColor
+	) {
 		double baseScaleX = (double) targetWidth / source.getWidth();
 		double baseScaleY = (double) targetHeight / source.getHeight();
 		double baseScale = Math.min(baseScaleX, baseScaleY);
@@ -56,7 +78,13 @@ public class ImageUtils {
 
 		BufferedImage result = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
 
+		Graphics2D g2 = result.createGraphics();
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+		g2.setColor(bgColor);
+		g2.fillRect(0, 0, targetWidth, targetHeight);
+
 		if (visX1 >= visX2 || visY1 >= visY2) {
+			g2.dispose();
 			return new FitResult(result, 0, 0, 0, 0);
 		}
 
@@ -67,8 +95,6 @@ public class ImageUtils {
 		int sx2 = Math.min((int) Math.round((visX2 - drawX) * srcScaleX), source.getWidth());
 		int sy2 = Math.min((int) Math.round((visY2 - drawY) * srcScaleY), source.getHeight());
 
-		Graphics2D g2 = result.createGraphics();
-		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 		g2.drawImage(source, visX1, visY1, visX2, visY2, sx1, sy1, sx2, sy2, null);
 		g2.dispose();
 

@@ -2,10 +2,7 @@ package org.duollectis.mapart.tools.converter;
 
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.duollectis.mapart.tools.gui.Lang;
-import org.duollectis.mapart.tools.gui.widget.HasDescription;
 import org.duollectis.mapart.tools.nativee.NativeBridge;
 import org.duollectis.mapart.tools.nativee.NativeMethod;
 import org.duollectis.mapart.tools.nativee.NativeWrapper;
@@ -54,7 +51,7 @@ public class Ditherer implements AutoCloseable {
 
 	@Setter
 	@NonNull
-	private Algorithm algorithm = Algorithm.FLOYD_STEINBERG;
+	private DitherAlgorithm algorithm = DitherAlgorithm.FLOYD_STEINBERG;
 
 	@Setter
 	private IntUnaryOperator onProgress;
@@ -281,80 +278,6 @@ public class Ditherer implements AutoCloseable {
 		graphics.dispose();
 
 		return ((DataBufferByte) bgrImage.getRaster().getDataBuffer()).getData();
-	}
-
-	@Getter
-	@RequiredArgsConstructor
-	public enum Algorithm implements HasDescription {
-		// Диффузия ошибки
-		FLOYD_STEINBERG(0),
-		STUCKI(1),
-		JJN(2),
-		BURKES(3),
-		SIERRA3(4),
-		SIERRA_LITE(5),
-		ATKINSON(6),
-		SIERRA2(7),
-		FILTER_LITE(8),
-
-		// Упорядоченный дизеринг Байера
-		BAYER_2X2(9),
-		BAYER_4X4(10),
-		BAYER_8X8(11),
-
-		// Без дизеринга
-		NONE(12),
-
-		// Расширенный упорядоченный дизеринг
-		BAYER_16X16(13),
-		CLUSTERED_DOT(14),
-		HALFTONE(15),
-		VOID_AND_CLUSTER(16),
-		BAYER_3X3(17),
-		ORDERED_3X3(18),
-		CLUSTERED_DOT_4X4(19),
-		VOID_AND_CLUSTER_14X14(20),
-
-		// Floyd-Steinberg с нестандартными делителями
-		FLOYD_STEINBERG_20(21),
-		FLOYD_STEINBERG_24(22),
-
-		// Однострочные фильтры диффузии
-		FAN(23),
-		SHIAU_FAN(24),
-		SHIAU_FAN_2(25),
-
-		// Дополнительные алгоритмы диффузии ошибки
-		PIGEON(26),
-		NAKANO(27),
-		ZHOU_FANG(28),
-
-		// Дополнительные матрицы упорядоченного дизеринга
-		DISPERSED_DOT_4X4(29),
-		DISPERSED_DOT_8X8(30),
-		BAYER_32X32(31),
-		MAGIC_SQUARE_5X5(32),
-		BLUE_NOISE_16X16(33);
-
-		private final int id;
-
-		@Override
-		public String toString() {
-			try {
-				return Lang.t("algorithm." + name());
-			} catch (Exception ignored) {
-				return name();
-			}
-		}
-
-		@Override
-		public String getDescription() {
-			try {
-				return Lang.t("algorithm." + name() + ".desc");
-			} catch (Exception ignored) {
-				return null;
-			}
-		}
 	}
 
 	private interface ImageDithererWrapper extends NativeWrapper {

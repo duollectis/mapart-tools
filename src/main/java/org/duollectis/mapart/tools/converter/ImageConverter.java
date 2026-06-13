@@ -18,7 +18,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.IntUnaryOperator;
 
 public class ImageConverter {
@@ -42,6 +45,9 @@ public class ImageConverter {
 	 * Выполняет только дизеринг изображения и возвращает {@link Ditherer} с результатом.
 	 * Схематики не сохраняются — это позволяет сначала показать превью пользователю.
 	 * Вызывающий код обязан закрыть возвращённый {@link Ditherer} после использования.
+	 * <p>
+	 * Прогресс публикуется через {@code onStage} на каждом значимом шаге:
+	 * загрузка палитры (0–4%), подготовка изображения (5–9%), дизеринг (10–100%).
 	 *
 	 * @param paletteJson    JSON-строка с палитрой цветов версии Майнкрафта
 	 * @param imageFile      исходное изображение
@@ -52,7 +58,22 @@ public class ImageConverter {
 	 * @param adjustments    коррекция изображения
 	 * @param ditherSettings настройки алгоритма дизеринга
 	 * @param cropSettings   настройки кропа/подгонки изображения
+	 * @param onStage        колбэк прогресса — вызывается на каждом этапе с текстом и процентом
 	 * @return {@link Ditherer} с заполненным результатом дизеринга и готовым превью
+	 */
+	/**
+	 * Выполняет только дизеринг изображения и возвращает {@link Ditherer} с результатом.
+	 * Схематики не сохраняются — это позволяет сначала показать превью пользователю.
+	 * Вызывающий код обязан закрыть возвращённый {@link Ditherer} после использования.
+	 * <p>
+	 * Прогресс публикуется через {@code onStage} на каждом значимом шаге:
+	 * загрузка палитры (0–4%), подготовка изображения (5–9%), дизеринг (10–100%).
+	 * <p>
+	 * Отмена реализована через {@code cancelCheck}: колбэк прогресса возвращает {@code 1}
+	 * в нативный C++ код, который немедленно прерывает дизеринг. После этого
+	 * бросается {@link CancellationException}, которую воркер конвертации перехватывает.
+	 *
+	 * @param cancelCheck поставщик флага отмены — вызывается на каждом шаге прогресса
 	 */
 	public Ditherer dither(
 		String paletteJson,
@@ -60,21 +81,30 @@ public class ImageConverter {
 		File blocksFile,
 		int mapWidth,
 		int mapHeight,
-		Ditherer.Algorithm algorithm,
+		DitherAlgorithm algorithm,
 		ImageAdjustments adjustments,
 		DitherSettings ditherSettings,
 		CropSettings cropSettings,
 		Map<String, WeightedSelector<BlockData>> blockSelectors,
 		StaircaseMode staircaseMode,
-		IntUnaryOperator onProgress
+		Consumer<ConversionStage> onStage,
+		BooleanSupplier cancelCheck
 	) {
 		Set<String> allowedBlocks = loadAllowedBlocks(blocksFile);
-		loadPalette(paletteJson, allowedBlocks, blockSelectors, staircaseMode);
+		loadPalette(paletteJson, allowedBlocks, blockSelectors, staircaseMode, onStage);
 
 		try {
+			onStage.accept(new ConversionStage(ConversionStage.Phase.PREPARING_IMAGE, 5));
 			BufferedImage rawImage = ImageIO.read(imageFile);
-			FitResult fit = ImageUtils.prepareImage(rawImage, MAP_SIZE * mapWidth, MAP_SIZE * mapHeight, cropSettings);
-			BufferedImage image = ImageUtils.applyAdjustments(fit.image(), adjustments);
+
+			onStage.accept(new ConversionStage(ConversionStage.Phase.PREPARING_IMAGE, 6));
+			BufferedImage adjusted = ImageUtils.applyAdjustments(rawImage, adjustments);
+
+			onStage.accept(new ConversionStage(ConversionStage.Phase.PREPARING_IMAGE, 8));
+			FitResult fit = ImageUtils.prepareImage(adjusted, MAP_SIZE * mapWidth, MAP_SIZE * mapHeight, cropSettings);
+			BufferedImage image = fit.image();
+
+			onStage.accept(new ConversionStage(ConversionStage.Phase.DITHERING, 10));
 
 			ditherer.setErrRateR(ditherSettings.errRateR());
 			ditherer.setErrRateG(ditherSettings.errRateG());
@@ -83,9 +113,23 @@ public class ImageConverter {
 			ditherer.setColorMetric(ditherSettings.colorMetric());
 			ditherer.setPalette(palette);
 			ditherer.setAlgorithm(algorithm);
-			ditherer.setOnProgress(onProgress);
-			ditherer.setClipRect(fit.clipX(), fit.clipY(), fit.clipW(), fit.clipH());
+			ditherer.setOnProgress(nativePercent -> {
+				if (cancelCheck.getAsBoolean()) {
+					return 1;
+				}
+
+				int mapped = 10 + nativePercent * 90 / 100;
+				onStage.accept(new ConversionStage(ConversionStage.Phase.DITHERING, mapped));
+				return 0;
+			});
 			ditherer.processImage(image);
+
+			if (cancelCheck.getAsBoolean()) {
+				ditherer.close();
+				throw new CancellationException();
+			}
+		} catch (CancellationException e) {
+			throw e;
 		} catch (Exception e) {
 			ditherer.close();
 			throw new RuntimeException(e);
@@ -160,7 +204,7 @@ public class ImageConverter {
 				ditherer.setErrRateB(defaults.errRateB());
 				ditherer.setNoiseLevel(defaults.noiseLevel());
 			ditherer.setPalette(palette);
-			ditherer.setAlgorithm(Ditherer.Algorithm.FLOYD_STEINBERG);
+			ditherer.setAlgorithm(DitherAlgorithm.FLOYD_STEINBERG);
 			ditherer.processImage(image);
 
 			renderSchematics(
@@ -196,6 +240,20 @@ public class ImageConverter {
 		Map<String, WeightedSelector<BlockData>> blockSelectors,
 		StaircaseMode staircaseMode
 	) {
+		loadPalette(data, whitelist, blockSelectors, staircaseMode, stage -> {});
+	}
+
+	/**
+	 * Загружает палитру с публикацией прогресса через {@code onStage}.
+	 * Прогресс публикуется в диапазоне 0–4% по мере обработки каждого цвета палитры.
+	 */
+	public void loadPalette(
+		String data,
+		Set<String> whitelist,
+		Map<String, WeightedSelector<BlockData>> blockSelectors,
+		StaircaseMode staircaseMode,
+		Consumer<ConversionStage> onStage
+	) {
 		if (!palette.isEmpty()) {
 			throw new RuntimeException("Палитра уже загружена!");
 		}
@@ -205,6 +263,8 @@ public class ImageConverter {
 			new TypeToken<Map<Integer, List<BlockData>>>() {}.getType()
 		);
 
+		onStage.accept(new ConversionStage(ConversionStage.Phase.LOADING_PALETTE, 1));
+
 		// Итерируем по entrySet напрямую — без лишней копии keySet
 		paletteMap.entrySet().removeIf(entry -> {
 			entry.getValue().removeIf(block ->
@@ -213,7 +273,11 @@ public class ImageConverter {
 			return entry.getValue().isEmpty();
 		});
 
+		onStage.accept(new ConversionStage(ConversionStage.Phase.LOADING_PALETTE, 2));
+
 		var allowedBrightnesses = staircaseMode.getAllowedBrightnesses();
+		int total = paletteMap.size();
+		int[] processed = {0};
 
 		paletteMap.forEach((color, blocks) -> {
 			String baseId = blocks.getFirst().getId();
@@ -226,6 +290,10 @@ public class ImageConverter {
 				int scaledColor = RGBUtils.scaleRGB(color, brightness.getModifier());
 				palette.add(new PaletteEntry(blocks, scaledColor, brightness, baseSelector.copy()));
 			}
+
+			processed[0]++;
+			int percent = 2 + processed[0] * 2 / total;
+			onStage.accept(new ConversionStage(ConversionStage.Phase.LOADING_PALETTE, percent));
 		});
 	}
 
@@ -294,7 +362,7 @@ public class ImageConverter {
 				int idx = dithered[my * MAP_SIZE + y][mx * MAP_SIZE + x];
 				// Пустые пиксели вне clip_rect (sentinel -1) заменяем индексом 0
 				// для корректного расчёта высот в BlockLeveler
-				slice[y][x] = idx < 0 ? 0 : idx;
+				slice[y][x] = Math.max(idx, 0);
 			}
 		}
 
@@ -376,6 +444,46 @@ public class ImageConverter {
 	 * @param paletteJson  JSON-строка с палитрой цветов версии Майнкрафта
 	 * @return изображение превью размером sizeX × sizeZ
 	 */
+	/**
+	 * Перегрузка для пакетного импорта: принимает уже построенную карту цветов блоков,
+	 * чтобы не парсить и не пересчитывать палитру для каждого файла отдельно.
+	 */
+	public static BufferedImage renderPreview(
+		SchematicImportResult importResult,
+		Map<String, Map<Brightness, Integer>> blockColorMap
+	) {
+		BlockData[][] blocks = importResult.blocks();
+		int[][] topLevels = importResult.topLevels();
+		int height = blocks.length;
+		int width = height > 0 ? blocks[0].length : 0;
+		int mapHeight = importResult.mapHeight();
+		int tileRows = mapHeight > 0 ? height / mapHeight : height;
+
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				BlockData block = blocks[y][x];
+
+				if (block == null) {
+					image.setRGB(x, y, Color.GRAY.getRGB());
+					continue;
+				}
+
+				Brightness brightness = resolveBrightness(topLevels, y, x, tileRows);
+				Map<Brightness, Integer> colorsByBrightness = blockColorMap.get(block.getId());
+
+				int color = colorsByBrightness == null
+					? Color.GRAY.getRGB()
+					: colorsByBrightness.getOrDefault(brightness, colorsByBrightness.getOrDefault(Brightness.NORMAL, Color.GRAY.getRGB()));
+
+				image.setRGB(x, y, color);
+			}
+		}
+
+		return image;
+	}
+
 	public static BufferedImage renderPreview(SchematicImportResult importResult, String paletteJson) {
 		Map<Integer, List<BlockData>> paletteMap = JsonHelper.GSON.fromJson(
 			paletteJson,
@@ -444,6 +552,10 @@ public class ImageConverter {
 		}
 
 		return currentY < prevY ? Brightness.LOW : Brightness.NORMAL;
+	}
+
+	public static Map<String, Map<Brightness, Integer>> buildBlockColorMapPublic(Map<Integer, List<BlockData>> paletteMap) {
+		return buildBlockColorMap(paletteMap);
 	}
 
 	private static Map<String, Map<Brightness, Integer>> buildBlockColorMap(Map<Integer, List<BlockData>> paletteMap) {

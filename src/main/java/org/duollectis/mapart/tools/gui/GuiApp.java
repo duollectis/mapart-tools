@@ -1,5 +1,10 @@
 package org.duollectis.mapart.tools.gui;
 
+import org.duollectis.mapart.tools.app.SingleInstanceGuard;
+import org.duollectis.mapart.tools.gui.keybind.KeyBindManager;
+import org.duollectis.mapart.tools.gui.util.AppIcon;
+import org.duollectis.mapart.tools.app.DiscordRpc;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.window.MainWindow;
 
 import javax.swing.*;
@@ -8,21 +13,51 @@ import java.awt.*;
 
 public class GuiApp {
 
-	private static AppTheme targetTheme = AppTheme.load("dark");
+	private static AppTheme targetTheme = AppTheme.load(BuiltinTheme.DARK.getId());
 	private static AppTheme previousTheme = targetTheme;
 	private static float colorProgress = 1f;
 
 	/**
-	 * Возвращает текущую активную тему.
-	 * Во время анимации смены темы возвращает интерполированный снимок между
-	 * {@code previousTheme} и {@code targetTheme}. После завершения — {@code targetTheme}.
+	 * Переиспользуемый объект для интерполяции — мутируется на каждом кадре анимации
+	 * через {@link AppTheme#blendInto} без создания новых объектов.
+	 */
+	private static final AppTheme blendedTheme = new AppTheme();
+
+	/**
+	 * Текущая активная тема.
+	 * Во время анимации смены темы — это {@code blendedTheme} с интерполированными цветами.
+	 * После завершения анимации — {@code targetTheme}.
 	 */
 	public static AppTheme theme = targetTheme;
 
 	public static void launch() {
-		String savedTheme = AppPreferences.loadTheme("dark");
-		applyTheme(savedTheme);
-		SwingUtilities.invokeLater(MainWindow::new);
+		AppState.init();
+		KeyBindManager.load();
+
+		boolean rpcEnabled = AppPreferences.loadDiscordRpc(true);
+		DiscordRpc.setEnabled(rpcEnabled);
+
+		// Синхронный прогрев кэша SVG-иконок до показа окна.
+		// Без этого первый paintComponent() кнопок блокирует EDT на ~2-3 сек
+		// из-за парсинга SVG через SVGUniverse для каждой иконки × цвет.
+		AppIcon.warmupCache(
+			theme.getText(),
+			theme.getTextDim(),
+			theme.getAccent(),
+			theme.getBgCard(),
+			theme.getContrastLight(),
+			theme.getContrastDark()
+		);
+
+		SwingUtilities.invokeLater(() -> {
+			MainWindow window = new MainWindow();
+			SingleInstanceGuard.registerFocusHandler(() -> {
+				window.setExtendedState(window.getExtendedState() & ~Frame.ICONIFIED);
+				window.setVisible(true);
+				window.toFront();
+				window.requestFocus();
+			});
+		});
 	}
 
 	public static void applyTheme(String themeName) {
@@ -40,8 +75,8 @@ public class GuiApp {
 			SwingUtilities.invokeLater(() ->
 				JOptionPane.showMessageDialog(
 					null,
-					Lang.t("theme_editor.error_load_failed", themeName, error),
-					Lang.t("settings.theme"),
+					UpdatableRegistry.translate("theme_editor.error_load_failed", themeName, error),
+					UpdatableRegistry.translate("settings.theme"),
 					JOptionPane.WARNING_MESSAGE
 				)
 			);
@@ -56,9 +91,13 @@ public class GuiApp {
 	 */
 	public static void setColorProgress(float progress) {
 		colorProgress = progress;
-		theme = colorProgress >= 1f
-			? targetTheme
-			: AppTheme.blend(previousTheme, targetTheme, colorProgress);
+
+		if (colorProgress >= 1f) {
+			theme = targetTheme;
+		} else {
+			AppTheme.blendInto(blendedTheme, previousTheme, targetTheme, colorProgress);
+			theme = blendedTheme;
+		}
 	}
 
 	private static void applyLookAndFeel() {

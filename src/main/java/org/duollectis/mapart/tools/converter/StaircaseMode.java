@@ -2,7 +2,7 @@ package org.duollectis.mapart.tools.converter;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.duollectis.mapart.tools.gui.Lang;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.HasDescription;
 
 import java.util.EnumSet;
@@ -53,11 +53,11 @@ public enum StaircaseMode implements HasDescription {
 
 	@Override
 	public String toString() {
-		return Lang.t(langKey);
+		return UpdatableRegistry.translate(langKey);
 	}
 
 	@Override
 	public String getDescription() {
-		return Lang.t(langKey + ".desc");
+		return UpdatableRegistry.translate(langKey + ".desc");
 	}
 }

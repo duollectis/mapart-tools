@@ -5,8 +5,10 @@ import org.duollectis.mapart.tools.converter.BlockData;
 import org.duollectis.mapart.tools.converter.SupportBlockSettings;
 import org.duollectis.mapart.tools.converter.WeightedSelector;
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.Lang;
+import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.block.BlockIconLoader;
+import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.util.AppTooltip;
 import org.duollectis.mapart.tools.gui.widget.InertialScrollPane;
 import org.duollectis.mapart.tools.gui.widget.ModernCheckBox;
@@ -17,6 +19,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
@@ -96,7 +99,7 @@ public class BlockPickerDialog extends JDialog {
 		SupportBlockSettings initialSupport,
 		Map<String, WeightedSelector<BlockData>> initialSelectors
 	) {
-		super(parent, Lang.t("picker.title", version), true);
+		super(parent, UpdatableRegistry.translate("picker.title", version), true);
 		this.version = version;
 		this.targetFile = targetFile;
 		this.fullPalette = loadPalette(version);
@@ -203,26 +206,35 @@ public class BlockPickerDialog extends JDialog {
 			BorderFactory.createEmptyBorder(10, 16, 10, 16)
 		));
 
-		JLabel title = new JLabel("🎨 " + Lang.t("picker.title", version));
+		JLabel title = new JLabel(UpdatableRegistry.translate("picker.title", version));
+		title.setIcon(AppIcon.PALETTE.colored(ACCENT));
+		title.setIconTextGap(6);
 		title.setFont(new Font("SansSerif", Font.BOLD, 15));
 		title.setForeground(ACCENT);
 
-		viewToggle = new ModernToggleButton("📝 " + Lang.t("picker.view_names"));
+		viewToggle = new ModernToggleButton(UpdatableRegistry.translate("picker.view_names"));
+		viewToggle.setIcon(AppIcon.LIST.colored(TEXT));
 		viewToggle.setSelected(false);
 		viewToggle.setEnabled(iconLoader != null);
 		AppTooltip.install(
 			viewToggle,
 			iconLoader == null
-				? Lang.t("picker.icons_unavailable", version)
-				: Lang.t("picker.view_toggle_tooltip")
+				? UpdatableRegistry.translate("picker.icons_unavailable", version)
+				: UpdatableRegistry.translate("picker.view_toggle_tooltip")
 		);
 		viewToggle.addActionListener(e -> {
 			iconMode = !viewToggle.isSelected();
-			viewToggle.setText(iconMode ? "📝 " + Lang.t("picker.view_names") : "🖼 " + Lang.t("picker.view_icons"));
+			if (iconMode) {
+				viewToggle.setText(UpdatableRegistry.translate("picker.view_names"));
+				viewToggle.setIcon(AppIcon.LIST.colored(TEXT));
+			} else {
+				viewToggle.setText(UpdatableRegistry.translate("picker.view_icons"));
+				viewToggle.setIcon(AppIcon.GRID.colored(TEXT));
+			}
 			refreshColorInfo();
 		});
 
-		hideConfiguredFilter = new ModernCheckBox(Lang.t("picker.hide_configured"));
+		hideConfiguredFilter = new ModernCheckBox(UpdatableRegistry.translate("picker.hide_configured"));
 		hideConfiguredFilter.addActionListener(e -> onSearchChanged());
 
 		selectedCountLabel = new JLabel();
@@ -279,7 +291,7 @@ public class BlockPickerDialog extends JDialog {
 
 		JScrollPane scroll = buildScrollPane(colorList);
 
-		JLabel label = new JLabel(Lang.t("picker.colors") + " (" + fullPalette.size() + ")");
+		JLabel label = new JLabel(UpdatableRegistry.translate("picker.colors") + " (" + fullPalette.size() + ")");
 		label.setForeground(TEXT_DIM);
 		label.setFont(new Font("SansSerif", Font.PLAIN, 11));
 
@@ -297,7 +309,7 @@ public class BlockPickerDialog extends JDialog {
 	}
 
 	private JPanel buildBlocksPanel() {
-		colorInfoLabel = new JLabel("← " + Lang.t("picker.blocks"));
+		colorInfoLabel = new JLabel("← " + UpdatableRegistry.translate("picker.blocks"));
 		colorInfoLabel.setForeground(TEXT_DIM);
 		colorInfoLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
 
@@ -337,8 +349,8 @@ public class BlockPickerDialog extends JDialog {
 	}
 
 	private JPanel buildSelectAllRow() {
-		JButton selectAll = buildSmallButton(Lang.t("picker.select_all_color"));
-		JButton selectNone = buildSmallButton(Lang.t("picker.clear_all"));
+		JButton selectAll = buildSmallButton(UpdatableRegistry.translate("picker.select_all_color"));
+		JButton selectNone = buildSmallButton(UpdatableRegistry.translate("picker.clear_all"));
 
 		selectAll.addActionListener(e -> setAllBlocksInColor(true));
 		selectNone.addActionListener(e -> setAllBlocksInColor(false));
@@ -358,10 +370,12 @@ public class BlockPickerDialog extends JDialog {
 	}
 
 	private JPanel buildBottomBar() {
-		JButton selectAllGlobal = buildSmallButton(Lang.t("picker.select_all"));
-		JButton clearAll = buildSmallButton(Lang.t("picker.clear_all"));
-		JButton save = buildPrimaryButton("💾 " + Lang.t("picker.save"), ACCENT, Color.WHITE);
-		JButton cancel = buildSmallButton(Lang.t("picker.cancel"));
+		JButton selectAllGlobal = buildSmallButton(UpdatableRegistry.translate("picker.select_all"));
+		JButton clearAll = buildSmallButton(UpdatableRegistry.translate("picker.clear_all"));
+		JButton save = buildPrimaryButton(UpdatableRegistry.translate("picker.save"), ACCENT, Color.WHITE);
+		save.setIcon(AppIcon.SAVE.colored(ContrastTextRenderer.contrastFor(ACCENT)));
+		save.setIconTextGap(6);
+		JButton cancel = buildSmallButton(UpdatableRegistry.translate("picker.cancel"));
 
 		selectAllGlobal.addActionListener(e -> {
 			fullPalette.values().forEach(blocks -> blocks.forEach(b -> enabledBlocks.add(b.getId())));
@@ -437,7 +451,9 @@ public class BlockPickerDialog extends JDialog {
 	 * Кнопка "⚖ Настроить распределение" активна при >= 2 выбранных блоках.
 	 */
 	private void showSupportBlocksPanel() {
-		colorInfoLabel.setText("🧱 " + Lang.t("picker.tab_support"));
+		colorInfoLabel.setIcon(AppIcon.BLOCK.colored(TEXT));
+		colorInfoLabel.setIconTextGap(4);
+		colorInfoLabel.setText(UpdatableRegistry.translate("picker.tab_support"));
 
 		List<BlockData> allCandidates = fullPalette.values().stream()
 			.flatMap(List::stream)
@@ -560,7 +576,8 @@ public class BlockPickerDialog extends JDialog {
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 				boolean on = isSelected();
-				g2.setColor(on ? new Color(20, 50, 80) : BG_INPUT);
+				Color bgColor = on ? blendWithBg(ACCENT, BG_INPUT, 0.25f) : BG_INPUT;
+				g2.setColor(bgColor);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
 
 				g2.setColor(on ? ACCENT : BORDER);
@@ -573,7 +590,14 @@ public class BlockPickerDialog extends JDialog {
 				}
 
 				g2.dispose();
-				super.paintComponent(g);
+
+				String text = getText();
+					if (text == null || text.isEmpty() || getIcon() != null) {
+						super.paintComponent(g);
+						return;
+					}
+	
+					ContrastTextRenderer.drawCentered((Graphics2D) g, text, getFont(), bgColor, getWidth(), getHeight());
 			}
 		};
 
@@ -591,7 +615,6 @@ public class BlockPickerDialog extends JDialog {
 		} else {
 			btn.setText(shortName(block.getId()));
 			btn.setFont(new Font("Monospaced", Font.PLAIN, 9));
-			btn.setForeground(active ? TEXT : TEXT_DIM);
 		}
 
 		btn.addActionListener(e -> {
@@ -618,15 +641,15 @@ public class BlockPickerDialog extends JDialog {
 				protected void paintComponent(Graphics g) {
 					Graphics2D g2 = (Graphics2D) g.create();
 					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					g2.setColor(new Color(0, 0, 0, 160));
+					g2.setColor(new Color(0, 0, 0, 200));
 					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 4, 4);
 					g2.dispose();
 					super.paintComponent(g);
 				}
 			};
-
+	
 			pctBadge.setFont(new Font("SansSerif", Font.BOLD, 9));
-			pctBadge.setForeground(new Color(150, 210, 255));
+			pctBadge.setForeground(Color.WHITE);
 			pctBadge.setOpaque(false);
 			pctBadge.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -667,7 +690,7 @@ public class BlockPickerDialog extends JDialog {
 			.filter(block -> filter.isBlank() || block.getId().contains(filter))
 			.forEach(block -> {
 				String label = block.isNeedSupport()
-					? buildBlockLabel(block) + Lang.t("picker.needs_support")
+					? buildBlockLabel(block) + UpdatableRegistry.translate("picker.needs_support")
 					: buildBlockLabel(block);
 
 				ModernCheckBox cb = new ModernCheckBox(label);
@@ -708,7 +731,7 @@ public class BlockPickerDialog extends JDialog {
 	}
 
 	private JButton buildIconVariantButton() {
-		JButton btn = new JButton("⚖ " + Lang.t("variant_picker.btn_tooltip")) {
+		JButton btn = new JButton(UpdatableRegistry.translate("variant_picker.btn_tooltip")) {
 			private boolean hovered = false;
 
 			{
@@ -733,9 +756,9 @@ public class BlockPickerDialog extends JDialog {
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 				Color base = isEnabled()
 					? (getModel().isPressed()
-						? new Color(30, 60, 100)
-						: (hovered ? new Color(40, 80, 130) : new Color(25, 50, 85)))
-					: new Color(30, 32, 48);
+						? GuiApp.theme.getBtnHoverBg().darker()
+						: (hovered ? GuiApp.theme.getBtnHoverBg() : BG_INPUT))
+					: BG_INPUT;
 				g2.setColor(base);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
 				g2.setColor(BORDER);
@@ -746,6 +769,8 @@ public class BlockPickerDialog extends JDialog {
 			}
 		};
 
+		btn.setIcon(AppIcon.BALANCE.colored(ACCENT));
+		btn.setIconTextGap(5);
 		btn.setForeground(ACCENT);
 		btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
 		btn.setFocusPainted(false);
@@ -753,7 +778,7 @@ public class BlockPickerDialog extends JDialog {
 		btn.setBorderPainted(false);
 		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		btn.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
-		AppTooltip.install(btn, Lang.t("variant_picker.hint"));
+		AppTooltip.install(btn, UpdatableRegistry.translate("variant_picker.hint"));
 		btn.setEnabled(false);
 
 		return btn;
@@ -892,8 +917,8 @@ public class BlockPickerDialog extends JDialog {
 
 		sep.setOpaque(false);
 
-		JLabel label = new JLabel(Lang.t("picker.separator_inactive"));
-		label.setForeground(new Color(80, 85, 110));
+		JLabel label = new JLabel(UpdatableRegistry.translate("picker.separator_inactive"));
+		label.setForeground(TEXT_DIM);
 		label.setFont(new Font("SansSerif", Font.PLAIN, 10));
 		label.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -916,7 +941,8 @@ public class BlockPickerDialog extends JDialog {
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 				boolean on = isSelected();
-				g2.setColor(on ? new Color(30, 65, 30) : BG_INPUT);
+				Color bgColor = on ? blendWithBg(SUCCESS, BG_INPUT, 0.25f) : BG_INPUT;
+				g2.setColor(bgColor);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
 
 				g2.setColor(on ? SUCCESS : BORDER);
@@ -930,7 +956,14 @@ public class BlockPickerDialog extends JDialog {
 				}
 
 				g2.dispose();
-				super.paintComponent(g);
+
+				String text = getText();
+					if (text == null || text.isEmpty() || getIcon() != null) {
+						super.paintComponent(g);
+						return;
+					}
+	
+					ContrastTextRenderer.drawCentered((Graphics2D) g, text, getFont(), bgColor, getWidth(), getHeight());
 			}
 		};
 
@@ -943,7 +976,7 @@ public class BlockPickerDialog extends JDialog {
 		AppTooltip.install(
 			btn,
 			block.isNeedSupport()
-				? buildBlockLabel(block) + Lang.t("picker.needs_support")
+				? buildBlockLabel(block) + UpdatableRegistry.translate("picker.needs_support")
 				: buildBlockLabel(block)
 		);
 		btn.setPreferredSize(new Dimension(cellSize, cellSize));
@@ -953,7 +986,6 @@ public class BlockPickerDialog extends JDialog {
 		} else {
 			btn.setText(shortName(block.getId()));
 			btn.setFont(new Font("Monospaced", Font.PLAIN, 9));
-			btn.setForeground(active ? TEXT : TEXT_DIM);
 		}
 
 		btn.addActionListener(e -> {
@@ -983,15 +1015,15 @@ public class BlockPickerDialog extends JDialog {
 				protected void paintComponent(Graphics g) {
 					Graphics2D g2 = (Graphics2D) g.create();
 					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					g2.setColor(new Color(0, 0, 0, 160));
+					g2.setColor(new Color(0, 0, 0, 200));
 					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 4, 4);
 					g2.dispose();
 					super.paintComponent(g);
 				}
 			};
-
+	
 			pctBadge.setFont(new Font("SansSerif", Font.BOLD, 9));
-			pctBadge.setForeground(new Color(180, 230, 180));
+			pctBadge.setForeground(Color.WHITE);
 			pctBadge.setOpaque(false);
 			pctBadge.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -1003,8 +1035,8 @@ public class BlockPickerDialog extends JDialog {
 		}
 
 		if (block.isNeedSupport()) {
-			JLabel badge = new JLabel("⚠");
-			badge.setFont(new Font("SansSerif", Font.BOLD, 10));
+			JLabel badge = new JLabel();
+			badge.setIcon(AppIcon.WARNING.colored(12, new Color(255, 200, 50)));
 			badge.setForeground(new Color(255, 200, 50));
 			badge.setOpaque(true);
 			badge.setBackground(new Color(60, 40, 0, 200));
@@ -1174,15 +1206,15 @@ public class BlockPickerDialog extends JDialog {
 			.filter(blocks -> blocks.stream().anyMatch(bl -> enabledBlocks.contains(bl.getUniqueKey())))
 			.count();
 
-		selectedCountLabel.setText(Lang.t("picker.colors_configured", configuredColors, fullPalette.size()));
+		selectedCountLabel.setText(UpdatableRegistry.translate("picker.colors_configured", configuredColors, fullPalette.size()));
 	}
 
 	private void saveAndClose() {
 		if (enabledBlocks.isEmpty()) {
 			JOptionPane.showMessageDialog(
 				this,
-				Lang.t("picker.no_blocks"),
-				Lang.t("dialog.error_title"),
+				UpdatableRegistry.translate("picker.no_blocks"),
+				UpdatableRegistry.translate("dialog.error_title"),
 				JOptionPane.WARNING_MESSAGE
 			);
 			return;
@@ -1200,8 +1232,8 @@ public class BlockPickerDialog extends JDialog {
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(
 				this,
-				Lang.t("error.blocks_load_failed", e.getMessage()),
-				Lang.t("dialog.error_title"),
+				UpdatableRegistry.translate("error.blocks_load_failed", e.getMessage()),
+				UpdatableRegistry.translate("dialog.error_title"),
 				JOptionPane.ERROR_MESSAGE
 			);
 		}
@@ -1231,7 +1263,7 @@ public class BlockPickerDialog extends JDialog {
 			protected void paintComponent(Graphics g) {
 				Graphics2D g2 = (Graphics2D) g.create();
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(hovered ? new Color(50, 55, 78) : BG_INPUT);
+				g2.setColor(hovered ? GuiApp.theme.getBtnHoverBg() : BG_INPUT);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
 				g2.setColor(BORDER);
 				g2.setStroke(new BasicStroke(1f));
@@ -1276,9 +1308,11 @@ public class BlockPickerDialog extends JDialog {
 			protected void paintComponent(Graphics g) {
 				Graphics2D g2 = (Graphics2D) g.create();
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(hovered ? bg.brighter() : bg);
+				Color base = hovered ? bg.brighter() : bg;
+				g2.setColor(base);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
 				g2.dispose();
+				setForeground(ContrastTextRenderer.contrastFor(base));
 				super.paintComponent(g);
 			}
 		};
@@ -1287,7 +1321,7 @@ public class BlockPickerDialog extends JDialog {
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
 		btn.setFocusPainted(false);
-		btn.setForeground(fg);
+		btn.setForeground(ContrastTextRenderer.contrastFor(bg));
 		btn.setFont(new Font("SansSerif", Font.BOLD, 13));
 		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
@@ -1305,7 +1339,7 @@ public class BlockPickerDialog extends JDialog {
 			BorderFactory.createEmptyBorder(5, 8, 5, 8)
 		));
 		field.setFont(new Font("SansSerif", Font.PLAIN, 12));
-		AppTooltip.install(field, Lang.t("picker.search"));
+		AppTooltip.install(field, UpdatableRegistry.translate("picker.search"));
 		field.getDocument().addDocumentListener(new DocumentListener() {
 			@Override public void insertUpdate(DocumentEvent e) { onSearchChanged(); }
 			@Override public void removeUpdate(DocumentEvent e) { onSearchChanged(); }
@@ -1348,7 +1382,7 @@ public class BlockPickerDialog extends JDialog {
 			);
 
 			return parsed.entrySet().stream()
-				.sorted((a, b) -> Integer.compare(luminance(a.getKey()), luminance(b.getKey())))
+				.sorted((a, b) -> Integer.compare(ContrastTextRenderer.luminance(a.getKey()), ContrastTextRenderer.luminance(b.getKey())))
 				.collect(Collectors.toMap(
 					Map.Entry::getKey,
 					Map.Entry::getValue,
@@ -1376,12 +1410,17 @@ public class BlockPickerDialog extends JDialog {
 		return null;
 	}
 
-	private static int luminance(int rgb) {
-		int r = (rgb >> 16) & 0xFF;
-		int g = (rgb >> 8) & 0xFF;
-		int b = rgb & 0xFF;
-
-		return (r * 299 + g * 587 + b * 114) / 1000;
+	/**
+	 * Рисует текст с XOR-инверсией пикселей глифа относительно фона.
+	 * Антиалиасинг сохраняется: текст рендерится в offscreen-буфер с полным AA,
+	 * затем каждый пиксель глифа XOR-ится с цветом фона и накладывается на холст.
+	 */
+	private static Color blendWithBg(Color accent, Color bg, float accentAlpha) {
+		float inv = 1f - accentAlpha;
+		int r = Math.round(accent.getRed() * accentAlpha + bg.getRed() * inv);
+		int g = Math.round(accent.getGreen() * accentAlpha + bg.getGreen() * inv);
+		int b = Math.round(accent.getBlue() * accentAlpha + bg.getBlue() * inv);
+		return new Color(r, g, b);
 	}
 
 	private class ColorCellRenderer implements ListCellRenderer<Integer> {
@@ -1400,9 +1439,7 @@ public class BlockPickerDialog extends JDialog {
 
 			JPanel cell = new JPanel(new BorderLayout(8, 0));
 			cell.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
-			cell.setBackground(
-				isSelected ? SELECTION_BG : (index % 2 == 0 ? BG_INPUT : new Color(26, 28, 42))
-			);
+			cell.setBackground(isSelected ? SELECTION_BG : BG_INPUT);
 
 			JPanel swatch = buildColorSwatch(colorRgb);
 
@@ -1415,7 +1452,7 @@ public class BlockPickerDialog extends JDialog {
 			long enabledCount = blocks.stream().filter(bl -> enabledBlocks.contains(bl.getUniqueKey())).count();
 
 			JLabel hexLabel = new JLabel(hex);
-			hexLabel.setForeground(isSelected ? Color.WHITE : TEXT);
+			hexLabel.setForeground(TEXT);
 			hexLabel.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
 			JLabel countLabel = new JLabel(enabledCount + "/" + blocks.size(), SwingConstants.RIGHT);
@@ -1437,14 +1474,15 @@ public class BlockPickerDialog extends JDialog {
 			));
 			cell.setBackground(isSelected ? SELECTION_BG : BG_CARD);
 
-			JLabel icon = new JLabel("🧱");
-			icon.setFont(new Font("SansSerif", Font.PLAIN, 16));
+			JLabel icon = new JLabel();
+			icon.setIcon(AppIcon.BLOCK.colored(16, isSelected ? TEXT : ACCENT));
 
-			JLabel label = new JLabel(Lang.t("picker.tab_support"));
-			label.setForeground(isSelected ? Color.WHITE : ACCENT);
+			JLabel label = new JLabel(UpdatableRegistry.translate("picker.tab_support"));
+			label.setForeground(isSelected ? TEXT : ACCENT);
 			label.setFont(new Font("SansSerif", Font.BOLD, 12));
 
-			JLabel countLabel = new JLabel(enabledSupportBlocks.size() + " ✓", SwingConstants.RIGHT);
+			JLabel countLabel = new JLabel(String.valueOf(enabledSupportBlocks.size()), SwingConstants.RIGHT);
+			countLabel.setIcon(AppIcon.CHECK.colored(enabledSupportBlocks.isEmpty() ? TEXT_DIM : SUCCESS));
 			countLabel.setForeground(enabledSupportBlocks.isEmpty() ? TEXT_DIM : SUCCESS);
 			countLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
 

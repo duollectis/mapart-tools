@@ -22,7 +22,7 @@ public class StyledSlider extends JPanel {
 	private static final int TRACK_HEIGHT = 4;
 	private static final int THUMB_SIZE_NORMAL = 12;
 	private static final int THUMB_SIZE_HOVER = 16;
-	private static final int TRACK_PADDING = 10;
+	static final int TRACK_PADDING = 10;
 
 	private final int min;
 	private final int max;
@@ -91,6 +91,18 @@ public class StyledSlider extends JPanel {
 		value = clamped;
 		repaint();
 		fireChangeEvent();
+	}
+
+	/** Устанавливает значение без уведомления слушателей — для программной синхронизации. */
+	public void setValueSilently(int newValue) {
+		int clamped = Math.clamp(newValue, min, max);
+
+		if (clamped == value) {
+			return;
+		}
+
+		value = clamped;
+		repaint();
 	}
 
 	public int getMinimum() {

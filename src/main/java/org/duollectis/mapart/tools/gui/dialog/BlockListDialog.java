@@ -2,7 +2,8 @@ package org.duollectis.mapart.tools.gui.dialog;
 
 import org.duollectis.mapart.tools.converter.BlockData;
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.Lang;
+import org.duollectis.mapart.tools.gui.util.AppIcon;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.block.BlockIconLoader;
 import org.duollectis.mapart.tools.gui.widget.InertialScrollPane;
 import org.duollectis.mapart.tools.gui.widget.ModernToggleButton;
@@ -22,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
 
 /**
  * Диалог со списком блоков, использованных в результате дизеринга.
@@ -70,7 +72,7 @@ public class BlockListDialog extends JDialog {
 		int supportBlockCount,
 		Consumer<String> onBlockRemoved
 	) {
-		super(parent, Lang.t("blocklist.title"), false);
+		super(parent, UpdatableRegistry.translate("blocklist.title"), false);
 
 		this.version = version;
 		this.supportBlockId = supportBlockId;
@@ -101,7 +103,7 @@ public class BlockListDialog extends JDialog {
 		}
 
 		tableModel.setRows(newRows);
-		totalLabel.setText(Lang.t("blocklist.total", newRows.stream().filter(r -> !r.isSupportBlock).count()));
+		totalLabel.setText(UpdatableRegistry.translate("blocklist.total", newRows.stream().filter(r -> !r.isSupportBlock).count()));
 	}
 
 	private void buildUi(Map<BlockData, Integer> blockCounts, int supportBlockCount) {
@@ -121,12 +123,12 @@ public class BlockListDialog extends JDialog {
 			BorderFactory.createEmptyBorder(12, 16, 12, 16)
 		));
 
-		JLabel title = new JLabel(Lang.t("blocklist.title"));
+		JLabel title = new JLabel(UpdatableRegistry.translate("blocklist.title"));
 		title.setForeground(TEXT);
 		title.setFont(new Font("SansSerif", Font.BOLD, 14));
 
 		long uniqueCount = buildRows(blockCounts, null, 0).size();
-		totalLabel = new JLabel(Lang.t("blocklist.total", uniqueCount));
+		totalLabel = new JLabel(UpdatableRegistry.translate("blocklist.total", uniqueCount));
 		totalLabel.setForeground(TEXT_DIM);
 		totalLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
 
@@ -147,8 +149,8 @@ public class BlockListDialog extends JDialog {
 	}
 
 	private JPanel buildCountModeToggle() {
-		ModernToggleButton btnItems = new ModernToggleButton(Lang.t("blocklist.mode_items"));
-		ModernToggleButton btnShulkers = new ModernToggleButton(Lang.t("blocklist.mode_shulkers"));
+		ModernToggleButton btnItems = new ModernToggleButton(UpdatableRegistry.translate("blocklist.mode_items"));
+		ModernToggleButton btnShulkers = new ModernToggleButton(UpdatableRegistry.translate("blocklist.mode_shulkers"));
 
 		btnShulkers.setSelected(true);
 
@@ -183,7 +185,7 @@ public class BlockListDialog extends JDialog {
 					g2.setColor(TEXT_DIM);
 					g2.setFont(getFont().deriveFont(Font.ITALIC));
 					g2.drawString(
-						Lang.t("blocklist.search"),
+						UpdatableRegistry.translate("blocklist.search"),
 						getInsets().left,
 						getHeight() / 2 + g2.getFontMetrics().getAscent() / 2 - 1
 					);
@@ -302,7 +304,7 @@ public class BlockListDialog extends JDialog {
 	}
 
 	private JButton buildExportButton() {
-		JButton btn = new JButton(Lang.t("blocklist.btn_export")) {
+		JButton btn = new JButton(UpdatableRegistry.translate("blocklist.btn_export")) {
 			@Override
 			protected void paintComponent(Graphics g) {
 				Graphics2D g2 = (Graphics2D) g.create();
@@ -315,17 +317,21 @@ public class BlockListDialog extends JDialog {
 				g2.setColor(BORDER);
 				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
 				g2.dispose();
+				Color fg = ContrastTextRenderer.contrastFor(base);
+				setForeground(fg);
+				setIcon(AppIcon.TXT_FILE.colored(fg));
 				super.paintComponent(g);
 			}
 		};
 
-		btn.setForeground(TEXT);
+		btn.setForeground(ContrastTextRenderer.contrastFor(INPUT));
 		btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
 		btn.setFocusPainted(false);
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
 		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		btn.setBorder(BorderFactory.createEmptyBorder(7, 16, 7, 16));
+		btn.setIcon(AppIcon.TXT_FILE.colored(ContrastTextRenderer.contrastFor(INPUT)));
 		btn.addActionListener(e -> exportToTxt());
 
 		return btn;
@@ -338,8 +344,8 @@ public class BlockListDialog extends JDialog {
 	 */
 	private void exportToTxt() {
 		JFileChooser chooser = new JFileChooser();
-		chooser.setDialogTitle(Lang.t("blocklist.export_dialog_title"));
-		chooser.setFileFilter(new FileNameExtensionFilter(Lang.t("filter.txt"), "txt"));
+		chooser.setDialogTitle(UpdatableRegistry.translate("blocklist.export_dialog_title"));
+		chooser.setFileFilter(new FileNameExtensionFilter(UpdatableRegistry.translate("filter.txt"), "txt"));
 		chooser.setSelectedFile(new File("block_list.txt"));
 
 		if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
@@ -370,22 +376,22 @@ public class BlockListDialog extends JDialog {
 				.toList();
 
 			if (!withShulkers.isEmpty()) {
-				writer.println(Lang.t("blocklist.export_section_shulkers"));
+				writer.println(UpdatableRegistry.translate("blocklist.export_section_shulkers"));
 
 				for (BlockRow row : withShulkers) {
 					int shulkers = (row.count + STACK_SIZE - 1) / STACK_SIZE / SHULKER_SLOTS;
-					String suffix = row.isSupportBlock ? "  " + Lang.t("blocklist.support_label") : "";
+					String suffix = row.isSupportBlock ? "  " + UpdatableRegistry.translate("blocklist.support_label") : "";
 					writer.println(toDisplayName(row.block.getId()) + "\t" + shulkers + "sh" + suffix);
 				}
 			}
 
 			if (!withRemainders.isEmpty()) {
 				writer.println();
-				writer.println(Lang.t("blocklist.export_section_remainders"));
+				writer.println(UpdatableRegistry.translate("blocklist.export_section_remainders"));
 
 				for (BlockRow row : withRemainders) {
 					int remainderStacks = (row.count + STACK_SIZE - 1) / STACK_SIZE % SHULKER_SLOTS;
-					String suffix = row.isSupportBlock ? "  " + Lang.t("blocklist.support_label") : "";
+					String suffix = row.isSupportBlock ? "  " + UpdatableRegistry.translate("blocklist.support_label") : "";
 					writer.println(toDisplayName(row.block.getId()) + "\t" + remainderStacks + "s" + suffix);
 				}
 			}
@@ -395,27 +401,27 @@ public class BlockListDialog extends JDialog {
 					writer.println();
 				}
 
-				writer.println(Lang.t("blocklist.export_section_stacks"));
+				writer.println(UpdatableRegistry.translate("blocklist.export_section_stacks"));
 
 				for (BlockRow row : stacksOnly) {
 					int stacksCeil = (row.count + STACK_SIZE - 1) / STACK_SIZE;
 					String count = stacksCeil > 1 ? stacksCeil + "s" : String.valueOf(row.count);
-					String suffix = row.isSupportBlock ? "  " + Lang.t("blocklist.support_label") : "";
+					String suffix = row.isSupportBlock ? "  " + UpdatableRegistry.translate("blocklist.support_label") : "";
 					writer.println(toDisplayName(row.block.getId()) + "\t" + count + suffix);
 				}
 			}
 		} catch (IOException ex) {
 			JOptionPane.showMessageDialog(
 				this,
-				Lang.t("error.export_txt_failed", ex.getMessage()),
-				Lang.t("dialog.error_title"),
+				UpdatableRegistry.translate("error.export_txt_failed", ex.getMessage()),
+				UpdatableRegistry.translate("dialog.error_title"),
 				JOptionPane.ERROR_MESSAGE
 			);
 		}
 	}
 
 	private JButton buildCloseButton() {
-		JButton btn = new JButton(Lang.t("blocklist.close")) {
+		JButton btn = new JButton(UpdatableRegistry.translate("blocklist.close")) {
 			@Override
 			protected void paintComponent(Graphics g) {
 				Graphics2D g2 = (Graphics2D) g.create();
@@ -426,11 +432,12 @@ public class BlockListDialog extends JDialog {
 				g2.setColor(base);
 				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
 				g2.dispose();
+				setForeground(ContrastTextRenderer.contrastFor(base));
 				super.paintComponent(g);
 			}
 		};
 
-		btn.setForeground(BG);
+		btn.setForeground(ContrastTextRenderer.contrastFor(ACCENT));
 		btn.setFont(new Font("SansSerif", Font.BOLD, 12));
 		btn.setFocusPainted(false);
 		btn.setContentAreaFilled(false);
@@ -525,8 +532,8 @@ public class BlockListDialog extends JDialog {
 		public String getColumnName(int column) {
 			return switch (column) {
 				case 0 -> "";
-				case 1 -> Lang.t("blocklist.col_id");
-				case 2 -> Lang.t("blocklist.col_count");
+				case 1 -> UpdatableRegistry.translate("blocklist.col_id");
+				case 2 -> UpdatableRegistry.translate("blocklist.col_count");
 				case 3 -> "";
 				default -> "";
 			};
@@ -539,7 +546,7 @@ public class BlockListDialog extends JDialog {
 				case 0 -> blockRow.icon;
 				case 1 -> blockRow.block.getId();
 				case 2 -> blockRow.count;
-				case 3 -> blockRow.isSupportBlock ? "" : Lang.t("blocklist.btn_remove");
+				case 3 -> blockRow.isSupportBlock ? "" : UpdatableRegistry.translate("blocklist.btn_remove");
 				default -> null;
 			};
 		}
@@ -592,7 +599,7 @@ public class BlockListDialog extends JDialog {
 			BlockRow blockRow = tableModel.getRow(modelRow);
 
 			String displayText = blockRow.isSupportBlock
-				? blockRow.block.getId() + "  " + Lang.t("blocklist.support_label")
+				? blockRow.block.getId() + "  " + UpdatableRegistry.translate("blocklist.support_label")
 				: (String) value;
 
 			JLabel label = (JLabel) super.getTableCellRendererComponent(
@@ -681,7 +688,7 @@ public class BlockListDialog extends JDialog {
 		}
 
 		private JButton buildDeleteButton() {
-			JButton btn = new JButton(Lang.t("blocklist.btn_remove")) {
+			JButton btn = new JButton(UpdatableRegistry.translate("blocklist.btn_remove")) {
 				@Override
 				protected void paintComponent(Graphics g) {
 					Graphics2D g2 = (Graphics2D) g.create();

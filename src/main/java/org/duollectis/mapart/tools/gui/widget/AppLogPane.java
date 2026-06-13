@@ -1,7 +1,7 @@
 package org.duollectis.mapart.tools.gui.widget;
 
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.util.ThemeEventBus;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,20 +11,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Панель лога приложения с поддержкой свёрнутых стектрейсов.
- *
- * <p>Обычные строки отображаются как текст. Исключения группируются
- * в свёрнутый блок — клик по заголовку раскрывает/сворачивает стектрейс.
+ * Панель лога приложения с поддержкой свёрнутых стектрейсов и изменения высоты
+ * путём перетаскивания верхней границы.
  */
 public class AppLogPane extends JPanel {
 
 	private static final int MAX_ENTRIES = 500;
+	private static final int MIN_HEIGHT = 40;
+	private static final int MAX_HEIGHT = 600;
+	private static final int HANDLE_H = 5;
 	private static final Font LOG_FONT = new Font("Monospaced", Font.PLAIN, 11);
 	private static final Font STACK_FONT = new Font("Monospaced", Font.PLAIN, 10);
 
 	private final List<LogEntry> entries = new ArrayList<>();
 	private final JPanel contentPanel;
 	private final InertialScrollPane scrollPane;
+
+	private int dragStartY;
+	private int dragStartHeight;
 
 	public AppLogPane() {
 		super(new BorderLayout());
@@ -42,13 +46,55 @@ public class AppLogPane extends JPanel {
 		scrollPane.setBackground(GuiApp.theme.getBgCard());
 		scrollPane.getViewport().setBackground(GuiApp.theme.getBgCard());
 		scrollPane.setPreferredSize(new Dimension(0, 80));
-		ThemeEventBus.register(() -> {
+		UpdatableRegistry.onThemeAnimFrame(() -> {
 			scrollPane.setBorder(BorderFactory.createLineBorder(GuiApp.theme.getBorder(), 1, true));
 			scrollPane.setBackground(GuiApp.theme.getBgCard());
 			scrollPane.getViewport().setBackground(GuiApp.theme.getBgCard());
 		});
 
+		add(buildDragHandle(), BorderLayout.NORTH);
 		add(scrollPane, BorderLayout.CENTER);
+	}
+
+	private JPanel buildDragHandle() {
+		JPanel handle = new JPanel() {
+			@Override
+			protected void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setColor(GuiApp.theme.getBorder());
+				int dotY = getHeight() / 2;
+				int centerX = getWidth() / 2;
+				for (int i = -12; i <= 12; i += 6) {
+					g2.fillOval(centerX + i - 1, dotY - 1, 3, 3);
+				}
+				g2.dispose();
+			}
+		};
+		handle.setOpaque(false);
+		handle.setPreferredSize(new Dimension(0, HANDLE_H));
+		handle.setCursor(Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR));
+
+		MouseAdapter dragAdapter = new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				dragStartY = e.getYOnScreen();
+				dragStartHeight = scrollPane.getPreferredSize().height;
+			}
+
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				int delta = dragStartY - e.getYOnScreen();
+				int newHeight = Math.clamp(dragStartHeight + delta, MIN_HEIGHT, MAX_HEIGHT);
+				scrollPane.setPreferredSize(new Dimension(0, newHeight));
+				revalidate();
+			}
+		};
+
+		handle.addMouseListener(dragAdapter);
+		handle.addMouseMotionListener(dragAdapter);
+
+		return handle;
 	}
 
 	/** Добавляет обычную строку лога. */
