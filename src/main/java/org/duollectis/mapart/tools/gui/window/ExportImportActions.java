@@ -2,7 +2,7 @@ package org.duollectis.mapart.tools.gui.window;
 
 import org.duollectis.mapart.tools.converter.*;
 import org.duollectis.mapart.tools.converter.schematic.SchematicImportResult;
-import org.duollectis.mapart.tools.gui.AppMessages;
+import org.duollectis.mapart.tools.app.AppMessages;
 import org.duollectis.mapart.tools.gui.GuiApp;
 import org.duollectis.mapart.tools.app.DiscordRpc;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
@@ -66,6 +66,8 @@ final class ExportImportActions {
 			? mode
 			: StaircaseMode.STAIRCASE;
 
+		int mapDatStartId = resolveMapDatStartId();
+
 		w.activeExportWorker = new ExportWorker(
 			w.lastDitherer,
 			outDir,
@@ -74,6 +76,7 @@ final class ExportImportActions {
 			effectiveSupport,
 			format,
 			staircaseMode,
+			mapDatStartId,
 			w.actions::log,
 			this::onExportSuccess,
 			this::onExportError
@@ -313,6 +316,18 @@ final class ExportImportActions {
 		}
 	}
 
+	private int resolveMapDatStartId() {
+		if (w.mapDatStartIdField == null) {
+			return 0;
+		}
+
+		try {
+			return Integer.parseInt(w.mapDatStartIdField.getText().trim());
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+	}
+
 	void setExportingState(boolean exporting) {
 		w.exportButton.setEnabled(!exporting);
 		w.convertButton.setEnabled(!exporting);
@@ -330,8 +345,20 @@ final class ExportImportActions {
 		}
 
 		SchematicFormat selected = w.formatCombo.getSelectedItem();
-		String key = selected == SchematicFormat.LITEMATIC ? "btn.export_litematic" : "btn.export_nbt";
+		String key = switch (selected) {
+			case LITEMATIC -> "btn.export_litematic";
+			case MAP_DAT -> "btn.export_map_dat";
+			default -> "btn.export_nbt";
+		};
 		w.exportButton.setText(UpdatableRegistry.translate(key));
+
+		if (w.mapDatStartIdPanel != null && w.exportAccordion != null) {
+			boolean isMapDat = selected == SchematicFormat.MAP_DAT;
+			w.mapDatStartIdPanel.animateVisible(
+				isMapDat,
+				() -> w.exportAccordion.refreshContentSize()
+			);
+		}
 	}
 
 }

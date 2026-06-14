@@ -2,7 +2,7 @@ package org.duollectis.mapart.tools.gui.widget;
 
 import org.duollectis.mapart.tools.converter.CropSettings;
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.util.UiAnimator;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 
 import javax.swing.*;
@@ -32,7 +32,6 @@ public class ImagePreviewPanel extends JPanel {
 	private static final int ARROW_STEP = 1;
 	private static final int ARROW_STEP_FAST = 10;
 	private static final int SNAP_THRESHOLD = 5;
-	private static final String PLACEHOLDER_TEXT = "Перетащите изображение сюда";
 
 	private static Color bg() {return GuiApp.theme.getBgCard();}
 
@@ -958,10 +957,11 @@ public class ImagePreviewPanel extends JPanel {
 
 		g2.setFont(new Font("SansSerif", Font.PLAIN, 13));
 		g2.setColor(placeholderText());
+		String placeholder = UpdatableRegistry.translate("preview.placeholder");
 		FontMetrics fm = g2.getFontMetrics();
-		int textX = x + (w - fm.stringWidth(PLACEHOLDER_TEXT)) / 2;
+		int textX = x + (w - fm.stringWidth(placeholder)) / 2;
 		int textY = y + h / 2 + fm.getAscent() / 2;
-		g2.drawString(PLACEHOLDER_TEXT, textX, textY);
+		g2.drawString(placeholder, textX, textY);
 	}
 
 	/**

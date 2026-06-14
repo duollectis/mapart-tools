@@ -1,7 +1,7 @@
 package org.duollectis.mapart.tools.gui.widget;
 
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.util.UiAnimator;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 import javax.swing.*;
 import java.awt.*;

@@ -1,7 +1,10 @@
-package org.duollectis.mapart.tools.gui;
+package org.duollectis.mapart.tools.gui.theme;
 
 import lombok.experimental.UtilityClass;
-import org.duollectis.mapart.tools.gui.util.ThemeTransition;
+import org.duollectis.mapart.tools.app.AppPreferences;
+import org.duollectis.mapart.tools.gui.GuiApp;
+import org.duollectis.mapart.tools.gui.anim.ThemeTransition;
+import org.duollectis.mapart.tools.gui.i18n.AppLocale;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 
 import javax.swing.JFrame;

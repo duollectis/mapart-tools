@@ -1,6 +1,6 @@
 package org.duollectis.mapart.tools.gui.dialog;
 
-import org.duollectis.mapart.tools.gui.AppTheme;
+import org.duollectis.mapart.tools.gui.theme.AppTheme;
 import org.duollectis.mapart.tools.gui.GuiApp;
 import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;

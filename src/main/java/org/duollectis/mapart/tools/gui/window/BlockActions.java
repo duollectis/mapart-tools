@@ -2,7 +2,7 @@ package org.duollectis.mapart.tools.gui.window;
 
 import org.duollectis.mapart.tools.converter.BlockData;
 import org.duollectis.mapart.tools.converter.WeightedSelector;
-import org.duollectis.mapart.tools.gui.AppMessages;
+import org.duollectis.mapart.tools.app.AppMessages;
 import org.duollectis.mapart.tools.gui.GuiApp;
 import org.duollectis.mapart.tools.gui.dialog.BlockListDialog;
 import org.duollectis.mapart.tools.gui.dialog.BlockPickerDialog;

@@ -1,7 +1,7 @@
 package org.duollectis.mapart.tools.app;
 
-import org.duollectis.mapart.tools.commands.ConvertCommand;
-import org.duollectis.mapart.tools.commands.ListCommand;
+import org.duollectis.mapart.tools.cli.ConvertCommand;
+import org.duollectis.mapart.tools.cli.ListCommand;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Spec;

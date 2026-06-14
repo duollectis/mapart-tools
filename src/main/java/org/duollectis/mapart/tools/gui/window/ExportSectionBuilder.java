@@ -6,6 +6,7 @@ import org.duollectis.mapart.tools.gui.util.AppTooltip;
 import org.duollectis.mapart.tools.gui.util.UiStateRegistry;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.AccordionPanel;
+import org.duollectis.mapart.tools.gui.widget.AnimatedPanel;
 import org.duollectis.mapart.tools.gui.widget.SelectionPanel;
 
 import javax.swing.*;
@@ -16,7 +17,7 @@ import java.util.List;
 import static org.duollectis.mapart.tools.gui.window.SettingsWidgetFactory.*;
 
 /**
- * Строит аккордеон «Экспорт»: папка вывода, формат схематика, кнопки экспорта/импорта.
+ * Строит аккордеон «Экспорт»: папка вывода, формат схематика, режим лестниц, кнопки экспорта/импорта.
  */
 final class ExportSectionBuilder {
 
@@ -27,6 +28,7 @@ final class ExportSectionBuilder {
 		inner.add(buildOutPathRow(w));
 		inner.add(Box.createVerticalStrut(8));
 		inner.add(buildFormatRow(w));
+		inner.add(buildMapDatStartIdRow(w));
 		inner.add(Box.createVerticalStrut(8));
 		inner.add(buildExportButtonRow(w));
 
@@ -61,8 +63,13 @@ final class ExportSectionBuilder {
 		formatItems.add(SchematicFormat.NBT);
 		formatItems.add(SchematicFormat.LITEMATIC);
 		formatItems.add(SchematicFormat.SCHEM);
+		formatItems.add(SchematicFormat.MAP_DAT);
 
 		w.formatCombo = new SelectionPanel<>(formatItems);
+		w.formatCombo.setDisplayConverter(item -> item instanceof SchematicFormat f
+				? UpdatableRegistry.translate("format." + f.name())
+				: item.toString()
+		);
 		w.formatCombo.addSelectionListener(item -> w.actions.syncExportButtonLabel());
 
 		JPanel inner = AccordionPanel.createContentPanel();
@@ -81,12 +88,33 @@ final class ExportSectionBuilder {
 		return accordion;
 	}
 
+	private static JComponent buildMapDatStartIdRow(MainWindow w) {
+		w.mapDatStartIdField = buildTextField();
+		w.mapDatStartIdField.setText("0");
+
+		JLabel label = dimLabel("");
+		UpdatableRegistry.registerLang("label.map_dat_start_id", label::setText);
+
+		JPanel row = new JPanel(new BorderLayout(4, 2));
+		row.setOpaque(false);
+		row.add(label, BorderLayout.NORTH);
+		row.add(w.mapDatStartIdField, BorderLayout.CENTER);
+
+		AnimatedPanel panel = new AnimatedPanel(new BorderLayout());
+		panel.setOpaque(false);
+		panel.add(row, BorderLayout.CENTER);
+		panel.collapseInstant();
+		w.mapDatStartIdPanel = panel;
+
+		return panel;
+	}
+
 	private static JPanel buildExportButtonRow(MainWindow w) {
 		w.exportButton = buildThemedButton("", w);
 		UpdatableRegistry.registerLang("btn.export", w.exportButton::setText);
 		w.exportButton.addActionListener(e -> w.actions.startExport());
 
-		JPanel row = new JPanel(new BorderLayout(0, 0));
+		JPanel row = new JPanel(new BorderLayout(4, 0));
 		row.setOpaque(false);
 		row.add(w.exportButton, BorderLayout.CENTER);
 

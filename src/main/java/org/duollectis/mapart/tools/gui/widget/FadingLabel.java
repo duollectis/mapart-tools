@@ -1,6 +1,6 @@
 package org.duollectis.mapart.tools.gui.widget;
 
-import org.duollectis.mapart.tools.gui.util.AnimatedFloat;
+import org.duollectis.mapart.tools.gui.anim.AnimatedFloat;
 
 import javax.swing.*;
 import java.awt.*;

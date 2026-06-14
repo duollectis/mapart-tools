@@ -5,14 +5,16 @@ import org.duollectis.mapart.tools.gui.util.AppTooltip;
 import org.duollectis.mapart.tools.gui.util.UiStateRegistry;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.AccordionPanel;
+import org.duollectis.mapart.tools.gui.widget.SelectionPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 import static org.duollectis.mapart.tools.gui.window.SettingsWidgetFactory.*;
 
 /**
- * Строит аккордеон «Блоки»: путь к файлу блоков, кнопки выбора и просмотра.
+ * Строит аккордеон «Блоки»: выбор версии, путь к файлу блоков, кнопки выбора и просмотра.
  */
 final class BlocksSectionBuilder {
 
@@ -20,6 +22,8 @@ final class BlocksSectionBuilder {
 
 	static AccordionPanel build(MainWindow w) {
 		JPanel inner = AccordionPanel.createContentPanel();
+		inner.add(buildVersionRow(w));
+		inner.add(Box.createVerticalStrut(8));
 		inner.add(buildBlocksRow(w));
 
 		w.blocksAccordion = new AccordionPanel("", inner);
@@ -27,6 +31,28 @@ final class BlocksSectionBuilder {
 		UiStateRegistry.bindAccordion("accordion.blocks", w.blocksAccordion);
 
 		return w.blocksAccordion;
+	}
+
+	private static JComponent buildVersionRow(MainWindow w) {
+		String[] versions = w.actions.loadVersions();
+		java.util.List<Object> versionItems = new ArrayList<>();
+
+		for (String v : versions) {
+			versionItems.add(v);
+		}
+
+		w.versionCombo = new SelectionPanel<>(versionItems);
+
+		JPanel inner = AccordionPanel.createContentPanel();
+		inner.add(w.versionCombo);
+
+		AccordionPanel accordion = new AccordionPanel("", inner);
+		UpdatableRegistry.registerLang("label.version", accordion::setTitle);
+		w.versionCombo.addInitializedSelectionListener(
+			item -> accordion.setSubtitle(item != null ? item.toString() : null)
+		);
+
+		return accordion;
 	}
 
 	private static JPanel buildBlocksRow(MainWindow w) {

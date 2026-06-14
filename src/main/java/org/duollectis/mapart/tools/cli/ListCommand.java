@@ -1,4 +1,4 @@
-package org.duollectis.mapart.tools.commands;
+package org.duollectis.mapart.tools.cli;
 
 import picocli.CommandLine.Command;
 

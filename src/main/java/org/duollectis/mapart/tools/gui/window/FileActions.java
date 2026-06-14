@@ -1,6 +1,6 @@
 package org.duollectis.mapart.tools.gui.window;
 
-import org.duollectis.mapart.tools.gui.AppMessages;
+import org.duollectis.mapart.tools.app.AppMessages;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.ImagePreviewPanel;
 

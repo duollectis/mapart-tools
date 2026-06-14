@@ -1,16 +1,17 @@
 package org.duollectis.mapart.tools.gui.window;
 
-import org.duollectis.mapart.tools.gui.AppLocale;
-import org.duollectis.mapart.tools.gui.AppPreferences;
-import org.duollectis.mapart.tools.gui.AppTheme;
-import org.duollectis.mapart.tools.gui.BuiltinTheme;
+import org.duollectis.mapart.tools.app.AppPreferences;
+import org.duollectis.mapart.tools.gui.i18n.AppLocale;
+import org.duollectis.mapart.tools.gui.theme.AppState;
+import org.duollectis.mapart.tools.gui.theme.AppTheme;
+import org.duollectis.mapart.tools.gui.theme.BuiltinTheme;
 import org.duollectis.mapart.tools.gui.dialog.ThemeEditorDialog;
 import org.duollectis.mapart.tools.gui.dialog.KeyBindsDialog;
 import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.util.AppTooltip;
 import org.duollectis.mapart.tools.app.DiscordRpc;
-import org.duollectis.mapart.tools.gui.util.ThemeTransition;
-import org.duollectis.mapart.tools.gui.util.UiAnimator;
+import org.duollectis.mapart.tools.gui.anim.ThemeTransition;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 import org.duollectis.mapart.tools.gui.util.UiStateRegistry;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.AccordionPanel;
@@ -18,7 +19,10 @@ import org.duollectis.mapart.tools.gui.widget.SelectionPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.duollectis.mapart.tools.gui.window.SettingsWidgetFactory.*;
 
@@ -32,8 +36,6 @@ final class AppSettingsSectionBuilder {
 
 	static AccordionPanel build(MainWindow w) {
 		JPanel inner = AccordionPanel.createContentPanel();
-		inner.add(buildVersionRow(w));
-		inner.add(Box.createVerticalStrut(8));
 		inner.add(buildLangAccordion(w));
 		inner.add(Box.createVerticalStrut(4));
 		inner.add(buildThemeAccordion(w));
@@ -51,31 +53,14 @@ final class AppSettingsSectionBuilder {
 		return w.appSettingsAccordion;
 	}
 
-	private static JComponent buildVersionRow(MainWindow w) {
-		String[] versions = w.actions.loadVersions();
-		java.util.List<Object> versionItems = new ArrayList<>();
-
-		for (String v : versions) {
-			versionItems.add(v);
-		}
-
-		w.versionCombo = new SelectionPanel<>(versionItems);
-
-		JPanel inner = AccordionPanel.createContentPanel();
-		inner.add(w.versionCombo);
-
-		AccordionPanel accordion = new AccordionPanel("", inner);
-		UpdatableRegistry.registerLang("label.version", accordion::setTitle);
-		w.versionCombo.addInitializedSelectionListener(
-			item -> accordion.setSubtitle(item != null ? item.toString() : null)
-		);
-
-		return accordion;
-	}
-
 	private static JComponent buildLangAccordion(MainWindow w) {
 		w.langCombo = new SelectionPanel<>(AppLocale.values());
 		w.langCombo.setDisplayConverter(item -> item instanceof AppLocale l ? l.getDisplayName() : item.toString());
+
+		// Восстанавливаем визуальный выбор без уведомления слушателей —
+		// язык уже загружен через AppState.init() до создания окна.
+		w.langCombo.setSelectedItemSilently(AppState.getLocale());
+
 		w.langCombo.addSelectionListener(locale -> {
 			if (locale == null) {
 				return;
@@ -105,6 +90,15 @@ final class AppSettingsSectionBuilder {
 	private static JComponent buildThemeAccordion(MainWindow w) {
 		w.themeCombo = new SelectionPanel<>(AppTheme.buildThemeMenuItems());
 		w.themeCombo.setDisplayConverter(item -> item instanceof BuiltinTheme bt ? bt.getDisplayName() : item.toString());
+
+		// Восстанавливаем визуальный выбор без уведомления слушателей —
+		// тема уже загружена через AppState.init() до создания окна.
+		String savedThemeName = AppState.getThemeName();
+		Object themeToSelect = BuiltinTheme.isBuiltin(savedThemeName)
+				? BuiltinTheme.fromId(savedThemeName)
+				: savedThemeName;
+		w.themeCombo.setSelectedItemSilently(themeToSelect);
+
 		w.themeCombo.addSelectionListener(item -> {
 			if (item instanceof SelectionPanel.Separator) {
 				return;
@@ -115,21 +109,10 @@ final class AppSettingsSectionBuilder {
 			ThemeTransition.applyColorOnly(w, themeName);
 		});
 
-		JButton editThemeBtn = buildIconButton(AppIcon.EDIT, new Insets(4, 8, 4, 8), w);
-		UpdatableRegistry.registerLang("btn.edit_theme", t -> AppTooltip.install(editThemeBtn, t));
-		editThemeBtn.addActionListener(e -> {
-			String currentThemeId = AppPreferences.loadTheme(BuiltinTheme.DARK.getId());
-			new ThemeEditorDialog(w, currentThemeId, () -> {
-				w.themeCombo.setItems(AppTheme.buildThemeMenuItems());
-				String savedTheme = AppPreferences.loadTheme(BuiltinTheme.DARK.getId());
-				ThemeTransition.applyColorOnly(w, savedTheme);
-			});
-		});
+		w.themeCombo.setRowActionProvider(item -> buildThemeRowActions(w, item));
 
 		JPanel inner = AccordionPanel.createContentPanel();
 		inner.add(w.themeCombo);
-		inner.add(Box.createVerticalStrut(4));
-		inner.add(editThemeBtn);
 
 		AccordionPanel accordion = new AccordionPanel("", inner);
 		UpdatableRegistry.registerLang("section.theme", accordion::setTitle);
@@ -141,7 +124,57 @@ final class AppSettingsSectionBuilder {
 			accordion.setSubtitle(w.themeCombo.getDisplayText(item));
 		});
 
+		JButton addThemeBtn = buildAddThemeButton(w);
+		accordion.setHeaderTrailingComponent(addThemeBtn);
+
 		return accordion;
+	}
+
+	private static List<SelectionPanel.RowAction> buildThemeRowActions(MainWindow w, Object item) {
+		List<SelectionPanel.RowAction> actions = new ArrayList<>();
+
+		actions.add(new SelectionPanel.RowAction(AppIcon.EDIT, () -> {
+			String themeId = item instanceof BuiltinTheme bt ? bt.getId() : item.toString();
+			new ThemeEditorDialog(w, themeId, () -> {
+				w.themeCombo.setItems(AppTheme.buildThemeMenuItems());
+				String savedTheme = AppPreferences.loadTheme(BuiltinTheme.DARK.getId());
+				ThemeTransition.applyColorOnly(w, savedTheme);
+			});
+		}));
+
+		if (item instanceof BuiltinTheme) {
+			return actions;
+		}
+
+		actions.add(new SelectionPanel.RowAction(AppIcon.CROSS, () -> {
+			String themeId = item.toString();
+			AppTheme.deleteCustomTheme(themeId);
+			w.themeCombo.setItems(AppTheme.buildThemeMenuItems());
+			String savedTheme = AppPreferences.loadTheme(BuiltinTheme.DARK.getId());
+			ThemeTransition.applyColorOnly(w, savedTheme);
+		}));
+
+		return actions;
+	}
+
+	private static JButton buildAddThemeButton(MainWindow w) {
+		JButton btn = buildIconButton(AppIcon.PALETTE, new Insets(3, 5, 3, 5), w);
+		UpdatableRegistry.registerLang("btn.new_theme", t -> AppTooltip.install(btn, t));
+		btn.addActionListener(e -> new ThemeEditorDialog(w, null, () -> {
+			w.themeCombo.setItems(AppTheme.buildThemeMenuItems());
+			String savedTheme = AppPreferences.loadTheme(BuiltinTheme.DARK.getId());
+			ThemeTransition.applyColorOnly(w, savedTheme);
+		}));
+
+		// Клик на кнопку не должен переключать аккордеон
+		btn.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				e.consume();
+			}
+		});
+
+		return btn;
 	}
 
 	private static JPanel buildAnimationsRow(MainWindow w) {

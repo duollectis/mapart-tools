@@ -1,6 +1,6 @@
 package org.duollectis.mapart.tools.gui.widget;
 
-import org.duollectis.mapart.tools.gui.util.UiAnimator;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -44,6 +44,9 @@ public class InertialScrollPane extends JScrollPane {
 		this.horizontal = horizontal;
 		setOpaque(false);
 		getViewport().setOpaque(false);
+		// SIMPLE_SCROLL_MODE отключает blit-оптимизацию и всегда перерисовывает
+		// весь viewport — устраняет артефакты при быстром скролле с прозрачным фоном.
+		getViewport().setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
 		setBorder(BorderFactory.createEmptyBorder());
 		installWheelListener();
 	}

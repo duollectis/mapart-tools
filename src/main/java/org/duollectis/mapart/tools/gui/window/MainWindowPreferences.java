@@ -2,8 +2,8 @@ package org.duollectis.mapart.tools.gui.window;
 
 import com.google.gson.reflect.TypeToken;
 import org.duollectis.mapart.tools.converter.*;
-import org.duollectis.mapart.tools.gui.AppPreferences;
-import org.duollectis.mapart.tools.gui.AppPreferences.LayerState;
+import org.duollectis.mapart.tools.app.AppPreferences;
+import org.duollectis.mapart.tools.app.AppPreferences.LayerState;
 import org.duollectis.mapart.tools.gui.util.UiStateRegistry;
 import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.widget.ImageLayer;

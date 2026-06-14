@@ -1,4 +1,4 @@
-package org.duollectis.mapart.tools.gui.util;
+package org.duollectis.mapart.tools.gui.anim;
 
 import lombok.experimental.UtilityClass;
 
@@ -46,15 +46,56 @@ public class UiAnimator {
 			return stub;
 		}
 
-		int[] elapsed = {0};
+		long startTime = System.currentTimeMillis();
 
 		Timer timer = new Timer(FRAME_MS, e -> {
-			elapsed[0] += FRAME_MS;
-			float t = Math.min(1.0f, (float) elapsed[0] / durationMs);
-			float eased = easeOutCubic(t);
-			onValue.accept(from + (to - from) * eased);
+			double t = Math.min(1.0, (double) (System.currentTimeMillis() - startTime) / durationMs);
+			double eased = easeOutCubicD(t);
+			onValue.accept((float) (from + (to - from) * eased));
 
-			if (t >= 1.0f) {
+			if (t >= 1.0) {
+				((Timer) e.getSource()).stop();
+
+				if (onDone != null) {
+					onDone.run();
+				}
+			}
+		});
+
+		timer.start();
+		return timer;
+	}
+
+	/**
+	 * Анимирует прогресс от 0 до 1 за {@code durationMs} мс, передавая в коллбэк
+	 * <b>линейный</b> {@code t} [0..1]. Вызывающий код сам применяет нужную кривую
+	 * к каждому анимируемому значению — это позволяет одним таймером управлять
+	 * несколькими свойствами с разными кривыми без рывков.
+	 *
+	 * @param durationMs длительность в мс
+	 * @param onProgress колбэк с линейным t [0..1] на каждом кадре
+	 * @param onDone     колбэк по завершении (может быть null)
+	 * @return запущенный таймер
+	 */
+	public static Timer animateProgress(int durationMs, Consumer<Float> onProgress, Runnable onDone) {
+		if (!animationsEnabled) {
+			onProgress.accept(1f);
+
+			if (onDone != null) {
+				onDone.run();
+			}
+
+			Timer stub = new Timer(Integer.MAX_VALUE, null);
+			return stub;
+		}
+
+		long startTime = System.currentTimeMillis();
+
+		Timer timer = new Timer(FRAME_MS, e -> {
+			double t = Math.min(1.0, (double) (System.currentTimeMillis() - startTime) / durationMs);
+			onProgress.accept((float) t);
+
+			if (t >= 1.0) {
 				((Timer) e.getSource()).stop();
 
 				if (onDone != null) {
@@ -194,8 +235,13 @@ public class UiAnimator {
 
 	/** Кривая easeOutCubic: быстрый старт, плавное торможение. */
 	public static float easeOutCubic(float t) {
-		float f = 1f - t;
-		return 1f - f * f * f;
+		double f = 1.0 - t;
+		return (float) (1.0 - f * f * f);
+	}
+
+	private static double easeOutCubicD(double t) {
+		double f = 1.0 - t;
+		return 1.0 - f * f * f;
 	}
 
 	private static Color scaleBrightness(Color color, float factor) {

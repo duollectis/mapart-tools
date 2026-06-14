@@ -89,26 +89,6 @@ final class DitheringsSectionBuilder {
 		return model;
 	}
 
-	private static JComponent buildColorMetricRow(MainWindow w) {
-		w.colorMetricCombo = new SelectionPanel<>(ColorMetric.values());
-		w.colorMetricCombo.addSelectionListener(item -> w.actions.scheduleConversionIfAuto());
-
-		JPanel inner = AccordionPanel.createContentPanel();
-		inner.add(w.colorMetricCombo);
-
-		AccordionPanel accordion = new AccordionPanel("", inner);
-		UpdatableRegistry.registerLang("section.color_metric", accordion::setTitle);
-		w.colorMetricCombo.addInitializedSelectionListener(item -> {
-			if (item == null) {
-				return;
-			}
-
-			accordion.setSubtitle(w.colorMetricCombo.getDisplayText(item));
-		});
-
-		return accordion;
-	}
-
 	private static JComponent buildStaircaseModeRow(MainWindow w) {
 		w.staircaseModeCombo = new SelectionPanel<>(StaircaseMode.values());
 		w.staircaseModeCombo.setSelectedItem(StaircaseMode.VALLEY);
@@ -131,6 +111,26 @@ final class DitheringsSectionBuilder {
 			}
 
 			accordion.setSubtitle(w.staircaseModeCombo.getDisplayText(item));
+		});
+
+		return accordion;
+	}
+
+	private static JComponent buildColorMetricRow(MainWindow w) {
+		w.colorMetricCombo = new SelectionPanel<>(ColorMetric.values());
+		w.colorMetricCombo.addSelectionListener(item -> w.actions.scheduleConversionIfAuto());
+
+		JPanel inner = AccordionPanel.createContentPanel();
+		inner.add(w.colorMetricCombo);
+
+		AccordionPanel accordion = new AccordionPanel("", inner);
+		UpdatableRegistry.registerLang("section.color_metric", accordion::setTitle);
+		w.colorMetricCombo.addInitializedSelectionListener(item -> {
+			if (item == null) {
+				return;
+			}
+
+			accordion.setSubtitle(w.colorMetricCombo.getDisplayText(item));
 		});
 
 		return accordion;
@@ -195,22 +195,19 @@ final class DitheringsSectionBuilder {
 			w.actions.scheduleConversionIfAuto();
 		});
 
-		JPanel buttonWrapper = new JPanel(new BorderLayout());
-		buttonWrapper.setOpaque(false);
-		buttonWrapper.add(w.errRateLinkButton, BorderLayout.NORTH);
+		JPanel buttonBar = new JPanel(new BorderLayout());
+		buttonBar.setOpaque(false);
+		buttonBar.add(w.errRateLinkButton, BorderLayout.EAST);
 
-		JPanel slidersColumn = new JPanel();
-		slidersColumn.setLayout(new BoxLayout(slidersColumn, BoxLayout.Y_AXIS));
-		slidersColumn.setOpaque(false);
-		slidersColumn.add(topGrid);
-		slidersColumn.add(strengthPanel);
-		slidersColumn.add(rPanel);
-		slidersColumn.add(rgbRowsPanel);
-
-		JPanel panel = new JPanel(new BorderLayout(6, 0));
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setOpaque(false);
-		panel.add(slidersColumn, BorderLayout.CENTER);
-		panel.add(buttonWrapper, BorderLayout.EAST);
+		panel.add(topGrid);
+		panel.add(strengthPanel);
+		panel.add(rPanel);
+		panel.add(rgbRowsPanel);
+		panel.add(Box.createVerticalStrut(4));
+		panel.add(buttonBar);
 
 		return panel;
 	}

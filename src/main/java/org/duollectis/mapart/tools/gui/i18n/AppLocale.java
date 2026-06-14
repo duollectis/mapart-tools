@@ -1,4 +1,4 @@
-package org.duollectis.mapart.tools.gui;
+package org.duollectis.mapart.tools.gui.i18n;
 
 import lombok.Getter;
 

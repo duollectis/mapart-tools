@@ -1,6 +1,6 @@
 package org.duollectis.mapart.tools.gui.window;
 
-import org.duollectis.mapart.tools.gui.AppPreferences;
+import org.duollectis.mapart.tools.app.AppPreferences;
 import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.util.AppTooltip;
 import org.duollectis.mapart.tools.gui.util.UiStateRegistry;

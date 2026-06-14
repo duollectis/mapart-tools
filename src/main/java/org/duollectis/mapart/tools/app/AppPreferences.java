@@ -1,4 +1,4 @@
-package org.duollectis.mapart.tools.gui;
+package org.duollectis.mapart.tools.app;
 
 import com.google.gson.*;
 import lombok.experimental.UtilityClass;

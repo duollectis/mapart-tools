@@ -86,7 +86,22 @@ class SchematicFormatTest {
 	}
 
 	@Test
-	void threeFormatsExist() {
-		assertThat(SchematicFormat.values()).hasSize(3);
+	void mapDatExtensionIsDat() {
+		assertThat(SchematicFormat.MAP_DAT.getExtension()).isEqualTo(".dat");
+	}
+
+	@Test
+	void mapDatIsMapDat() {
+		assertThat(SchematicFormat.MAP_DAT.isMapDat()).isTrue();
+	}
+
+	@Test
+	void nbtIsNotMapDat() {
+		assertThat(SchematicFormat.NBT.isMapDat()).isFalse();
+	}
+
+	@Test
+	void fourFormatsExist() {
+		assertThat(SchematicFormat.values()).hasSize(4);
 	}
 }

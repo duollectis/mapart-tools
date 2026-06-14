@@ -2,7 +2,7 @@ package org.duollectis.mapart.tools.gui.widget;
 
 import org.duollectis.mapart.tools.gui.GuiApp;
 import org.duollectis.mapart.tools.gui.util.AppIcon;
-import org.duollectis.mapart.tools.gui.util.UiAnimator;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.window.MainWindow;
 

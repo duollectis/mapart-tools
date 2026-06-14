@@ -286,10 +286,14 @@ public class ImageConverter {
 				: buildEqualSelector(blocks);
 
 			// Каждая разрешённая яркость получает независимую копию селектора — свои счётчики SEQUENTIAL
-			for (Brightness brightness : allowedBrightnesses) {
-				int scaledColor = RGBUtils.scaleRGB(color, brightness.getModifier());
-				palette.add(new PaletteEntry(blocks, scaledColor, brightness, baseSelector.copy()));
-			}
+				for (Brightness brightness : allowedBrightnesses) {
+					int scaledColor = RGBUtils.scaleRGB(color, brightness.getModifier());
+					// Формула байта карты: (baseColorId << 2) | brightness.ordinal()
+					// brightness.ordinal(): LOW=0, NORMAL=1, HIGH=2 — совпадает с MapColor.Brightness.id
+					int baseColorId = MapColorTable.resolveBaseId(color);
+					int mapColorId = baseColorId >= 0 ? (baseColorId << 2) | brightness.ordinal() : -1;
+					palette.add(new PaletteEntry(blocks, scaledColor, brightness, baseSelector.copy(), mapColorId));
+				}
 
 			processed[0]++;
 			int percent = 2 + processed[0] * 2 / total;

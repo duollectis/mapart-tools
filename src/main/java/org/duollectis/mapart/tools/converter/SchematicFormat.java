@@ -1,15 +1,17 @@
 package org.duollectis.mapart.tools.converter;
 
 import org.duollectis.mapart.tools.converter.schematic.*;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
+import org.duollectis.mapart.tools.gui.widget.HasDescription;
 
 /**
- * Формат схематики карт-арта.
- * Каждый элемент знает своё расширение файла и умеет создавать
- * соответствующий {@link SchematicWriter} (экспорт) и {@link SchematicReader} (импорт).
+ * Формат экспорта карт-арта.
+ * Схематичные форматы (NBT, LITEMATIC, SCHEM) создают {@link SchematicWriter}/{@link SchematicReader}.
+ * Формат MAP_DAT использует {@link MapDatWriter} и не поддерживает импорт.
  */
-public enum SchematicFormat {
+public enum SchematicFormat implements HasDescription {
 
-	NBT(".nbt") {
+	NBT(".nbt", "format.NBT") {
 		@Override
 		public SchematicWriter createWriter(int sizeX, int sizeY, int sizeZ, String name) {
 			return new NbtSchematicWriter(sizeX, sizeY, sizeZ);
@@ -21,7 +23,7 @@ public enum SchematicFormat {
 		}
 	},
 
-	LITEMATIC(".litematic") {
+	LITEMATIC(".litematic", "format.LITEMATIC") {
 		@Override
 		public SchematicWriter createWriter(int sizeX, int sizeY, int sizeZ, String name) {
 			return new LitematicSchematicWriter(sizeX, sizeY, sizeZ, name);
@@ -33,7 +35,7 @@ public enum SchematicFormat {
 		}
 	},
 
-	SCHEM(".schem") {
+	SCHEM(".schem", "format.SCHEM") {
 		@Override
 		public SchematicWriter createWriter(int sizeX, int sizeY, int sizeZ, String name) {
 			return new SpongeSchematicWriter(sizeX, sizeY, sizeZ, name);
@@ -43,16 +45,39 @@ public enum SchematicFormat {
 		public SchematicReader createReader() {
 			return new SpongeSchematicReader();
 		}
+	},
+
+	MAP_DAT(".dat", "format.MAP_DAT") {
+		@Override
+		public SchematicWriter createWriter(int sizeX, int sizeY, int sizeZ, String name) {
+			throw new UnsupportedOperationException("MAP_DAT не использует SchematicWriter");
+		}
+
+		@Override
+		public SchematicReader createReader() {
+			throw new UnsupportedOperationException("MAP_DAT не поддерживает импорт");
+		}
 	};
 
 	private final String extension;
+	private final String langKey;
 
-	SchematicFormat(String extension) {
+	SchematicFormat(String extension, String langKey) {
 		this.extension = extension;
+		this.langKey = langKey;
 	}
 
 	public String getExtension() {
 		return extension;
+	}
+
+	public boolean isMapDat() {
+		return this == MAP_DAT;
+	}
+
+	@Override
+	public String getDescription() {
+		return UpdatableRegistry.translate(langKey + ".desc");
 	}
 
 	public abstract SchematicWriter createWriter(int sizeX, int sizeY, int sizeZ, String name);

@@ -1,4 +1,4 @@
-package org.duollectis.mapart.tools.gui;
+package org.duollectis.mapart.tools.gui.theme;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -255,6 +255,26 @@ public class AppTheme {
 		Path file = EXTERNAL_THEMES_DIR.resolve(fileName + ".json");
 		Files.writeString(file, GSON.toJson(theme), StandardCharsets.UTF_8);
 		return fileName;
+	}
+
+	/**
+	 * Удаляет файл кастомной темы из директории сохранения.
+	 * Встроенные темы удалить нельзя — метод игнорирует такой запрос.
+	 *
+	 * @param themeId имя темы (snake_case, без расширения)
+	 */
+	public static void deleteCustomTheme(String themeId) {
+		if (BuiltinTheme.isBuiltin(themeId)) {
+			return;
+		}
+
+		Path file = EXTERNAL_THEMES_DIR.resolve(themeId + ".json");
+
+		try {
+			Files.deleteIfExists(file);
+		} catch (IOException e) {
+			System.err.println("Не удалось удалить тему: " + file + " — " + e.getMessage());
+		}
 	}
 
 	/**

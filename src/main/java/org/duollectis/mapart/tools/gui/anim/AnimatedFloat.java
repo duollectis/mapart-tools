@@ -1,4 +1,4 @@
-package org.duollectis.mapart.tools.gui.util;
+package org.duollectis.mapart.tools.gui.anim;
 
 import javax.swing.*;
 import java.util.function.Consumer;

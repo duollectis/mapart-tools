@@ -2,6 +2,7 @@ package org.duollectis.mapart.tools.gui.util;
 
 import lombok.experimental.UtilityClass;
 import org.duollectis.mapart.tools.gui.GuiApp;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 import javax.swing.*;
 import java.awt.*;

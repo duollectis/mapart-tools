@@ -1,8 +1,8 @@
 package org.duollectis.mapart.tools.gui.widget;
 
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.util.AnimatedFloat;
-import org.duollectis.mapart.tools.gui.util.UiAnimator;
+import org.duollectis.mapart.tools.gui.anim.AnimatedFloat;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 
 import javax.swing.*;
@@ -21,7 +21,7 @@ import java.beans.PropertyChangeSupport;
  */
 public class AccordionPanel extends JPanel {
 
-	private static final int ANIM_DURATION_MS = 220;
+	private static final int ANIM_DURATION_MS = 2200;
 	private static final int HEADER_HEIGHT = 40;
 	private static final int CORNER_RADIUS = 10;
 	private static final int ARROW_SIZE = 6;
@@ -30,8 +30,12 @@ public class AccordionPanel extends JPanel {
 	private final JLabel titleLabel;
 	private final JLabel subtitleLabel;
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+	private JPanel header;
+	private JPanel headerEastPanel;
+	private JLabel arrowLabel;
 
 	private boolean expanded = false;
+	private float arrowProgress = 0f;
 	private final AnimatedFloat hoverProgress = new AnimatedFloat(0f);
 	private int animTargetHeight;
 	private Timer activeAnimation;
@@ -43,7 +47,7 @@ public class AccordionPanel extends JPanel {
 
 		titleLabel = buildTitleLabel(title);
 		subtitleLabel = buildSubtitleLabel();
-		JPanel header = buildHeader();
+		header = buildHeader();
 
 		contentPanel = content;
 		contentWrapper = buildContentWrapper(content);
@@ -72,6 +76,17 @@ public class AccordionPanel extends JPanel {
 		boolean hasText = subtitle != null && !subtitle.isBlank();
 		subtitleLabel.setText(hasText ? subtitle : "");
 		subtitleLabel.setVisible(hasText);
+	}
+
+	/**
+	 * Вставляет компонент в правую часть шапки аккордеона — между субтитром и стрелкой.
+	 * Используется для добавления кнопки «+» создания новой темы прямо в заголовок.
+	 * Клики на вставленный компонент не вызывают toggle аккордеона.
+	 */
+	public void setHeaderTrailingComponent(JComponent component) {
+		headerEastPanel.add(component, 0);
+		headerEastPanel.revalidate();
+		headerEastPanel.repaint();
 	}
 
 	/**
@@ -114,6 +129,7 @@ public class AccordionPanel extends JPanel {
 	public void expandInstant() {
 		stopAnimation();
 		expanded = true;
+		arrowProgress = 1f;
 		contentWrapper.setVisible(true);
 		revalidate();
 		doLayout();
@@ -131,11 +147,18 @@ public class AccordionPanel extends JPanel {
 	public void collapse() {
 		stopAnimation();
 		expanded = false;
+		arrowProgress = 0f;
 		animTargetHeight = 0;
 		contentWrapper.setPreferredSize(new Dimension(Short.MAX_VALUE, 0));
 		contentWrapper.setVisible(false);
 		revalidate();
 		repaint();
+	}
+
+	public void collapseAnimated() {
+		if (expanded) {
+			animateCollapse();
+		}
 	}
 
 	public void addAccordionListener(PropertyChangeListener listener) {
@@ -145,7 +168,63 @@ public class AccordionPanel extends JPanel {
 	// ── Построение компонентов ─────────────────────────────────────────────────
 
 	private JLabel buildTitleLabel(String title) {
-		JLabel label = new JLabel(title);
+		JLabel label = new JLabel(title) {
+			private static final int FONT_SIZE_BASE = 13;
+			private static final int FONT_SIZE_MIN = 9;
+
+			@Override
+			public Dimension getPreferredSize() {
+				FontMetrics fm = getFontMetrics(getFont());
+				String text = getText();
+				int textWidth = text == null ? 0 : fm.stringWidth(text);
+				return new Dimension(textWidth, HEADER_HEIGHT);
+			}
+
+			@Override
+			public Dimension getMinimumSize() {
+				return new Dimension(0, HEADER_HEIGHT);
+			}
+
+			@Override
+			public Dimension getMaximumSize() {
+				return new Dimension(Integer.MAX_VALUE, HEADER_HEIGHT);
+			}
+
+			@Override
+			protected void paintComponent(Graphics g) {
+				String text = getText();
+
+				if (text == null || text.isBlank()) {
+					return;
+				}
+
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+				g2.setColor(getForeground());
+
+				Font fitted = fitFont(g2, text);
+				g2.setFont(fitted);
+
+				FontMetrics fm = g2.getFontMetrics();
+				int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+				g2.drawString(text, 0, y);
+				g2.dispose();
+			}
+
+			private Font fitFont(Graphics2D g2, String text) {
+				for (int size = FONT_SIZE_BASE; size >= FONT_SIZE_MIN; size--) {
+					Font candidate = new Font("SansSerif", Font.BOLD, size);
+					FontMetrics fm = g2.getFontMetrics(candidate);
+
+					if (fm.stringWidth(text) <= getWidth()) {
+						return candidate;
+					}
+				}
+
+				return new Font("SansSerif", Font.BOLD, FONT_SIZE_MIN);
+			}
+		};
+
 		label.setFont(new Font("SansSerif", Font.BOLD, 13));
 		label.setForeground(GuiApp.theme.getText());
 		UpdatableRegistry.onThemeAnimFrame(() -> label.setForeground(GuiApp.theme.getText()));
@@ -174,7 +253,8 @@ public class AccordionPanel extends JPanel {
 				g2.setColor(bg);
 				int arc = CORNER_RADIUS * 2;
 
-				boolean hasContent = contentWrapper.getPreferredSize().height > 0;
+				boolean hasContent = contentWrapper.isVisible()
+					&& contentWrapper.getPreferredSize().height > 1;
 
 				if (hasContent) {
 					g2.fillRoundRect(0, 0, getWidth(), getHeight() + CORNER_RADIUS, arc, arc);
@@ -195,13 +275,18 @@ public class AccordionPanel extends JPanel {
 			}
 		};
 
+		headerEastPanel = new JPanel();
+		headerEastPanel.setLayout(new BoxLayout(headerEastPanel, BoxLayout.X_AXIS));
+		headerEastPanel.setOpaque(false);
+		headerEastPanel.add(buildArrowLabel());
+
 		header.setOpaque(false);
 		header.setBorder(BorderFactory.createEmptyBorder(0, 14, 0, 14));
 		header.setPreferredSize(new Dimension(Short.MAX_VALUE, HEADER_HEIGHT));
 		header.setMaximumSize(new Dimension(Integer.MAX_VALUE, HEADER_HEIGHT));
 		header.setAlignmentX(LEFT_ALIGNMENT);
 		header.add(buildTitleRow(), BorderLayout.CENTER);
-		header.add(buildArrowLabel(), BorderLayout.EAST);
+		header.add(headerEastPanel, BorderLayout.EAST);
 
 		header.addMouseListener(new MouseAdapter() {
 			@Override
@@ -241,7 +326,27 @@ public class AccordionPanel extends JPanel {
 	}
 
 	private JLabel buildArrowLabel() {
-		JLabel arrow = new JLabel() {
+		arrowLabel = new JLabel() {
+			@Override
+			public float getAlignmentY() {
+				return 0.5f;
+			}
+
+			@Override
+			public Dimension getPreferredSize() {
+				return new Dimension(20, HEADER_HEIGHT);
+			}
+
+			@Override
+			public Dimension getMinimumSize() {
+				return new Dimension(20, HEADER_HEIGHT);
+			}
+
+			@Override
+			public Dimension getMaximumSize() {
+				return new Dimension(20, HEADER_HEIGHT);
+			}
+
 			@Override
 			protected void paintComponent(Graphics g) {
 				Graphics2D g2 = (Graphics2D) g.create();
@@ -250,23 +355,19 @@ public class AccordionPanel extends JPanel {
 				g2.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
 				int cx = getWidth() / 2;
-				int cy = getHeight() / 2;
+				int cy = HEADER_HEIGHT / 2;
 
-				if (expanded) {
-					g2.drawLine(cx - ARROW_SIZE, cy + ARROW_SIZE / 2, cx, cy - ARROW_SIZE / 2);
-					g2.drawLine(cx, cy - ARROW_SIZE / 2, cx + ARROW_SIZE, cy + ARROW_SIZE / 2);
-				} else {
-					g2.drawLine(cx - ARROW_SIZE, cy - ARROW_SIZE / 2, cx, cy + ARROW_SIZE / 2);
-					g2.drawLine(cx, cy + ARROW_SIZE / 2, cx + ARROW_SIZE, cy - ARROW_SIZE / 2);
-				}
+				double angle = -arrowProgress * Math.PI;
+				g2.translate(cx, cy);
+				g2.rotate(angle);
+				g2.drawLine(-ARROW_SIZE, -ARROW_SIZE / 2, 0, ARROW_SIZE / 2);
+				g2.drawLine(0, ARROW_SIZE / 2, ARROW_SIZE, -ARROW_SIZE / 2);
 
 				g2.dispose();
 			}
 		};
 
-		arrow.setPreferredSize(new Dimension(20, HEADER_HEIGHT));
-
-		return arrow;
+		return arrowLabel;
 	}
 
 	/**
@@ -329,6 +430,7 @@ public class AccordionPanel extends JPanel {
 
 				g2.dispose();
 			}
+
 		};
 
 		wrapper.setOpaque(false);
@@ -355,37 +457,42 @@ public class AccordionPanel extends JPanel {
 		expanded = true;
 		pcs.firePropertyChange("expanded", wasExpanded, true);
 
+		// Запоминаем текущую высоту до любых изменений — при прерывании закрытия она > 0
+		int startHeight = contentWrapper.isVisible()
+			? contentWrapper.getPreferredSize().height
+			: 0;
+
 		contentWrapper.setVisible(true);
-		contentWrapper.setPreferredSize(new Dimension(Short.MAX_VALUE, 0));
-		revalidate();
-		doLayout();
 
 		contentPanel.setSize(resolveContentWidth(), Short.MAX_VALUE);
 		contentPanel.revalidate();
 
-		// Сбрасываем фиксированный размер чтобы получить реальную высоту контента
-		contentWrapper.setPreferredSize(null);
-		int wrapperHeight = contentWrapper.getPreferredSize().height;
-		animTargetHeight = wrapperHeight;
+		contentWrapper.setPreferredSize(new Dimension(Short.MAX_VALUE, startHeight));
 
-		// Снова фиксируем на 0 для старта анимации
-		contentWrapper.setPreferredSize(new Dimension(Short.MAX_VALUE, 0));
+		float startArrow = arrowProgress;
 
-		activeAnimation = UiAnimator.animateFloat(
-			0,
-			wrapperHeight,
+		activeAnimation = UiAnimator.animateProgress(
 			ANIM_DURATION_MS,
-			h -> {
-				int height = Math.round(h);
-				contentWrapper.setPreferredSize(new Dimension(Short.MAX_VALUE, height));
-				revalidate();
-				repaint();
-				notifyAncestors();
-				// Каждый кадр подтягиваем скролл так чтобы нижний край аккордеона был виден
-				scrollIntoView();
+			t -> {
+				// Пересчитываем целевую высоту на каждом кадре — контент мог измениться
+				contentWrapper.setPreferredSize(null);
+				int targetHeight = contentWrapper.getPreferredSize().height;
+				animTargetHeight = targetHeight;
+
+				float eased = UiAnimator.easeOutCubic(t);
+
+				arrowProgress = startArrow + (1f - startArrow) * eased;
+
+				int height = Math.round(startHeight + (targetHeight - startHeight) * eased);
+					contentWrapper.setPreferredSize(new Dimension(Short.MAX_VALUE, height));
+					revalidate();
+					repaintWithParent();
+					scrollIntoView();
 			},
 			() -> {
+				arrowProgress = 1f;
 				contentWrapper.setPreferredSize(null);
+				animTargetHeight = contentWrapper.getPreferredSize().height;
 				revalidate();
 				repaint();
 				notifyAncestors();
@@ -401,26 +508,42 @@ public class AccordionPanel extends JPanel {
 		pcs.firePropertyChange("expanded", wasExpanded, false);
 
 		int startHeight = contentWrapper.getPreferredSize().height;
+		float startArrow = arrowProgress;
 
-		activeAnimation = UiAnimator.animateFloat(
-			startHeight,
-			0,
+		activeAnimation = UiAnimator.animateProgress(
 			ANIM_DURATION_MS,
-			h -> {
-				int height = Math.round(h);
+			t -> {
+				float eased = UiAnimator.easeOutCubic(t);
+
+				arrowProgress = startArrow * (1f - eased);
+
+				int height = Math.round(startHeight * (1f - eased));
 				contentWrapper.setPreferredSize(new Dimension(Short.MAX_VALUE, height));
 				revalidate();
-				repaint();
-				notifyAncestors();
+				repaintWithParent();
 			},
 			() -> {
+				arrowProgress = 0f;
 				contentWrapper.setVisible(false);
 				contentWrapper.setPreferredSize(new Dimension(Short.MAX_VALUE, 0));
 				revalidate();
-				repaint();
+				repaintWithParent();
 				notifyAncestors();
 			}
 		);
+	}
+
+	// Инвалидирует и себя, и родителя — чтобы очистить артефакты рисования
+	// дочерних компонентов, которые могли выйти за пределы contentWrapper
+	// во время анимации (AnimatedPanel рисует детей за своими bounds).
+	private void repaintWithParent() {
+		repaint();
+
+		Container parent = getParent();
+
+		if (parent != null) {
+			parent.repaint();
+		}
 	}
 
 	/**

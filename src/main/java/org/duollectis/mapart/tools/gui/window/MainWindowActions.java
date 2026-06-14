@@ -2,8 +2,8 @@ package org.duollectis.mapart.tools.gui.window;
 
 import org.duollectis.mapart.tools.converter.*;
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.util.AnimatedFloat;
-import org.duollectis.mapart.tools.gui.util.UiAnimator;
+import org.duollectis.mapart.tools.gui.anim.AnimatedFloat;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.ImagePreviewPanel;
 import org.duollectis.mapart.tools.utils.image.ImageAdjustments;

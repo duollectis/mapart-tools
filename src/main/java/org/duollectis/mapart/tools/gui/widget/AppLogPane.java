@@ -27,9 +27,6 @@ public class AppLogPane extends JPanel {
 	private final JPanel contentPanel;
 	private final InertialScrollPane scrollPane;
 
-	private int dragStartY;
-	private int dragStartHeight;
-
 	public AppLogPane() {
 		super(new BorderLayout());
 		setOpaque(false);
@@ -52,49 +49,8 @@ public class AppLogPane extends JPanel {
 			scrollPane.getViewport().setBackground(GuiApp.theme.getBgCard());
 		});
 
-		add(buildDragHandle(), BorderLayout.NORTH);
+		add(buildResizeHandle(), BorderLayout.NORTH);
 		add(scrollPane, BorderLayout.CENTER);
-	}
-
-	private JPanel buildDragHandle() {
-		JPanel handle = new JPanel() {
-			@Override
-			protected void paintComponent(Graphics g) {
-				super.paintComponent(g);
-				Graphics2D g2 = (Graphics2D) g.create();
-				g2.setColor(GuiApp.theme.getBorder());
-				int dotY = getHeight() / 2;
-				int centerX = getWidth() / 2;
-				for (int i = -12; i <= 12; i += 6) {
-					g2.fillOval(centerX + i - 1, dotY - 1, 3, 3);
-				}
-				g2.dispose();
-			}
-		};
-		handle.setOpaque(false);
-		handle.setPreferredSize(new Dimension(0, HANDLE_H));
-		handle.setCursor(Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR));
-
-		MouseAdapter dragAdapter = new MouseAdapter() {
-			@Override
-			public void mousePressed(MouseEvent e) {
-				dragStartY = e.getYOnScreen();
-				dragStartHeight = scrollPane.getPreferredSize().height;
-			}
-
-			@Override
-			public void mouseDragged(MouseEvent e) {
-				int delta = dragStartY - e.getYOnScreen();
-				int newHeight = Math.clamp(dragStartHeight + delta, MIN_HEIGHT, MAX_HEIGHT);
-				scrollPane.setPreferredSize(new Dimension(0, newHeight));
-				revalidate();
-			}
-		};
-
-		handle.addMouseListener(dragAdapter);
-		handle.addMouseMotionListener(dragAdapter);
-
-		return handle;
 	}
 
 	/** Добавляет обычную строку лога. */
@@ -133,6 +89,51 @@ public class AppLogPane extends JPanel {
 			contentPanel.revalidate();
 			contentPanel.repaint();
 		});
+	}
+
+	/**
+	 * Строит невидимую полосу-ручку над scrollPane.
+	 * При перетаскивании вверх/вниз меняет preferredSize у scrollPane,
+	 * что растягивает консоль вверх за счёт BorderLayout.SOUTH в родителе.
+	 */
+	private JPanel buildResizeHandle() {
+		JPanel handle = new JPanel() {
+			@Override
+			protected void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				int cx = getWidth() / 2;
+				int cy = getHeight() / 2;
+				g.setColor(GuiApp.theme.getBorder());
+				g.fillRoundRect(cx - 20, cy - 1, 40, 2, 2, 2);
+			}
+		};
+		handle.setOpaque(false);
+		handle.setPreferredSize(new Dimension(0, HANDLE_H));
+		handle.setCursor(Cursor.getPredefinedCursor(Cursor.N_RESIZE_CURSOR));
+		UpdatableRegistry.onThemeAnimFrame(handle::repaint);
+
+		int[] dragStartY = {0};
+		int[] dragStartH = {0};
+
+		handle.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				dragStartY[0] = e.getYOnScreen();
+				dragStartH[0] = scrollPane.getPreferredSize().height;
+			}
+		});
+
+		handle.addMouseMotionListener(new MouseAdapter() {
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				int delta = dragStartY[0] - e.getYOnScreen();
+				int newHeight = Math.clamp(dragStartH[0] + delta, MIN_HEIGHT, MAX_HEIGHT);
+				scrollPane.setPreferredSize(new Dimension(0, newHeight));
+				revalidate();
+			}
+		});
+
+		return handle;
 	}
 
 	private void trimIfNeeded() {
@@ -181,10 +182,7 @@ public class AppLogPane extends JPanel {
 	}
 
 	private JPanel buildExceptionHeader(LogEntry entry, JPanel wrapper) {
-		JLabel arrow = new JLabel("▶");
-		arrow.setFont(new Font("SansSerif", Font.PLAIN, 9));
-		arrow.setForeground(GuiApp.theme.getError());
-		arrow.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 4));
+		JLabel arrow = buildExceptionArrow(false);
 
 		JLabel text = new JLabel(entry.text);
 		text.setFont(LOG_FONT);
@@ -201,7 +199,8 @@ public class AppLogPane extends JPanel {
 			public void mouseClicked(MouseEvent e) {
 				boolean nowVisible = !entry.stackPanel.isVisible();
 				entry.stackPanel.setVisible(nowVisible);
-				arrow.setText(nowVisible ? "▼" : "▶");
+				arrow.putClientProperty("expanded", nowVisible);
+				arrow.repaint();
 				wrapper.revalidate();
 				wrapper.repaint();
 				scrollPane.revalidate();
@@ -210,6 +209,53 @@ public class AppLogPane extends JPanel {
 		});
 
 		return row;
+	}
+
+	/**
+	 * Рисует маленький треугольник-стрелку для заголовка исключения.
+	 * Повёрнут вправо (свёрнуто) или вниз (развёрнуто) в зависимости от
+	 * client property {@code "expanded"}.
+	 */
+	private JLabel buildExceptionArrow(boolean expanded) {
+		JLabel arrow = new JLabel() {
+			private static final int SIZE = 7;
+
+			@Override
+			protected void paintComponent(Graphics g) {
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setColor(GuiApp.theme.getError());
+
+				int cx = getWidth() / 2;
+				int cy = getHeight() / 2;
+				boolean isExpanded = Boolean.TRUE.equals(getClientProperty("expanded"));
+
+				if (isExpanded) {
+					// треугольник вниз
+					int[] xs = {cx - SIZE / 2, cx + SIZE / 2, cx};
+					int[] ys = {cy - SIZE / 2, cy - SIZE / 2, cy + SIZE / 2};
+					g2.fillPolygon(xs, ys, 3);
+				} else {
+					// треугольник вправо
+					int[] xs = {cx - SIZE / 2, cx + SIZE / 2, cx - SIZE / 2};
+					int[] ys = {cy - SIZE / 2, cy, cy + SIZE / 2};
+					g2.fillPolygon(xs, ys, 3);
+				}
+
+				g2.dispose();
+			}
+
+			@Override
+			public Dimension getPreferredSize() {
+				return new Dimension(14, 14);
+			}
+		};
+
+		arrow.putClientProperty("expanded", expanded);
+		arrow.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 4));
+		UpdatableRegistry.onThemeAnimFrame(arrow::repaint);
+
+		return arrow;
 	}
 
 	private JPanel buildStackPanel(List<String> lines) {

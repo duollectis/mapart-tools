@@ -1,7 +1,7 @@
 package org.duollectis.mapart.tools.gui.window;
 
 import org.duollectis.mapart.tools.converter.*;
-import org.duollectis.mapart.tools.gui.AppMessages;
+import org.duollectis.mapart.tools.app.AppMessages;
 import org.duollectis.mapart.tools.gui.GuiApp;
 import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.app.DiscordRpc;
@@ -76,7 +76,7 @@ final class ConversionActions {
 					BufferedImage adjusted = get();
 
 					if (w.sourcePreview.getLayers().isEmpty()) {
-						w.sourcePreview.addLayer(adjusted, "Layer 1");
+						w.sourcePreview.addLayer(adjusted, AppMessages.LAYER_DEFAULT_NAME);
 					} else {
 						w.sourcePreview.updateActiveLayerImage(adjusted);
 					}

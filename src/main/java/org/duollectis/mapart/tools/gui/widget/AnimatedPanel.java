@@ -1,6 +1,6 @@
 package org.duollectis.mapart.tools.gui.widget;
 
-import org.duollectis.mapart.tools.gui.util.UiAnimator;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,6 +22,7 @@ public class AnimatedPanel extends JPanel {
 	private boolean expanded;
 	private int clipHeight;
 	private float alpha;
+	private boolean layoutInProgress;
 
 	public AnimatedPanel(LayoutManager layout) {
 		super(layout);
@@ -94,6 +95,32 @@ public class AnimatedPanel extends JPanel {
 		return expanded;
 	}
 
+	// Отключаем оптимизированное рисование: Swing будет перерисовывать
+	// дочерние компоненты через этот контейнер (с его clip), а не напрямую.
+	// Без этого RepaintManager рисует слайдеры за пределами clip-rect.
+	@Override
+	public boolean isOptimizedDrawingEnabled() {
+		return false;
+	}
+
+	// Во время layout-прохода возвращаем полную высоту содержимого,
+	// чтобы layout-менеджер правильно расставил дочерние компоненты.
+	// В остальное время — реальный clipHeight, чтобы не триггерить
+	// repaint за пределами компонента через RepaintManager.
+	@Override
+	public int getHeight() {
+		return layoutInProgress ? resolveFullHeight() : super.getHeight();
+	}
+
+	// GridBagLayout использует getSize() (а не getHeight()) при layoutContainer.
+	// Переопределяем чтобы GridBagLayout видел полную высоту и не сжимал компоненты.
+	@Override
+	public Dimension getSize() {
+		return layoutInProgress
+				? new Dimension(super.getWidth(), resolveFullHeight())
+				: super.getSize();
+	}
+
 	@Override
 	public Dimension getPreferredSize() {
 		return new Dimension(super.getPreferredSize().width, clipHeight);
@@ -109,21 +136,29 @@ public class AnimatedPanel extends JPanel {
 		return new Dimension(0, clipHeight);
 	}
 
+	// Родительский BoxLayout/FullWidthLayout может выделить меньше места чем fullH
+	// (пока аккордеон ещё анимируется). Игнорируем высоту от родителя и всегда
+	// устанавливаем реальный размер = fullH, чтобы GridBagLayout внутри не сжимал
+	// дочерние компоненты. Clip в paintChildren обрезает видимую область до clipHeight.
+	@Override
+	public void setBounds(int x, int y, int width, int height) {
+		super.setBounds(x, y, width, resolveFullHeight());
+	}
+
 	/**
-	 * Форсирует layout с полной высотой содержимого, чтобы дочерние компоненты
-	 * не сжимались во время анимации clip-rect.
+	 * Форсирует layout с полной высотой содержимого через флаг {@code layoutInProgress}.
+	 * Во время вызова {@code super.doLayout()} метод {@code getHeight()} возвращает
+	 * полную высоту, поэтому layout-менеджер правильно расставляет дочерние компоненты.
+	 * Реальный размер компонента при этом не меняется — нет лишних repaint/invalidate.
 	 */
 	@Override
 	public void doLayout() {
-		int fullH = resolveFullHeight();
-		int savedH = getHeight();
+		layoutInProgress = true;
 
-		if (fullH > savedH) {
-			setSize(getWidth(), fullH);
+		try {
 			super.doLayout();
-			setSize(getWidth(), savedH);
-		} else {
-			super.doLayout();
+		} finally {
+			layoutInProgress = false;
 		}
 	}
 
@@ -146,19 +181,36 @@ public class AnimatedPanel extends JPanel {
 			return;
 		}
 
+		// Пересекаем clipHeight с clip из переданного Graphics (в координатах этого компонента).
+		// Это гарантирует что AnimatedPanel не выйдет за пределы contentWrapper
+		// даже когда тот анимируется и имеет меньшую высоту чем полный контент.
+		int w = getWidth();
+		Rectangle gClip = g.getClipBounds();
+		int effectiveH;
+
+		if (gClip == null) {
+			effectiveH = clipHeight;
+		} else {
+			Rectangle own = new Rectangle(0, 0, w, clipHeight);
+			Rectangle intersection = own.intersection(gClip);
+			effectiveH = intersection.isEmpty() ? 0 : intersection.y + intersection.height;
+		}
+
+		if (effectiveH <= 0) {
+			return;
+		}
+
 		// Рисуем дочерние компоненты в offscreen-буфер, затем накладываем с альфой.
 		// Прямое применение AlphaComposite к g2 не работает для Swing-компонентов —
 		// каждый дочерний компонент создаёт свой Graphics и сбрасывает composite.
-		int w = getWidth();
-		int h = clipHeight;
-		BufferedImage buf = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage buf = new BufferedImage(w, effectiveH, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D bufG = buf.createGraphics();
-		bufG.setClip(0, 0, w, h);
+		bufG.setClip(0, 0, w, effectiveH);
 		super.paintChildren(bufG);
 		bufG.dispose();
 
 		Graphics2D g2 = (Graphics2D) g.create();
-		g2.setClip(0, 0, w, h);
+		g2.setClip(0, 0, w, effectiveH);
 		g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 		g2.drawImage(buf, 0, 0, null);
 		g2.dispose();

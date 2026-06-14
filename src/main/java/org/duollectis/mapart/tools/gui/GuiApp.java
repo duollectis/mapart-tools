@@ -1,9 +1,13 @@
 package org.duollectis.mapart.tools.gui;
 
-import org.duollectis.mapart.tools.app.SingleInstanceGuard;
-import org.duollectis.mapart.tools.gui.keybind.KeyBindManager;
-import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.app.DiscordRpc;
+import org.duollectis.mapart.tools.app.SingleInstanceGuard;
+import org.duollectis.mapart.tools.app.AppPreferences;
+import org.duollectis.mapart.tools.gui.keybind.KeyBindManager;
+import org.duollectis.mapart.tools.gui.theme.AppState;
+import org.duollectis.mapart.tools.gui.theme.AppTheme;
+import org.duollectis.mapart.tools.gui.theme.BuiltinTheme;
+import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.window.MainWindow;
 
@@ -85,7 +89,7 @@ public class GuiApp {
 
 	/**
 	 * Обновляет прогресс анимации цветового перехода.
-	 * Вызывается из {@link org.duollectis.mapart.tools.gui.util.ThemeTransition} на каждом кадре.
+	 * Вызывается из {@link org.duollectis.mapart.tools.gui.anim.ThemeTransition} на каждом кадре.
 	 *
 	 * @param progress коэффициент интерполяции [0.0, 1.0]
 	 */

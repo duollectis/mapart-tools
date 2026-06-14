@@ -1,9 +1,10 @@
 package org.duollectis.mapart.tools.gui.widget;
 
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.util.AnimatedFloat;
+import org.duollectis.mapart.tools.gui.anim.AnimatedFloat;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
+import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.util.AppTooltip;
-import org.duollectis.mapart.tools.gui.util.UiAnimator;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 
 import javax.swing.*;
@@ -31,6 +32,8 @@ public class SelectionPanel<T> extends JPanel {
 	private static final int SEPARATOR_HEIGHT = 24;
 	private static final int CORNER_RADIUS = 6;
 	private static final int MAX_VISIBLE_HEIGHT = 280;
+	private static final int ACTION_BTN_SIZE = 22;
+	private static final int ACTION_BTN_GAP = 2;
 
 	private final List<Object> items;
 	private final JPanel rowsPanel;
@@ -38,6 +41,7 @@ public class SelectionPanel<T> extends JPanel {
 	private final List<Consumer<T>> selectionListeners = new ArrayList<>();
 
 	private Function<Object, String> displayConverter = Object::toString;
+	private Function<T, List<RowAction>> rowActionProvider;
 	private T selectedItem;
 
 	public SelectionPanel(List<Object> items) {
@@ -75,6 +79,17 @@ public class SelectionPanel<T> extends JPanel {
 		rebuildRows();
 	}
 
+	/**
+	 * Устанавливает провайдер действий для строк списка.
+	 * Кнопки действий (edit, delete и т.д.) появляются справа при наведении курсора на строку.
+	 * Провайдер вызывается для каждой строки при построении — возвращает список действий или null.
+	 */
+	@SuppressWarnings("unchecked")
+	public void setRowActionProvider(Function<T, List<RowAction>> provider) {
+		rowActionProvider = provider;
+		rebuildRows();
+	}
+
 	public void setItems(List<Object> newItems) {
 		items.clear();
 		items.addAll(newItems);
@@ -106,6 +121,7 @@ public class SelectionPanel<T> extends JPanel {
 		return displayConverter.apply(item);
 	}
 
+	@SuppressWarnings("unchecked")
 	public void setSelectedItem(Object item) {
 		if (item == null) {
 			return;
@@ -120,6 +136,31 @@ public class SelectionPanel<T> extends JPanel {
 				selectedItem = (T) candidate;
 				repaintRows();
 				notifyListeners();
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Устанавливает выбранный элемент без уведомления слушателей.
+	 * Используется для восстановления сохранённого состояния при старте,
+	 * когда язык уже загружен через {@code UpdatableRegistry.load()} и
+	 * повторный вызов слушателей не нужен.
+	 */
+	@SuppressWarnings("unchecked")
+	public void setSelectedItemSilently(Object item) {
+		if (item == null) {
+			return;
+		}
+
+		for (Object candidate : items) {
+			if (candidate instanceof Separator) {
+				continue;
+			}
+
+			if (candidate.equals(item)) {
+				selectedItem = (T) candidate;
+				repaintRows();
 				return;
 			}
 		}
@@ -246,7 +287,13 @@ public class SelectionPanel<T> extends JPanel {
 		AnimatedFloat selectionProgress = new AnimatedFloat(item.equals(selectedItem) ? 1f : 0f);
 		String[] labelText = {displayConverter.apply(item)};
 
-		JPanel row = new JPanel() {
+		List<RowAction> actions = rowActionProvider == null
+				? List.of()
+				: rowActionProvider.apply((T) item);
+
+		JPanel actionsPanel = buildActionsPanel(actions, hoverProgress);
+
+		JPanel row = new JPanel(new BorderLayout()) {
 			@Override
 			protected void paintComponent(Graphics g) {
 				Graphics2D g2 = (Graphics2D) g.create();
@@ -297,6 +344,10 @@ public class SelectionPanel<T> extends JPanel {
 		row.setPreferredSize(new Dimension(Short.MAX_VALUE, ITEM_HEIGHT));
 		row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+		if (actionsPanel != null) {
+			row.add(actionsPanel, BorderLayout.EAST);
+		}
+
 		UpdatableRegistry.onLangChanged(() -> {
 			labelText[0] = displayConverter.apply(item);
 			row.repaint();
@@ -341,8 +392,107 @@ public class SelectionPanel<T> extends JPanel {
 		return row;
 	}
 
-	// ── Вложенный тип ─────────────────────────────────────────────────────────
+	/**
+	 * Строит панель с кнопками действий для строки.
+	 * Кнопки прозрачны при отсутствии hover и плавно появляются при наведении.
+	 * Клики на кнопки не вызывают выбор строки.
+	 */
+	private JPanel buildActionsPanel(List<RowAction> actions, AnimatedFloat hoverProgress) {
+		if (actions.isEmpty()) {
+			return null;
+		}
+
+		int panelWidth = actions.size() * (ACTION_BTN_SIZE + ACTION_BTN_GAP) + ACTION_BTN_GAP;
+
+		JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, ACTION_BTN_GAP, 0)) {
+			@Override
+			protected void paintComponent(Graphics g) {
+				// Прозрачный фон — рисуем только дочерние кнопки
+			}
+		};
+		panel.setOpaque(false);
+		panel.setPreferredSize(new Dimension(panelWidth, ITEM_HEIGHT));
+
+		for (RowAction action : actions) {
+			JButton btn = buildActionButton(action, hoverProgress);
+			panel.add(btn);
+		}
+
+		return panel;
+	}
+
+	private JButton buildActionButton(RowAction action, AnimatedFloat hoverProgress) {
+		JButton btn = new JButton() {
+			@Override
+			protected void paintComponent(Graphics g) {
+				float alpha = hoverProgress.get();
+
+				if (alpha <= 0f) {
+					return;
+				}
+
+				Graphics2D g2 = (Graphics2D) g.create();
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+
+				Object hoverObj = getClientProperty("btnHover");
+				float btnHover = hoverObj instanceof AnimatedFloat af ? af.get() : 0f;
+
+				if (btnHover > 0f) {
+					Color overlay = GuiApp.theme.getHoverBgOverlay();
+					g2.setColor(new Color(
+						overlay.getRed(),
+						overlay.getGreen(),
+						overlay.getBlue(),
+						Math.round(overlay.getAlpha() * btnHover)
+					));
+					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 6, 6);
+				}
+
+				Color iconColor = UiAnimator.lerp(GuiApp.theme.getTextDim(), GuiApp.theme.getText(), btnHover);
+				Icon icon = action.icon().colored(ACTION_BTN_SIZE - 6, iconColor);
+				int iconX = (getWidth() - icon.getIconWidth()) / 2;
+				int iconY = (getHeight() - icon.getIconHeight()) / 2;
+				icon.paintIcon(this, g2, iconX, iconY);
+
+				g2.dispose();
+			}
+		};
+
+		AnimatedFloat btnHover = new AnimatedFloat(0f);
+		btn.putClientProperty("btnHover", btnHover);
+
+		btn.setOpaque(false);
+		btn.setContentAreaFilled(false);
+		btn.setBorderPainted(false);
+		btn.setFocusPainted(false);
+		btn.setPreferredSize(new Dimension(ACTION_BTN_SIZE, ACTION_BTN_SIZE));
+		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+		btn.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				btnHover.animateTo(1f, 120, v -> btn.repaint());
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				btnHover.animateTo(0f, 120, v -> btn.repaint());
+			}
+		});
+
+		btn.addActionListener(e -> action.handler().run());
+
+		UpdatableRegistry.onThemeAnimFrame(() -> btn.repaint());
+
+		return btn;
+	}
+
+	// ── Вложенные типы ─────────────────────────────────────────────────────────
 
 	/** Разделитель-заголовок группы элементов в списке. Хранит ключ перевода. */
 	public record Separator(String langKey) {}
+
+	/** Действие для строки списка: иконка и обработчик клика. */
+	public record RowAction(AppIcon icon, Runnable handler) {}
 }

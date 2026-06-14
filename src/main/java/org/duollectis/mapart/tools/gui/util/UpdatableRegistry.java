@@ -5,8 +5,8 @@ import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import lombok.experimental.UtilityClass;
-import org.duollectis.mapart.tools.gui.AppLocale;
-import org.duollectis.mapart.tools.gui.AppPreferences;
+import org.duollectis.mapart.tools.app.AppPreferences;
+import org.duollectis.mapart.tools.gui.i18n.AppLocale;
 
 import javax.swing.JComponent;
 import java.awt.Component;

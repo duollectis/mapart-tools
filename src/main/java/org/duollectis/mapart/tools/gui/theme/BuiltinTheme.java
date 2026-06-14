@@ -1,4 +1,4 @@
-package org.duollectis.mapart.tools.gui;
+package org.duollectis.mapart.tools.gui.theme;
 
 import lombok.Getter;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;

@@ -448,7 +448,7 @@ public class BlockPickerDialog extends JDialog {
 	/**
 	 * Показывает в правой панели все блоки палитры, которым не нужна опора (needSupport=false).
 	 * Активные (выбранные как опора) — сверху, неактивные — снизу через сепаратор.
-	 * Кнопка "⚖ Настроить распределение" активна при >= 2 выбранных блоках.
+	 * Кнопка "Настроить распределение" активна при >= 2 выбранных блоках.
 	 */
 	private void showSupportBlocksPanel() {
 		colorInfoLabel.setIcon(AppIcon.BLOCK.colored(TEXT));

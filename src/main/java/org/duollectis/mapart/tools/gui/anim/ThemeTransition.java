@@ -1,7 +1,8 @@
-package org.duollectis.mapart.tools.gui.util;
+package org.duollectis.mapart.tools.gui.anim;
 
 import lombok.experimental.UtilityClass;
 import org.duollectis.mapart.tools.gui.GuiApp;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 
 import javax.swing.*;
 import java.awt.*;

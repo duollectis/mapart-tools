@@ -1,4 +1,4 @@
-package org.duollectis.mapart.tools.gui;
+package org.duollectis.mapart.tools.app;
 
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 
@@ -52,6 +52,13 @@ public final class AppMessages {
 	public static String IMPORT_FILE_SKIP;
 	public static String IMPORT_FILE_TOO_LARGE;
 
+	public static String LAYER_DEFAULT_NAME;
+	public static String PROGRESS_GENERATING_SCHEMATICS;
+	public static String PROGRESS_GENERATING_MAP_DAT;
+	public static String LOG_MAP_DAT_EXPORT_START;
+	public static String LOG_MAP_DAT_EXPORT_DONE;
+	public static String LOG_MAP_DAT_EXPORT_ERROR;
+
 	static {
 		reg("error.version_not_found", v -> ERROR_VERSION_NOT_FOUND = v);
 		reg("error.palette_entry_not_found", v -> ERROR_PALETTE_ENTRY_NOT_FOUND = v);
@@ -89,6 +96,13 @@ public final class AppMessages {
 
 		reg("import.file.skip", v -> IMPORT_FILE_SKIP = v);
 		reg("import.file.too_large", v -> IMPORT_FILE_TOO_LARGE = v);
+
+		reg("layer.default_name", v -> LAYER_DEFAULT_NAME = v);
+		reg("progress.generating_schematics", v -> PROGRESS_GENERATING_SCHEMATICS = v);
+		reg("progress.generating_map_dat", v -> PROGRESS_GENERATING_MAP_DAT = v);
+		reg("log.map_dat_export_start", v -> LOG_MAP_DAT_EXPORT_START = v);
+		reg("log.map_dat_export_done", v -> LOG_MAP_DAT_EXPORT_DONE = v);
+		reg("log.map_dat_export_error", v -> LOG_MAP_DAT_EXPORT_ERROR = v);
 	}
 
 	private static void reg(String key, Consumer<String> setter) {

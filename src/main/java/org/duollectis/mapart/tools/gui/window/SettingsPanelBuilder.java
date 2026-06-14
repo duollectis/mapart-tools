@@ -1,9 +1,14 @@
 package org.duollectis.mapart.tools.gui.window;
 
+import org.duollectis.mapart.tools.gui.util.AppIcon;
+import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
+import org.duollectis.mapart.tools.gui.widget.AccordionPanel;
 import org.duollectis.mapart.tools.gui.widget.InertialScrollPane;
+import org.duollectis.mapart.tools.gui.widget.RippleButton;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 /**
  * Оркестратор левой колонки настроек {@link MainWindow}.
@@ -18,17 +23,32 @@ class SettingsPanelBuilder {
 		content.setOpaque(false);
 		content.setBorder(BorderFactory.createEmptyBorder(14, 14, 6, 14));
 
-		content.add(AppSettingsSectionBuilder.build(w));
+		AccordionPanel appSettings = AppSettingsSectionBuilder.build(w);
+		AccordionPanel image = ImageSectionBuilder.build(w);
+		AccordionPanel blocks = BlocksSectionBuilder.build(w);
+		AccordionPanel dithering = DitheringsSectionBuilder.build(w);
+		AccordionPanel importSection = ImportSectionBuilder.build(w);
+		AccordionPanel exportSection = ExportSectionBuilder.build(w);
+
+		List<AccordionPanel> allAccordions = List.of(
+			appSettings, image, blocks, dithering, importSection, exportSection
+		);
+
+		JPanel collapseBar = buildCollapseBar(allAccordions, w);
+		collapseBar.setAlignmentX(Component.LEFT_ALIGNMENT);
+		content.add(collapseBar);
+		content.add(Box.createVerticalStrut(2));
+		content.add(appSettings);
 		content.add(Box.createVerticalStrut(6));
-		content.add(ImageSectionBuilder.build(w));
+		content.add(image);
 		content.add(Box.createVerticalStrut(6));
-		content.add(BlocksSectionBuilder.build(w));
+		content.add(blocks);
 		content.add(Box.createVerticalStrut(6));
-		content.add(DitheringsSectionBuilder.build(w));
+		content.add(dithering);
 		content.add(Box.createVerticalStrut(6));
-		content.add(ImportSectionBuilder.build(w));
+		content.add(importSection);
 		content.add(Box.createVerticalStrut(6));
-		content.add(ExportSectionBuilder.build(w));
+		content.add(exportSection);
 
 		InertialScrollPane scroll = new InertialScrollPane(content);
 
@@ -61,5 +81,19 @@ class SettingsPanelBuilder {
 		card.add(scroll, BorderLayout.CENTER);
 
 		return card;
+	}
+
+	private static JPanel buildCollapseBar(List<AccordionPanel> accordions, MainWindow w) {
+		JPanel bar = new JPanel(new BorderLayout());
+		bar.setOpaque(false);
+		bar.add(buildCollapseButton(accordions, w), BorderLayout.EAST);
+		return bar;
+	}
+
+	private static RippleButton buildCollapseButton(List<AccordionPanel> accordions, MainWindow w) {
+		RippleButton btn = new RippleButton(AppIcon.CROSS, new Insets(5, 5, 5, 5), w);
+		btn.addActionListener(e -> accordions.forEach(AccordionPanel::collapseAnimated));
+		UpdatableRegistry.registerLang("settings.collapse_all", btn::setToolTipText);
+		return btn;
 	}
 }

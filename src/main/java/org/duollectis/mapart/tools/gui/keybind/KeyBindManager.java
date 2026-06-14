@@ -1,7 +1,7 @@
 package org.duollectis.mapart.tools.gui.keybind;
 
 import lombok.experimental.UtilityClass;
-import org.duollectis.mapart.tools.gui.AppPreferences;
+import org.duollectis.mapart.tools.app.AppPreferences;
 
 import javax.swing.*;
 import java.awt.*;
