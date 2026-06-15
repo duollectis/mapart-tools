@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 /**
  * Диалог со списком блоков, использованных в результате дизеринга.
@@ -329,7 +330,7 @@ public class BlockListDialog extends JDialog {
 		btn.setFocusPainted(false);
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 		btn.setBorder(BorderFactory.createEmptyBorder(7, 16, 7, 16));
 		btn.setIcon(AppIcon.TXT_FILE.colored(ContrastTextRenderer.contrastFor(INPUT)));
 		btn.addActionListener(e -> exportToTxt());
@@ -442,7 +443,7 @@ public class BlockListDialog extends JDialog {
 		btn.setFocusPainted(false);
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 		btn.setBorder(BorderFactory.createEmptyBorder(7, 20, 7, 20));
 		btn.addActionListener(e -> dispose());
 
@@ -714,7 +715,7 @@ public class BlockListDialog extends JDialog {
 			btn.setFocusPainted(false);
 			btn.setContentAreaFilled(false);
 			btn.setBorderPainted(false);
-			btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			UiAnimator.applyHandCursor(btn);
 			btn.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
 			btn.setOpaque(false);
 

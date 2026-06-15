@@ -14,6 +14,7 @@ import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 /**
  * Диалог редактора темы оформления.
@@ -391,7 +392,7 @@ public class ThemeEditorDialog extends JDialog {
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
 		btn.setFocusPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 
 		btn.addActionListener(e -> {
 			Point anchor = btn.getLocationOnScreen();
@@ -536,7 +537,7 @@ public class ThemeEditorDialog extends JDialog {
 		btn.setFocusPainted(false);
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 		btn.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
 		btn.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -567,7 +568,7 @@ public class ThemeEditorDialog extends JDialog {
 		btn.setFocusPainted(false);
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 		btn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
 
 		return btn;

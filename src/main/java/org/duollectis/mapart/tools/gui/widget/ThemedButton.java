@@ -120,7 +120,7 @@ public class ThemedButton extends JButton {
 		setContentAreaFilled(false);
 		setBorderPainted(false);
 		setFocusPainted(false);
-		setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(this);
 		setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		if (style == Style.PRIMARY) {

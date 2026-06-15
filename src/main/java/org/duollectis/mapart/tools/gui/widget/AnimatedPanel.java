@@ -216,6 +216,14 @@ public class AnimatedPanel extends JPanel {
 		g2.dispose();
 	}
 
+
+	// Ограничиваем hit-область до видимой части (clipHeight).
+	// Без этого свёрнутая панель физически занимает полную высоту
+	// и поглощает события мыши у компонентов, расположенных ниже.
+	@Override
+	public boolean contains(int x, int y) {
+		return y >= 0 && y < clipHeight && super.contains(x, y);
+	}
 	private int resolveFullHeight() {
 		Dimension saved = super.getPreferredSize();
 		return saved.height > 0 ? saved.height : getLayout().preferredLayoutSize(this).height;

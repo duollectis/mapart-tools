@@ -32,7 +32,6 @@ public enum AppIcon {
 
 	RESET("reset"),
 	BROWSE("browse"),
-	OPEN_WINDOW("open_window"),
 	PREV("prev"),
 	NEXT("next"),
 	AUTO_FIT("auto_fit"),
@@ -41,7 +40,6 @@ public enum AppIcon {
 	COLOR_PICKER("color_picker"),
 	PLAY("play"),
 	STOP("stop"),
-	LINK("link"),
 	LIST("list"),
 	GRID("grid"),
 	SAVE("save"),
@@ -56,7 +54,6 @@ public enum AppIcon {
 	MAGNET("magnet"),
 	FIT("fit"),
 	COVER("cover"),
-	EXPORT("export"),
 	IMPORT_FILE("import_file"),
 	CROSS("cross"),
 	EYE("eye"),
@@ -64,8 +61,7 @@ public enum AppIcon {
 	IMAGE("image"),
 	FOLDER_OPEN("folder_open"),
 	TXT_FILE("txt_file"),
-	SUN("sun"),
-	MOON("moon");
+	CHEVRON_RIGHT("chevron_right");
 
 	private static final int DEFAULT_SIZE = 16;
 	private static final ConcurrentMap<Long, Icon> CACHE = new ConcurrentHashMap<>();

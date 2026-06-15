@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
 import java.util.function.Consumer;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 /**
  * Компактный всплывающий пикер цвета в стиле приложения.
@@ -302,7 +303,7 @@ public class ColorPickerPopup extends JPanel {
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
 		btn.setFocusPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 		btn.addActionListener(e -> confirm());
 
 		return btn;
@@ -468,7 +469,7 @@ public class ColorPickerPopup extends JPanel {
 
 		HueSlider() {
 			setOpaque(false);
-			setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			UiAnimator.applyHandCursor(this);
 
 			MouseAdapter adapter = new MouseAdapter() {
 				@Override

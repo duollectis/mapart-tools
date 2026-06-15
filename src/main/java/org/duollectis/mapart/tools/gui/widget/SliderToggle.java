@@ -39,7 +39,7 @@ public class SliderToggle extends JPanel {
 		this.animProgress = initialSelected ? 1f : 0f;
 
 		setOpaque(false);
-		setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(this);
 		setLayout(new BorderLayout(8, 0));
 
 		addMouseListener(new MouseAdapter() {

@@ -9,6 +9,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 /**
  * Панель лога приложения с поддержкой свёрнутых стектрейсов и изменения высоты
@@ -190,7 +191,7 @@ public class AppLogPane extends JPanel {
 
 		JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 1));
 		row.setOpaque(false);
-		row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(row);
 		row.add(arrow);
 		row.add(text);
 

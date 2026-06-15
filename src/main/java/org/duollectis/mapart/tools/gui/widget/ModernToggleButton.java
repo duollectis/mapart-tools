@@ -38,7 +38,7 @@ public class ModernToggleButton extends JToggleButton {
 		setBorderPainted(false);
 		setFocusPainted(false);
 		setFont(new Font("SansSerif", Font.PLAIN, 12));
-		setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(this);
 
 		addMouseListener(new MouseAdapter() {
 			@Override

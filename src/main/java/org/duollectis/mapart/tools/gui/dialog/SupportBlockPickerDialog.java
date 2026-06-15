@@ -15,6 +15,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 /**
  * Диалог выбора блоков-опор с весами и режимом распределения.
@@ -481,7 +482,7 @@ public class SupportBlockPickerDialog extends JDialog {
 			btn.setFocusPainted(false);
 			btn.setContentAreaFilled(false);
 			btn.setBorderPainted(false);
-			btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			UiAnimator.applyHandCursor(btn);
 			btn.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
 			btn.setOpaque(false);
 
@@ -513,7 +514,7 @@ public class SupportBlockPickerDialog extends JDialog {
 			btn.setFocusPainted(false);
 			btn.setContentAreaFilled(false);
 			btn.setBorderPainted(false);
-			btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			UiAnimator.applyHandCursor(btn);
 			btn.setBorder(BorderFactory.createEmptyBorder(7, 18, 7, 18));
 
 		return btn;
@@ -544,7 +545,7 @@ public class SupportBlockPickerDialog extends JDialog {
 		btn.setFocusPainted(false);
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 		btn.setBorder(BorderFactory.createEmptyBorder(7, 14, 7, 14));
 
 		return btn;

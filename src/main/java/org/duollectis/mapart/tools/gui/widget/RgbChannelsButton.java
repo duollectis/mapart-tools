@@ -34,7 +34,7 @@ public class RgbChannelsButton extends JToggleButton {
 		setContentAreaFilled(false);
 		setBorderPainted(false);
 		setFocusPainted(false);
-		setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(this);
 		setPreferredSize(new Dimension(BUTTON_W, BUTTON_H));
 		setMinimumSize(new Dimension(BUTTON_W, BUTTON_H));
 		setMaximumSize(new Dimension(BUTTON_W, BUTTON_H));

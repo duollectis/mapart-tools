@@ -455,6 +455,7 @@
   "app_settings.theme_group_custom": "Custom",
   "app_settings.discord_rpc": "Discord RPC",
   "app_settings.animations": "UI Animations",
+  "app_settings.hand_cursor": "Hand cursor on hover",
   "section.language": "Language",
   "section.theme": "Theme",
   "section.staircase_mode": "Staircase Mode",

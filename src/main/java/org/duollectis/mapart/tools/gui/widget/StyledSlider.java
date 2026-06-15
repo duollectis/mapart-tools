@@ -43,7 +43,7 @@ public class StyledSlider extends JPanel {
 
 		setOpaque(false);
 		setPreferredSize(new Dimension(0, 20));
-		setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(this);
 
 		MouseAdapter mouseHandler = new MouseAdapter() {
 			@Override

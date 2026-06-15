@@ -342,7 +342,7 @@ public class SelectionPanel<T> extends JPanel {
 		row.setAlignmentX(LEFT_ALIGNMENT);
 		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, ITEM_HEIGHT));
 		row.setPreferredSize(new Dimension(Short.MAX_VALUE, ITEM_HEIGHT));
-		row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(row);
 
 		if (actionsPanel != null) {
 			row.add(actionsPanel, BorderLayout.EAST);
@@ -467,7 +467,7 @@ public class SelectionPanel<T> extends JPanel {
 		btn.setBorderPainted(false);
 		btn.setFocusPainted(false);
 		btn.setPreferredSize(new Dimension(ACTION_BTN_SIZE, ACTION_BTN_SIZE));
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 
 		btn.addMouseListener(new MouseAdapter() {
 			@Override

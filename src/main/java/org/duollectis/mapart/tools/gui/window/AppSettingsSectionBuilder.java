@@ -44,6 +44,8 @@ final class AppSettingsSectionBuilder {
 		inner.add(Box.createVerticalStrut(4));
 		inner.add(buildDiscordRpcRow(w));
 		inner.add(Box.createVerticalStrut(4));
+		inner.add(buildHandCursorRow(w));
+		inner.add(Box.createVerticalStrut(4));
 		inner.add(buildKeyBindsButton(w));
 
 		w.appSettingsAccordion = new AccordionPanel("", inner);
@@ -191,6 +193,16 @@ final class AppSettingsSectionBuilder {
 		return buildToggleRow("app_settings.discord_rpc", AppPreferences.loadDiscordRpc(false), enabled -> {
 			AppPreferences.saveDiscordRpc(enabled);
 			DiscordRpc.setEnabled(enabled);
+		});
+	}
+
+	private static JPanel buildHandCursorRow(MainWindow w) {
+		boolean initial = AppPreferences.loadHandCursor(true);
+		UiAnimator.setHandCursorEnabled(initial);
+
+		return buildToggleRow("app_settings.hand_cursor", initial, enabled -> {
+			UiAnimator.setHandCursorEnabled(enabled);
+			AppPreferences.saveHandCursor(enabled);
 		});
 	}
 

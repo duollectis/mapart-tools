@@ -5,6 +5,11 @@ import lombok.experimental.UtilityClass;
 import javax.swing.*;
 import java.awt.*;
 import java.util.function.Consumer;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Утилита для декларативных Swing-анимаций через {@link Timer} на ~60fps.
@@ -21,6 +26,12 @@ public class UiAnimator {
 
 	/** Глобальный флаг анимаций. При {@code false} все переходы выполняются мгновенно. */
 	public static boolean animationsEnabled = true;
+
+	/** Глобальный флаг курсора-руки. При {@code false} используется стандартный курсор. */
+	public static boolean handCursorEnabled = true;
+
+	/** Реестр компонентов с курсором-рукой для обновления при смене флага. */
+	private static final List<WeakReference<Component>> handCursorComponents = new ArrayList<>();
 
 	/**
 	 * Анимирует float-значение от {@code from} до {@code to} за {@code durationMs} мс
@@ -243,6 +254,39 @@ public class UiAnimator {
 		double f = 1.0 - t;
 		return 1.0 - f * f * f;
 	}
+
+
+	/**
+	 * Регистрирует компонент как «хочет курсор-руку» и сразу применяет текущий флаг.
+	 * Компонент хранится через WeakReference — не мешает GC.
+	 */
+	public static void applyHandCursor(Component component) {
+		handCursorComponents.removeIf(ref -> ref.get() == null);
+		handCursorComponents.add(new WeakReference<>(component));
+		component.setCursor(handCursorEnabled
+				? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+				: Cursor.getDefaultCursor());
+	}
+
+	/**
+	 * Меняет глобальный флаг курсора-руки и немедленно обновляет все зарегистрированные компоненты.
+	 */
+	public static void setHandCursorEnabled(boolean enabled) {
+		handCursorEnabled = enabled;
+		Cursor target = enabled
+				? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+				: Cursor.getDefaultCursor();
+		handCursorComponents.removeIf(ref -> ref.get() == null);
+
+		for (WeakReference<Component> ref : handCursorComponents) {
+			Component c = ref.get();
+
+			if (c != null) {
+				c.setCursor(target);
+			}
+		}
+	}
+
 
 	private static Color scaleBrightness(Color color, float factor) {
 		int r = Math.clamp((int) (color.getRed() * factor), 0, 255);

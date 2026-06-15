@@ -20,6 +20,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 /**
  * Универсальный диалог настройки процентного распределения блоков.
@@ -627,7 +628,7 @@ public class BlockVariantPickerDialog extends JDialog {
 			label.setHorizontalAlignment(SwingConstants.CENTER);
 			label.setOpaque(true);
 			label.setBackground(selected ? table.getSelectionBackground() : BG);
-			label.setCursor(canLock ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : Cursor.getDefaultCursor());
+			label.setCursor(canLock && UiAnimator.handCursorEnabled ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : Cursor.getDefaultCursor());
 			return label;
 		}
 	}
@@ -643,7 +644,7 @@ public class BlockVariantPickerDialog extends JDialog {
 			label.setHorizontalAlignment(SwingConstants.CENTER);
 			label.setOpaque(true);
 			label.setBackground(BG);
-			label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			UiAnimator.applyHandCursor(label);
 			label.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseClicked(MouseEvent e) {
@@ -812,7 +813,7 @@ public class BlockVariantPickerDialog extends JDialog {
 			btn.setFocusPainted(false);
 			btn.setContentAreaFilled(false);
 			btn.setBorderPainted(false);
-			btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			UiAnimator.applyHandCursor(btn);
 			btn.setBorder(BorderFactory.createEmptyBorder(7, 18, 7, 18));
 	
 			return btn;
@@ -843,7 +844,7 @@ public class BlockVariantPickerDialog extends JDialog {
 			btn.setFocusPainted(false);
 			btn.setContentAreaFilled(false);
 			btn.setBorderPainted(false);
-			btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			UiAnimator.applyHandCursor(btn);
 			btn.setBorder(BorderFactory.createEmptyBorder(7, 14, 7, 14));
 	
 			return btn;

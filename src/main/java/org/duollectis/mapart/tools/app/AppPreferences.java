@@ -51,6 +51,7 @@ public class AppPreferences {
 	private static final String KEY_KEYBINDS = "keybinds";
 	private static final String KEY_DISCORD_RPC = "discord_rpc";
 	private static final String KEY_ANIMATIONS = "animations";
+	private static final String KEY_HAND_CURSOR = "hand_cursor";
 	private static final String KEY_LAYERS = "layers";
 	private static final String KEY_ACTIVE_LAYER = "active_layer";
 	private static final String KEY_IMPORT_ADD_TO_BLOCKS = "import_add_to_blocks";
@@ -486,6 +487,17 @@ public class AppPreferences {
 	public boolean loadDiscordRpc(boolean defaultValue) {
 		JsonObject root = readRoot();
 		return root.has(KEY_DISCORD_RPC) ? root.get(KEY_DISCORD_RPC).getAsBoolean() : defaultValue;
+	}
+
+	public void saveHandCursor(boolean enabled) {
+		JsonObject root = readRoot();
+		root.addProperty(KEY_HAND_CURSOR, enabled);
+		writeRoot(root);
+	}
+
+	public boolean loadHandCursor(boolean defaultValue) {
+		JsonObject root = readRoot();
+		return root.has(KEY_HAND_CURSOR) ? root.get(KEY_HAND_CURSOR).getAsBoolean() : defaultValue;
 	}
 
 	/**

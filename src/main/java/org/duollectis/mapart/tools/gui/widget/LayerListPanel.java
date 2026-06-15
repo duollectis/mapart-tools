@@ -783,7 +783,7 @@ public class LayerListPanel extends JPanel {
 			setPreferredSize(new Dimension(CARD_SIZE, CARD_SIZE));
 			setMinimumSize(new Dimension(CARD_SIZE, CARD_SIZE));
 			setMaximumSize(new Dimension(CARD_SIZE, CARD_SIZE));
-			setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			UiAnimator.applyHandCursor(this);
 
 			eyeBtn = new RippleButton(layer.isVisible() ? AppIcon.EYE : AppIcon.EYE_OFF, mainWindow);
 			eyeBtn.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
@@ -1019,7 +1019,7 @@ public class LayerListPanel extends JPanel {
 
 				@Override
 				public void mouseReleased(MouseEvent e) {
-					setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+					UiAnimator.applyHandCursor(CardPanel.this);
 					boolean wasDragging = dragging;
 					endDrag();
 

@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 
 /**
@@ -606,7 +607,7 @@ public class BlockPickerDialog extends JDialog {
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
 		btn.setFocusPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 		AppTooltip.install(btn, block.getId());
 		btn.setPreferredSize(new Dimension(cellSize, cellSize));
 
@@ -776,7 +777,7 @@ public class BlockPickerDialog extends JDialog {
 		btn.setFocusPainted(false);
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 		btn.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
 		AppTooltip.install(btn, UpdatableRegistry.translate("variant_picker.hint"));
 		btn.setEnabled(false);
@@ -972,7 +973,7 @@ public class BlockPickerDialog extends JDialog {
 		btn.setContentAreaFilled(false);
 		btn.setBorderPainted(false);
 		btn.setFocusPainted(false);
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 		AppTooltip.install(
 			btn,
 			block.isNeedSupport()
@@ -1279,7 +1280,7 @@ public class BlockPickerDialog extends JDialog {
 		btn.setFocusPainted(false);
 		btn.setForeground(TEXT);
 		btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 
 		return btn;
 	}
@@ -1323,7 +1324,7 @@ public class BlockPickerDialog extends JDialog {
 		btn.setFocusPainted(false);
 		btn.setForeground(ContrastTextRenderer.contrastFor(bg));
 		btn.setFont(new Font("SansSerif", Font.BOLD, 13));
-		btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(btn);
 
 		return btn;
 	}

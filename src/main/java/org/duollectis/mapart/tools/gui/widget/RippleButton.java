@@ -129,7 +129,7 @@ public class RippleButton extends JButton {
 		setContentAreaFilled(false);
 		setBorderPainted(false);
 		setFocusPainted(false);
-		setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		UiAnimator.applyHandCursor(this);
 		setBorder(BorderFactory.createEmptyBorder(3, 7, 3, 7));
 
 		addMouseListener(new MouseAdapter() {

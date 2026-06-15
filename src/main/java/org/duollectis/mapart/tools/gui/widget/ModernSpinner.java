@@ -164,7 +164,7 @@ public class ModernSpinner extends JSpinner {
 			btn.setContentAreaFilled(false);
 			btn.setBorderPainted(false);
 			btn.setFocusPainted(false);
-			btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			UiAnimator.applyHandCursor(btn);
 			btn.setPreferredSize(new Dimension(22, 0));
 
 			return btn;
