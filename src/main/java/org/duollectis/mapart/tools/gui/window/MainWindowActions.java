@@ -2,7 +2,6 @@ package org.duollectis.mapart.tools.gui.window;
 
 import org.duollectis.mapart.tools.converter.*;
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.anim.AnimatedFloat;
 import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.ImagePreviewPanel;
@@ -10,8 +9,6 @@ import org.duollectis.mapart.tools.utils.image.ImageAdjustments;
 
 import javax.swing.*;
 import javax.swing.Timer;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -140,10 +137,6 @@ class MainWindowActions {
 
 	// ── Блоки ─────────────────────────────────────────────────────────────────
 
-	void openBlockList() {
-		blocks.openBlockList();
-	}
-
 	void removeBlockAndReconvert(String blockId) {
 		blocks.removeBlockAndReconvert(blockId);
 	}
@@ -168,9 +161,6 @@ class MainWindowActions {
 		blocks.loadBlocksFromFile(file);
 	}
 
-	void openBlockPicker() {
-		blocks.openBlockPicker();
-	}
 
 	void syncBlocksFromFieldIfNeeded() {
 		blocks.syncBlocksFromFieldIfNeeded();
@@ -245,25 +235,6 @@ class MainWindowActions {
 	}
 
 	void addHoverEffect(JButton btn) {
-		AnimatedFloat hover = new AnimatedFloat(0f);
-		btn.putClientProperty("hoverProgress", hover);
-
-		btn.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				hover.animateTo(1f, 150, v -> {
-					btn.putClientProperty("hoverProgress", v);
-					btn.repaint();
-				});
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				hover.animateTo(0f, 150, v -> {
-					btn.putClientProperty("hoverProgress", v);
-					btn.repaint();
-				});
-			}
-		});
+		UiAnimator.addHoverEffect(btn);
 	}
 }

@@ -232,7 +232,6 @@ final class ConversionActions {
 		w.progressBar.setString(UpdatableRegistry.translate(AppMessages.PROGRESS_DITHER_DONE, ditherer.getDitherTime()));
 		w.progressBar.setForeground(GuiApp.theme.getSuccess());
 		w.exportButton.setEnabled(true);
-		w.blockListButton.setEnabled(true);
 		w.actions.log(UpdatableRegistry.translate(AppMessages.LOG_DITHER_DONE, ditherer.getDitherTime()));
 	}
 
@@ -261,7 +260,6 @@ final class ConversionActions {
 			w.progressBar.setString(AppMessages.PROGRESS_DITHERING + " 0%");
 			w.progressBar.setForeground(GuiApp.theme.getAccent());
 			w.exportButton.setEnabled(false);
-			w.blockListButton.setEnabled(false);
 			switchConvertButtonToStop();
 		} else {
 			switchConvertButtonToConvert();
@@ -276,7 +274,6 @@ final class ConversionActions {
 		w.lastDitherer.close();
 		w.lastDitherer = null;
 		w.exportButton.setEnabled(false);
-		w.blockListButton.setEnabled(false);
 	}
 
 	void startConversionForBlockList() {
@@ -331,7 +328,7 @@ final class ConversionActions {
 				w.progressBar.setValue(stage.percent());
 				w.progressBar.setString(resolveStageLabel(stage));
 			},
-			this::onDitheringSuccessFromBlockList,
+			this::onDitheringSuccess,
 			this::onConversionError,
 			this::onConversionCancelled
 		);
@@ -339,13 +336,6 @@ final class ConversionActions {
 		w.activeConversionWorker.execute();
 	}
 
-	void onDitheringSuccessFromBlockList(Ditherer ditherer) {
-		onDitheringSuccess(ditherer);
-
-		if (w.activeBlockListDialog != null && w.activeBlockListDialog.isVisible()) {
-			w.activeBlockListDialog.refresh(ditherer.getUsedBlockCounts(), ditherer.getSupportBlockCount());
-		}
-	}
 
 	void syncSourcePreviewMapCount() {
 		if (w.sourcePreview == null || w.mapSizeControl == null) {

@@ -5,7 +5,6 @@ import org.duollectis.mapart.tools.gui.i18n.AppLocale;
 import org.duollectis.mapart.tools.gui.theme.AppState;
 import org.duollectis.mapart.tools.gui.theme.AppTheme;
 import org.duollectis.mapart.tools.gui.theme.BuiltinTheme;
-import org.duollectis.mapart.tools.gui.dialog.ThemeEditorDialog;
 import org.duollectis.mapart.tools.gui.dialog.KeyBindsDialog;
 import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.util.AppTooltip;
@@ -68,9 +67,10 @@ final class AppSettingsSectionBuilder {
 				return;
 			}
 
-			AppPreferences.saveLocale(locale.getCode());
-			UpdatableRegistry.load(locale);
-			UpdatableRegistry.fireLang(w);
+			AppState.applyLocale(locale, w);
+
+
+
 		});
 
 		JPanel inner = AccordionPanel.createContentPanel();
@@ -125,6 +125,12 @@ final class AppSettingsSectionBuilder {
 
 			accordion.setSubtitle(w.themeCombo.getDisplayText(item));
 		});
+		UpdatableRegistry.onLangChanged(() -> {
+			Object selected = w.themeCombo.getSelectedItem();
+			if (selected != null && !(selected instanceof SelectionPanel.Separator)) {
+				accordion.setSubtitle(w.themeCombo.getDisplayText(selected));
+			}
+		});
 
 		JButton addThemeBtn = buildAddThemeButton(w);
 		accordion.setHeaderTrailingComponent(addThemeBtn);
@@ -137,7 +143,7 @@ final class AppSettingsSectionBuilder {
 
 		actions.add(new SelectionPanel.RowAction(AppIcon.EDIT, () -> {
 			String themeId = item instanceof BuiltinTheme bt ? bt.getId() : item.toString();
-			new ThemeEditorDialog(w, themeId, () -> {
+			w.showThemeEditor(themeId, () -> {
 				w.themeCombo.setItems(AppTheme.buildThemeMenuItems());
 				String savedTheme = AppPreferences.loadTheme(BuiltinTheme.DARK.getId());
 				ThemeTransition.applyColorOnly(w, savedTheme);
@@ -162,7 +168,7 @@ final class AppSettingsSectionBuilder {
 	private static JButton buildAddThemeButton(MainWindow w) {
 		JButton btn = buildIconButton(AppIcon.PALETTE, new Insets(3, 5, 3, 5), w);
 		UpdatableRegistry.registerLang("btn.new_theme", t -> AppTooltip.install(btn, t));
-		btn.addActionListener(e -> new ThemeEditorDialog(w, null, () -> {
+		btn.addActionListener(e -> w.showThemeEditor(null, () -> {
 			w.themeCombo.setItems(AppTheme.buildThemeMenuItems());
 			String savedTheme = AppPreferences.loadTheme(BuiltinTheme.DARK.getId());
 			ThemeTransition.applyColorOnly(w, savedTheme);
@@ -207,7 +213,7 @@ final class AppSettingsSectionBuilder {
 	}
 
 	private static JPanel buildKeyBindsButton(MainWindow w) {
-		JButton btn = buildAccentButton("", w);
+		JButton btn = buildAccentButton("");
 		UpdatableRegistry.registerLang("btn.key_binds", btn::setText);
 		btn.addActionListener(e -> new KeyBindsDialog(w));
 

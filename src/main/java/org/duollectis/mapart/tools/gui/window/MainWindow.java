@@ -7,18 +7,20 @@ import org.duollectis.mapart.tools.converter.schematic.SchematicImportResult;
 import org.duollectis.mapart.tools.app.AppPreferences;
 import org.duollectis.mapart.tools.gui.i18n.AppLocale;
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.dialog.BlockListDialog;
 import org.duollectis.mapart.tools.gui.keybind.KeyBindAction;
 import org.duollectis.mapart.tools.gui.keybind.KeyBindManager;
 import org.duollectis.mapart.tools.gui.util.UiStateRegistry;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.*;
+import org.duollectis.mapart.tools.gui.widget.PanelNavigator;
+import org.duollectis.mapart.tools.gui.widget.ThemeEditorPanel;
 import org.duollectis.mapart.tools.gui.widget.AnimatedPanel;
 import org.duollectis.mapart.tools.gui.widget.LayerListPanel;
 import org.duollectis.mapart.tools.gui.widget.SliderRow;
 import org.duollectis.mapart.tools.gui.worker.ConversionWorker;
 import org.duollectis.mapart.tools.gui.worker.ExportWorker;
 import org.duollectis.mapart.tools.gui.worker.ImportWorker;
+import org.duollectis.mapart.tools.gui.block.BlockIconLoader;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,6 +32,8 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public class MainWindow extends JFrame {
@@ -106,8 +110,6 @@ public class MainWindow extends JFrame {
 	JButton exportButton;
 	JTextField mapDatStartIdField;
 	AnimatedPanel mapDatStartIdPanel;
-	JButton blockListButton;
-	JButton pickBlocksButton;
 	JLabel blocksCountLabel;
 	AnimatedProgressBar progressBar;
 	AppLogPane logArea;
@@ -120,6 +122,8 @@ public class MainWindow extends JFrame {
 	JButton importButton;
 	StyledSlider blurSlider;
 	JLabel blurLabel;
+
+	PanelNavigator navigator;
 
 	AccordionPanel appSettingsAccordion;
 	AccordionPanel imageAccordion;
@@ -139,7 +143,6 @@ public class MainWindow extends JFrame {
 	ImportWorker activeImportWorker;
 	Ditherer lastDitherer;
 	SchematicImportResult lastImportResult;
-	BlockListDialog activeBlockListDialog;
 	Set<String> enabledBlocks = new HashSet<>();
 	Map<String, WeightedSelector<BlockData>> blockSelectors = new HashMap<>();
 	volatile boolean sourcePreviewPending;
@@ -210,21 +213,28 @@ public class MainWindow extends JFrame {
 		handlers.put(KeyBindAction.SAVE_PREVIEW, actions::savePreview);
 		handlers.put(KeyBindAction.MERGE_LAYERS, layerListPanel::mergeSelectedLayers);
 		handlers.put(KeyBindAction.DELETE_LAYER, layerListPanel::deleteSelectedLayers);
+		handlers.put(KeyBindAction.NAV_BACK, navigator::popIfPossible);
 		KeyBindManager.install(handlers);
 	}
 
 	private JPanel buildCenterPanel() {
-		JPanel rightColumn = new JPanel(new BorderLayout(0, 0)) {
+		JPanel previewColumn = new JPanel(new BorderLayout(0, 0)) {
 			@Override
 			protected void paintComponent(Graphics g) {
 				g.setColor(BG());
 				g.fillRect(0, 0, getWidth(), getHeight());
 			}
 		};
-		rightColumn.setOpaque(false);
-		rightColumn.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 12));
-		rightColumn.add(PreviewPanelBuilder.buildPreviewPanel(this), BorderLayout.CENTER);
-		rightColumn.add(PreviewPanelBuilder.buildBottomPanel(this), BorderLayout.SOUTH);
+		previewColumn.setOpaque(false);
+		previewColumn.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 12));
+		previewColumn.add(PreviewPanelBuilder.buildPreviewPanel(this), BorderLayout.CENTER);
+		previewColumn.add(PreviewPanelBuilder.buildBottomPanel(this), BorderLayout.SOUTH);
+
+		PanelNavigator[] navHolder = new PanelNavigator[1];
+		JPanel navigatorWrapper = PanelNavigator.wrap(previewColumn, navHolder);
+		navigatorWrapper.setOpaque(false);
+		navigator = navHolder[0];
+
 
 		JPanel settingsPanel = SettingsPanelBuilder.buildSettingsPanel(this);
 
@@ -238,7 +248,7 @@ public class MainWindow extends JFrame {
 		center.setOpaque(false);
 		center.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 0));
 		center.add(settingsPanel, BorderLayout.WEST);
-		center.add(rightColumn, BorderLayout.CENTER);
+		center.add(navigatorWrapper, BorderLayout.CENTER);
 
 		// Динамически ограничиваем ширину левой панели: растёт пропорционально окну,
 		// но не выходит за пределы [SETTINGS_MIN_WIDTH, SETTINGS_MAX_WIDTH].
@@ -272,6 +282,42 @@ public class MainWindow extends JFrame {
 		});
 
 		return center;
+	}
+
+
+	void showThemeEditor(String themeId, Runnable onSaved) {
+		ThemeEditorPanel panel = new ThemeEditorPanel(themeId, onSaved, () -> navigator.pop(null));
+		navigator.push(panel, null);
+	}
+
+	void showBlockPicker(Runnable onSaved) {
+		String version = (String) versionCombo.getSelectedItem();
+		Map<Integer, Map<Brightness, List<BlockData>>> paletteByColor = prefs.parsePaletteByColor(version);
+		Optional<BlockIconLoader> iconLoader = BlockIconLoader.create(version);
+		StaircaseMode staircaseMode = staircaseModeCombo.getSelectedItem() instanceof StaircaseMode mode
+			? mode
+			: StaircaseMode.STAIRCASE;
+		BlockPickerPanel panel = new BlockPickerPanel(
+			this,
+			paletteByColor,
+			iconLoader,
+			staircaseMode,
+			enabledBlocks,
+			blockSelectors,
+			supportSettings,
+			onSaved
+		);
+		navigator.push(panel, null);
+	}
+
+	public void navigateBack() {
+		navigator.pop(null);
+	}
+
+	public void applyBlockPickerResult(Set<String> enabled, Map<String, WeightedSelector<BlockData>> selectors, SupportBlockSettings support) {
+		enabledBlocks = enabled;
+		blockSelectors = selectors;
+		supportSettings = support;
 	}
 }
 

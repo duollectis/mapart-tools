@@ -46,7 +46,7 @@ public class SliderRow {
 	}
 
 	public void registerLang(String langKey) {
-		UpdatableRegistry.registerLang(langKey, nameLabel::setTextInstant);
+		UpdatableRegistry.registerLangFading(langKey, nameLabel);
 	}
 
 	/**

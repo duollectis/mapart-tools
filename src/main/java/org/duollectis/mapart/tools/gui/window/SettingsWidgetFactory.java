@@ -84,8 +84,8 @@ public final class SettingsWidgetFactory {
 		SliderToggle toggle = new SliderToggle(initial);
 		toggle.addChangeListener(onChange::accept);
 
-		JLabel label = dimLabel("");
-		UpdatableRegistry.registerLang(langKey, label::setText);
+		FadingLabel label = buildFadingDimLabel("");
+		UpdatableRegistry.registerLangFading(langKey, label);
 
 		JPanel row = new JPanel(new BorderLayout(8, 0));
 		row.setOpaque(false);
@@ -95,16 +95,24 @@ public final class SettingsWidgetFactory {
 		return row;
 	}
 
-	public static ThemedButton buildPrimaryButton(String text, MainWindow w) {
-		return new ThemedButton(text, ThemedButton.Style.PRIMARY, w);
+	public static ThemedButton buildPrimaryButton(String text) {
+		return new ThemedButton(text, ThemedButton.Style.PRIMARY);
 	}
 
-	public static ThemedButton buildAccentButton(String text, MainWindow w) {
-		return new ThemedButton(text, ThemedButton.Style.ACCENT, w);
+	public static ThemedButton buildAccentButton(String text) {
+		return new ThemedButton(text, ThemedButton.Style.ACCENT);
 	}
 
-	public static ThemedButton buildThemedButton(String text, MainWindow w) {
-		return new ThemedButton(text, ThemedButton.Style.THEMED, w);
+	public static ThemedButton buildThemedButton(String text) {
+		return new ThemedButton(text, ThemedButton.Style.THEMED);
+	}
+
+	public static ThemedButton buildDeleteButton(String text) {
+		return new ThemedButton(text, ThemedButton.Style.DELETE);
+	}
+
+	public static ThemedButton buildKeybindButton(String text) {
+		return new ThemedButton(text, ThemedButton.Style.KEYBIND);
 	}
 
 	private static Border buildTextFieldBorder() {

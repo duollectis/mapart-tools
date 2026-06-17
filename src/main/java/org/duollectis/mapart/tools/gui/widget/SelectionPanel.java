@@ -366,6 +366,11 @@ public class SelectionPanel<T> extends JPanel {
 				if (!item.equals(prev)) {
 					notifyListeners();
 				}
+
+				Container parent = SwingUtilities.getAncestorOfClass(AccordionPanel.class, row);
+				if (parent instanceof AccordionPanel accordion) {
+					accordion.collapseAnimated();
+				}
 			}
 
 			@Override

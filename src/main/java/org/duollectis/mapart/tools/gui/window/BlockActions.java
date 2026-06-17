@@ -4,8 +4,6 @@ import org.duollectis.mapart.tools.converter.BlockData;
 import org.duollectis.mapart.tools.converter.WeightedSelector;
 import org.duollectis.mapart.tools.app.AppMessages;
 import org.duollectis.mapart.tools.gui.GuiApp;
-import org.duollectis.mapart.tools.gui.dialog.BlockListDialog;
-import org.duollectis.mapart.tools.gui.dialog.BlockPickerDialog;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 
 import java.io.File;
@@ -27,32 +25,6 @@ final class BlockActions {
 		w = window;
 	}
 
-	void openBlockList() {
-		if (w.lastDitherer == null) {
-			return;
-		}
-
-		String version = (String) w.versionCombo.getSelectedItem();
-		String primarySupportId = (w.supportSettings != null && !w.supportSettings.isEmpty())
-			? w.supportSettings.getEntries().getFirst().blockId()
-			: null;
-
-		w.activeBlockListDialog = new BlockListDialog(
-			w,
-			w.lastDitherer.getUsedBlockCounts(),
-			version,
-			primarySupportId,
-			w.lastDitherer.getSupportBlockCount(),
-			this::removeBlockAndReconvert
-		);
-
-		w.activeBlockListDialog.addWindowListener(new java.awt.event.WindowAdapter() {
-			@Override
-			public void windowClosed(java.awt.event.WindowEvent e) {
-				w.activeBlockListDialog = null;
-			}
-		});
-	}
 
 	/**
 	 * Удаляет блок из активного набора, сохраняет обновлённый файл блоков
@@ -172,33 +144,6 @@ final class BlockActions {
 		}
 	}
 
-	void openBlockPicker() {
-		syncBlocksFromFieldIfNeeded();
-
-		String version = (String) w.versionCombo.getSelectedItem();
-		File targetFile = resolveBlocksTargetFile();
-
-		BlockPickerDialog dialog = new BlockPickerDialog(
-			w,
-			version,
-			targetFile,
-			w.enabledBlocks,
-			w.supportSettings,
-			w.blockSelectors
-		);
-
-		if (dialog.isConfirmed()) {
-			w.enabledBlocks = new HashSet<>(dialog.getEnabledBlocks());
-			w.blockSelectors = new HashMap<>(dialog.getBlockSelectors());
-			w.supportSettings = dialog.getSupportSettings();
-			w.prefs.savePreferences();
-
-			w.blocksPathField.setText(targetFile.getAbsolutePath());
-			w.blocksCountLabel.setText(UpdatableRegistry.translate("label.blocks_count", w.enabledBlocks.size()));
-			w.blocksCountLabel.setForeground(GuiApp.theme.getSuccess());
-			w.actions.log(UpdatableRegistry.translate(AppMessages.LOG_BLOCKS_PICKED, w.enabledBlocks.size(), targetFile.getName()));
-		}
-	}
 
 	void syncBlocksFromFieldIfNeeded() {
 		String path = w.blocksPathField.getText().strip();

@@ -4,38 +4,51 @@ import org.duollectis.mapart.tools.gui.GuiApp;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 
 import javax.swing.*;
+import javax.swing.text.DefaultCaret;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 /**
  * Панель лога приложения с поддержкой свёрнутых стектрейсов и изменения высоты
  * путём перетаскивания верхней границы.
+ * Обычные строки выводятся в единый JTextArea — выделение через несколько строк
+ * и копирование Ctrl+C работают нативно на любой раскладке.
  */
 public class AppLogPane extends JPanel {
 
-	private static final int MAX_ENTRIES = 500;
+	private static final int MAX_PLAIN_LINES = 500;
 	private static final int MIN_HEIGHT = 40;
 	private static final int MAX_HEIGHT = 600;
 	private static final int HANDLE_H = 5;
 	private static final Font LOG_FONT = new Font("Monospaced", Font.PLAIN, 11);
 	private static final Font STACK_FONT = new Font("Monospaced", Font.PLAIN, 10);
 
-	private final List<LogEntry> entries = new ArrayList<>();
+	private final JTextArea logArea;
+	private final JPanel exceptionsPanel;
 	private final JPanel contentPanel;
 	private final InertialScrollPane scrollPane;
+	private int plainLineCount = 0;
 
 	public AppLogPane() {
 		super(new BorderLayout());
 		setOpaque(false);
 
-		contentPanel = new JPanel();
-		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+		logArea = buildMainLogArea();
+
+		exceptionsPanel = new JPanel();
+		exceptionsPanel.setLayout(new BoxLayout(exceptionsPanel, BoxLayout.Y_AXIS));
+		exceptionsPanel.setOpaque(false);
+
+		contentPanel = new JPanel(new BorderLayout());
 		contentPanel.setOpaque(false);
 		contentPanel.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+		contentPanel.add(logArea, BorderLayout.NORTH);
+		contentPanel.add(exceptionsPanel, BorderLayout.CENTER);
 
 		scrollPane = new InertialScrollPane(contentPanel);
 		scrollPane.setOpaque(true);
@@ -48,6 +61,7 @@ public class AppLogPane extends JPanel {
 			scrollPane.setBorder(BorderFactory.createLineBorder(GuiApp.theme.getBorder(), 1, true));
 			scrollPane.setBackground(GuiApp.theme.getBgCard());
 			scrollPane.getViewport().setBackground(GuiApp.theme.getBgCard());
+			logArea.setForeground(GuiApp.theme.getTextDim());
 		});
 
 		add(buildResizeHandle(), BorderLayout.NORTH);
@@ -57,27 +71,21 @@ public class AppLogPane extends JPanel {
 	/** Добавляет обычную строку лога. */
 	public void appendLine(String text) {
 		SwingUtilities.invokeLater(() -> {
-			trimIfNeeded();
-			LogEntry entry = new LogEntry(text, EntryType.PLAIN);
-			entries.add(entry);
-			contentPanel.add(buildPlainRow(entry));
+			trimPlainLinesIfNeeded();
+			if (plainLineCount > 0) {
+				logArea.append("\n");
+			}
+			logArea.append(text);
+			plainLineCount++;
 			scrollToBottom();
 		});
 	}
 
-	/**
-	 * Добавляет запись об ошибке: заголовок исключения + свёрнутый стектрейс.
-	 *
-	 * @param header     первая строка (тип исключения + сообщение)
-	 * @param stackLines строки стектрейса (начинаются с {@code \tat ...})
-	 */
 	public void appendException(String header, List<String> stackLines) {
 		SwingUtilities.invokeLater(() -> {
-			trimIfNeeded();
-			LogEntry entry = new LogEntry(header, EntryType.EXCEPTION);
-			entry.stackLines = new ArrayList<>(stackLines);
-			entries.add(entry);
-			contentPanel.add(buildExceptionRow(entry));
+			exceptionsPanel.add(buildExceptionRow(header, new ArrayList<>(stackLines)));
+			exceptionsPanel.revalidate();
+			exceptionsPanel.repaint();
 			scrollToBottom();
 		});
 	}
@@ -85,18 +93,29 @@ public class AppLogPane extends JPanel {
 	/** Очищает весь лог. */
 	public void clear() {
 		SwingUtilities.invokeLater(() -> {
-			entries.clear();
-			contentPanel.removeAll();
-			contentPanel.revalidate();
-			contentPanel.repaint();
+			logArea.setText("");
+			plainLineCount = 0;
+			exceptionsPanel.removeAll();
+			exceptionsPanel.revalidate();
+			exceptionsPanel.repaint();
 		});
 	}
 
-	/**
-	 * Строит невидимую полосу-ручку над scrollPane.
-	 * При перетаскивании вверх/вниз меняет preferredSize у scrollPane,
-	 * что растягивает консоль вверх за счёт BorderLayout.SOUTH в родителе.
-	 */
+	private JTextArea buildMainLogArea() {
+		JTextArea area = new JTextArea();
+		area.setFont(LOG_FONT);
+		area.setForeground(GuiApp.theme.getTextDim());
+		area.setEditable(false);
+		area.setOpaque(false);
+		area.setLineWrap(false);
+		area.setWrapStyleWord(false);
+		area.setBorder(BorderFactory.createEmptyBorder());
+		area.setFocusable(true);
+		DefaultCaret caret = (DefaultCaret) area.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+		return area;
+	}
+
 	private JPanel buildResizeHandle() {
 		JPanel handle = new JPanel() {
 			@Override
@@ -137,11 +156,19 @@ public class AppLogPane extends JPanel {
 		return handle;
 	}
 
-	private void trimIfNeeded() {
-		while (entries.size() >= MAX_ENTRIES) {
-			entries.remove(0);
-			contentPanel.remove(0);
+	private void trimPlainLinesIfNeeded() {
+		if (plainLineCount < MAX_PLAIN_LINES) {
+			return;
 		}
+		String text = logArea.getText();
+		int newlineIdx = text.indexOf('\n');
+		if (newlineIdx < 0) {
+			logArea.setText("");
+			plainLineCount = 0;
+			return;
+		}
+		logArea.setText(text.substring(newlineIdx + 1));
+		plainLineCount--;
 	}
 
 	private void scrollToBottom() {
@@ -153,39 +180,27 @@ public class AppLogPane extends JPanel {
 		});
 	}
 
-	private JPanel buildPlainRow(LogEntry entry) {
-		JLabel label = new JLabel(entry.text);
-		label.setFont(LOG_FONT);
-		label.setForeground(GuiApp.theme.getTextDim());
-		label.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
-
-		JPanel row = new JPanel(new BorderLayout());
-		row.setOpaque(false);
-		row.add(label, BorderLayout.WEST);
-
-		return row;
-	}
-
-	private JPanel buildExceptionRow(LogEntry entry) {
+	private JPanel buildExceptionRow(String header, List<String> stackLines) {
 		JPanel wrapper = new JPanel();
 		wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
 		wrapper.setOpaque(false);
 
-		JPanel headerRow = buildExceptionHeader(entry, wrapper);
+		JPanel[] stackPanelRef = {null};
+		JPanel headerRow = buildExceptionHeader(header, wrapper, stackPanelRef);
 		wrapper.add(headerRow);
 
-		JPanel stackPanel = buildStackPanel(entry.stackLines);
+		JPanel stackPanel = buildStackPanel(stackLines);
 		stackPanel.setVisible(false);
-		entry.stackPanel = stackPanel;
+		stackPanelRef[0] = stackPanel;
 		wrapper.add(stackPanel);
 
 		return wrapper;
 	}
 
-	private JPanel buildExceptionHeader(LogEntry entry, JPanel wrapper) {
+	private JPanel buildExceptionHeader(String headerText, JPanel wrapper, JPanel[] stackPanelRef) {
 		JLabel arrow = buildExceptionArrow(false);
 
-		JLabel text = new JLabel(entry.text);
+		JLabel text = new JLabel(headerText);
 		text.setFont(LOG_FONT);
 		text.setForeground(GuiApp.theme.getError());
 
@@ -198,8 +213,12 @@ public class AppLogPane extends JPanel {
 		row.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				boolean nowVisible = !entry.stackPanel.isVisible();
-				entry.stackPanel.setVisible(nowVisible);
+				JPanel stackPanel = stackPanelRef[0];
+				if (stackPanel == null) {
+					return;
+				}
+				boolean nowVisible = !stackPanel.isVisible();
+				stackPanel.setVisible(nowVisible);
 				arrow.putClientProperty("expanded", nowVisible);
 				arrow.repaint();
 				wrapper.revalidate();
@@ -212,11 +231,6 @@ public class AppLogPane extends JPanel {
 		return row;
 	}
 
-	/**
-	 * Рисует маленький треугольник-стрелку для заголовка исключения.
-	 * Повёрнут вправо (свёрнуто) или вниз (развёрнуто) в зависимости от
-	 * client property {@code "expanded"}.
-	 */
 	private JLabel buildExceptionArrow(boolean expanded) {
 		JLabel arrow = new JLabel() {
 			private static final int SIZE = 7;
@@ -226,23 +240,18 @@ public class AppLogPane extends JPanel {
 				Graphics2D g2 = (Graphics2D) g.create();
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 				g2.setColor(GuiApp.theme.getError());
-
 				int cx = getWidth() / 2;
 				int cy = getHeight() / 2;
 				boolean isExpanded = Boolean.TRUE.equals(getClientProperty("expanded"));
-
 				if (isExpanded) {
-					// треугольник вниз
 					int[] xs = {cx - SIZE / 2, cx + SIZE / 2, cx};
 					int[] ys = {cy - SIZE / 2, cy - SIZE / 2, cy + SIZE / 2};
 					g2.fillPolygon(xs, ys, 3);
 				} else {
-					// треугольник вправо
 					int[] xs = {cx - SIZE / 2, cx + SIZE / 2, cx - SIZE / 2};
 					int[] ys = {cy - SIZE / 2, cy, cy + SIZE / 2};
 					g2.fillPolygon(xs, ys, 3);
 				}
-
 				g2.dispose();
 			}
 
@@ -251,11 +260,9 @@ public class AppLogPane extends JPanel {
 				return new Dimension(14, 14);
 			}
 		};
-
 		arrow.putClientProperty("expanded", expanded);
 		arrow.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 4));
 		UpdatableRegistry.onThemeAnimFrame(arrow::repaint);
-
 		return arrow;
 	}
 
@@ -265,36 +272,19 @@ public class AppLogPane extends JPanel {
 		panel.setOpaque(false);
 		panel.setBorder(BorderFactory.createEmptyBorder(0, 14, 2, 0));
 
-		for (String line : lines) {
-			JLabel label = new JLabel(line);
-			label.setFont(STACK_FONT);
-			label.setForeground(GuiApp.theme.getTextDim());
+		JTextArea stackArea = new JTextArea(String.join("\n", lines));
+		stackArea.setFont(STACK_FONT);
+		stackArea.setForeground(GuiApp.theme.getTextDim());
+		stackArea.setEditable(false);
+		stackArea.setOpaque(false);
+		stackArea.setLineWrap(false);
+		stackArea.setWrapStyleWord(false);
+		stackArea.setBorder(BorderFactory.createEmptyBorder());
+		stackArea.setFocusable(true);
+		DefaultCaret caret = (DefaultCaret) stackArea.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
-			JPanel row = new JPanel(new BorderLayout());
-			row.setOpaque(false);
-			row.add(label, BorderLayout.WEST);
-			panel.add(row);
-		}
-
+		panel.add(stackArea);
 		return panel;
-	}
-
-	// ── Внутренние типы ───────────────────────────────────────────────────────
-
-	private enum EntryType {
-		PLAIN, EXCEPTION
-	}
-
-	private static final class LogEntry {
-
-		final String text;
-		final EntryType type;
-		List<String> stackLines;
-		JPanel stackPanel;
-
-		LogEntry(String text, EntryType type) {
-			this.text = text;
-			this.type = type;
-		}
 	}
 }

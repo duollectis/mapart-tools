@@ -5,6 +5,7 @@ import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.util.AppTooltip;
 import org.duollectis.mapart.tools.gui.util.UiStateRegistry;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
+import org.duollectis.mapart.tools.gui.widget.FadingLabel;
 import org.duollectis.mapart.tools.gui.widget.AccordionPanel;
 import org.duollectis.mapart.tools.gui.widget.AnimatedPanel;
 import org.duollectis.mapart.tools.gui.widget.SelectionPanel;
@@ -46,8 +47,8 @@ final class ExportSectionBuilder {
 		UpdatableRegistry.registerLang("btn.browse_out", t -> AppTooltip.install(browseBtn, t));
 		browseBtn.addActionListener(e -> w.actions.chooseOutDir());
 
-		JLabel label = dimLabel("");
-		UpdatableRegistry.registerLang("label.out_path", label::setText);
+		FadingLabel label = buildFadingDimLabel("");
+		UpdatableRegistry.registerLangFading("label.out_path", label);
 
 		JPanel row = new JPanel(new BorderLayout(4, 2));
 		row.setOpaque(false);
@@ -92,8 +93,8 @@ final class ExportSectionBuilder {
 		w.mapDatStartIdField = buildTextField();
 		w.mapDatStartIdField.setText("0");
 
-		JLabel label = dimLabel("");
-		UpdatableRegistry.registerLang("label.map_dat_start_id", label::setText);
+		FadingLabel label = buildFadingDimLabel("");
+		UpdatableRegistry.registerLangFading("label.map_dat_start_id", label);
 
 		JPanel row = new JPanel(new BorderLayout(4, 2));
 		row.setOpaque(false);
@@ -110,7 +111,7 @@ final class ExportSectionBuilder {
 	}
 
 	private static JPanel buildExportButtonRow(MainWindow w) {
-		w.exportButton = buildThemedButton("", w);
+		w.exportButton = buildThemedButton("");
 		UpdatableRegistry.registerLang("btn.export", w.exportButton::setText);
 		w.exportButton.addActionListener(e -> w.actions.startExport());
 

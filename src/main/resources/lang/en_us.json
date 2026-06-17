@@ -14,6 +14,7 @@
   "keybind.action.save_preview": "Save preview",
   "keybind.action.merge_layers": "Merge layers",
   "keybind.action.delete_layer": "Delete layer",
+  "keybind.action.nav_back": "Navigate back",
   "app.title": "MapArt Tools",
   "app.subtitle": "Minecraft map art schematic converter",
 
@@ -187,6 +188,11 @@
   "picker.colors_configured": "{0} of {1} colors configured",
   "picker.tab_palette": "Palette",
   "picker.tab_support": "Support",
+  "picker.title_short": "Block Picker",
+  "picker.configure_support": "Configure support weights...",
+  "picker.group_enabled": "Enabled",
+  "picker.group_disabled": "Disabled",
+  "picker.weights_tooltip": "Configure block weights for this color",
 
   "settings.title": "Settings",
   "settings.language": "Interface Language",
@@ -385,6 +391,11 @@
   "picker.view_toggle_tooltip": "Toggle view: icons / names",
   "picker.needs_support": "requires support",
   "picker.separator_inactive": "--- inactive ---",
+  "picker.brightness.low": "Dark",
+  "picker.brightness.normal": "Normal",
+  "picker.brightness.high": "Light",
+  "picker.filter_placeholder": "Filter blocks...",
+  "picker.split_brightness_tooltip": "Split brightnesses: show each brightness separately",
 
   "blocklist.export_section_shulkers": "=== Shulkers ===",
   "blocklist.export_section_remainders": "=== Remainders ===",

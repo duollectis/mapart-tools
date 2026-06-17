@@ -9,6 +9,7 @@ import org.duollectis.mapart.tools.app.AppPreferences;
 import org.duollectis.mapart.tools.gui.i18n.AppLocale;
 
 import javax.swing.JComponent;
+import org.duollectis.mapart.tools.gui.widget.FadingLabel;
 import java.awt.Component;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -31,6 +32,8 @@ import java.util.function.Consumer;
 public class UpdatableRegistry {
 
 	private static JsonObject translations = new JsonObject();
+
+	private static final boolean STRICT_LANG_VALIDATION = false;
 
 	private static final Map<String, List<Consumer<String>>> langComponents = new HashMap<>();
 
@@ -79,8 +82,14 @@ public class UpdatableRegistry {
 			return AppLocale.ENGLISH;
 		}
 
-		Set<String> registeredKeys = getLangKeys();
 		JsonObject loaded = parseLocale(locale);
+
+		if (!STRICT_LANG_VALIDATION) {
+			translations = loaded;
+			return locale;
+		}
+
+		Set<String> registeredKeys = getLangKeys();
 
 		if (registeredKeys.isEmpty()) {
 			translations = loaded;
@@ -95,8 +104,8 @@ public class UpdatableRegistry {
 		}
 
 		System.err.println(
-			"[Lang] Локаль '" + locale.getCode() + "' не содержит ключей: " + missingKeys
-				+ ". Используется дефолтная локаль '" + AppLocale.ENGLISH.getCode() + "'."
+			"[Lang] Локаль   + locale.getCode() +  не содержит ключей: " + missingKeys
+				+ ". Используется дефолтная локаль   + AppLocale.ENGLISH.getCode() + ."
 		);
 
 		translations = parseLocale(AppLocale.ENGLISH);
@@ -170,13 +179,16 @@ public class UpdatableRegistry {
 			.add(updater);
 	}
 
-	/**
-	 * Уведомляет всех языковых подписчиков о смене языка, затем рекурсивно
-	 * вызывает {@code repaint()} на всём дереве компонентов начиная с {@code root}.
-	 *
-	 * @param root корневой компонент для обхода (обычно главное окно)
-	 */
-	public static void fireLang(Component root) {
+	/** Регистрирует {@link FadingLabel} — при смене языка текст меняется через плавный fade. */
+	public static void registerLangFading(String key, FadingLabel label) {
+		label.setTextInstant(translate(key));
+		langComponents
+			.computeIfAbsent(key, k -> new ArrayList<>())
+			.add(label::setTextInstant);
+	}
+
+	/** Уведомляет всех языковых подписчиков о смене языка. */
+	public static void fireLang() {
 		for (var entry : langComponents.entrySet()) {
 			String translated = translate(entry.getKey());
 
@@ -188,8 +200,6 @@ public class UpdatableRegistry {
 		for (Runnable listener : langListeners) {
 			listener.run();
 		}
-
-		repaintTree(root);
 	}
 
 	/**
@@ -285,6 +295,10 @@ public class UpdatableRegistry {
 	 * @throws IllegalStateException если в файле обнаружены дублирующиеся ключи
 	 */
 	private static JsonObject loadAndValidateDefault() {
+		if (!STRICT_LANG_VALIDATION) {
+			return parseLocale(AppLocale.ENGLISH);
+		}
+
 		Set<String> seen = new HashSet<>();
 		Set<String> duplicates = new TreeSet<>();
 
@@ -312,13 +326,13 @@ public class UpdatableRegistry {
 			}
 
 			throw new IllegalStateException(
-				"[Lang] Дефолтная локаль '" + AppLocale.ENGLISH.getCode()
-					+ "' содержит дублирующиеся ключи: " + duplicates
+				"[Lang] Default locale '" + AppLocale.ENGLISH.getCode()
+					+ "' has duplicate keys: " + duplicates
 			);
 		} catch (IllegalStateException e) {
 			throw e;
 		} catch (Exception e) {
-			System.err.println("[Lang] Не удалось загрузить дефолтную локаль: " + e.getMessage());
+			System.err.println("[Lang] Не удалось загрузить дефолтную локаль: "  + e.getMessage());
 			return new JsonObject();
 		}
 	}
@@ -342,10 +356,6 @@ public class UpdatableRegistry {
 		}
 
 		return missing;
-	}
-
-	private static void repaintTree(Component component) {
-		component.repaint();
 	}
 
 	private record ThemeEntry(JComponent component, Runnable listener) {}

@@ -110,8 +110,8 @@ public class AppTooltip {
 		int tooltipW = computeTooltipWidth(lines, fm);
 		int tooltipH = lineH * lines.size() + PADDING_V * 2;
 
-		Point pos = resolvePosition(layeredPane, tooltipW, tooltipH);
-		activePanel = new TooltipPanel(lines, tooltipW, tooltipH, pos.x, pos.y);
+		int[] pos = resolvePosition(layeredPane, tooltipW, tooltipH);
+		activePanel = new TooltipPanel(lines, tooltipW, tooltipH, pos[0], pos[1], pos[2] == 1);
 
 		layeredPane.add(activePanel, JLayeredPane.DRAG_LAYER);
 		layeredPane.revalidate();
@@ -177,8 +177,9 @@ public class AppTooltip {
 			return;
 		}
 
-		Point pos = resolvePosition(layeredPane, activePanel.tooltipW, activePanel.tooltipH);
-		activePanel.setBounds(pos.x, pos.y, activePanel.tooltipW, activePanel.tooltipH);
+		int[] pos = resolvePosition(layeredPane, activePanel.tooltipW, activePanel.tooltipH);
+		activePanel.setBounds(pos[0], pos[1], activePanel.tooltipW, activePanel.tooltipH);
+		activePanel.openFromRight = pos[2] == 1;
 		layeredPane.repaint();
 	}
 
@@ -188,20 +189,21 @@ public class AppTooltip {
 	 * Влево уходит только если справа не хватает места, а слева места больше.
 	 * По вертикали: ниже курсора, если не выходит за нижний край, иначе выше.
 	 */
-	private static Point resolvePosition(JLayeredPane layeredPane, int tooltipW, int tooltipH) {
-	 Point mouseScreen = MouseInfo.getPointerInfo().getLocation();
-	 Point layerScreen = layeredPane.getLocationOnScreen();
+	private static int[] resolvePosition(JLayeredPane layeredPane, int tooltipW, int tooltipH) {
+		Point mouseScreen = MouseInfo.getPointerInfo().getLocation();
+		Point layerScreen = layeredPane.getLocationOnScreen();
 
-	 int mouseX = mouseScreen.x - layerScreen.x;
-	 int mouseY = mouseScreen.y - layerScreen.y;
+		int mouseX = mouseScreen.x - layerScreen.x;
+		int mouseY = mouseScreen.y - layerScreen.y;
 
-	 int spaceRight = layeredPane.getWidth() - mouseX - CURSOR_OFFSET;
-	 int spaceLeft = mouseX - CURSOR_OFFSET;
-	 int x = spaceRight >= tooltipW || spaceRight >= spaceLeft
-	 		? mouseX + CURSOR_OFFSET
-	 		: mouseX - tooltipW - CURSOR_OFFSET;
+		int spaceRight = layeredPane.getWidth() - mouseX - CURSOR_OFFSET;
+		int spaceLeft = mouseX - CURSOR_OFFSET;
+		boolean placeRight = spaceRight >= tooltipW || spaceRight >= spaceLeft;
+		int x = placeRight
+			? mouseX + CURSOR_OFFSET
+			: mouseX - tooltipW - CURSOR_OFFSET;
 
-	 x = Math.max(4, Math.min(x, layeredPane.getWidth() - tooltipW - 4));
+		x = Math.max(4, Math.min(x, layeredPane.getWidth() - tooltipW - 4));
 
 		int y = mouseY + CURSOR_OFFSET;
 
@@ -211,7 +213,7 @@ public class AppTooltip {
 
 		y = Math.max(4, y);
 
-		return new Point(x, y);
+		return new int[]{x, y, placeRight ? 1 : 0};
 	}
 
 	/**
@@ -270,12 +272,14 @@ public class AppTooltip {
 		final int tooltipH;
 		private final List<String> lines;
 		private Timer activeTimer;
+		boolean openFromRight;
 
-		TooltipPanel(List<String> lines, int tooltipW, int tooltipH, int x, int y) {
+		TooltipPanel(List<String> lines, int tooltipW, int tooltipH, int x, int y, boolean openFromRight) {
 			super(null);
 			this.lines = lines;
 			this.tooltipW = tooltipW;
 			this.tooltipH = tooltipH;
+			this.openFromRight = openFromRight;
 
 			setOpaque(false);
 			setBounds(x, y, tooltipW, tooltipH);
@@ -320,7 +324,8 @@ public class AppTooltip {
 			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
 			int animW = (int) (tooltipW * animProgress);
-			g2.setClip(new Rectangle2D.Float(0, 0, animW, tooltipH));
+			float clipX = openFromRight ? 0 : tooltipW - animW;
+			g2.setClip(new Rectangle2D.Float(clipX, 0, animW, tooltipH));
 			g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, animProgress));
 
 			g2.setColor(GuiApp.theme.getTooltipBg());

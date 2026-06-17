@@ -4,8 +4,10 @@ import lombok.experimental.UtilityClass;
 import org.duollectis.mapart.tools.app.AppPreferences;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.ActionEvent;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -93,7 +95,19 @@ public class KeyBindManager {
 			return false;
 		}
 
-		boolean focusInTextField = event.getComponent() instanceof JTextField;
+		Window focusedWindow = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusedWindow();
+		if (focusedWindow instanceof JDialog) {
+			return false;
+		}
+
+		if (event.isControlDown() && event.getComponent() instanceof JTextArea ta && ta.getSelectedText() != null) {
+			Action copyAction = ta.getActionMap().get("copy");
+			if (copyAction != null) {
+				copyAction.actionPerformed(new ActionEvent(ta, ActionEvent.ACTION_PERFORMED, "copy"));
+			}
+			return true;
+		}
+		boolean focusInTextField = event.getComponent() instanceof JTextComponent;
 
 		for (KeyBindAction action : KeyBindAction.values()) {
 			KeyBind bind = binds.getOrDefault(action, action.getDefaultBind());

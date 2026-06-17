@@ -7,6 +7,7 @@ import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
 import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 import org.duollectis.mapart.tools.gui.util.UiStateRegistry;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
+import org.duollectis.mapart.tools.gui.widget.FadingLabel;
 import org.duollectis.mapart.tools.gui.widget.AppLogPane;
 import org.duollectis.mapart.tools.gui.widget.ColorPickerPopup;
 import org.duollectis.mapart.tools.gui.widget.ImagePreviewPanel;
@@ -16,13 +17,10 @@ import org.duollectis.mapart.tools.gui.widget.RippleButton;
 import org.duollectis.mapart.tools.gui.widget.StyledSlider;
 import org.duollectis.mapart.tools.gui.widget.WrapLayout;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicProgressBarUI;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 
 class PreviewPanelBuilder {
 
@@ -212,8 +210,8 @@ class PreviewPanelBuilder {
 		UpdatableRegistry.registerLang("btn.save_preview", saveBtn::setText);
 		UpdatableRegistry.registerLang("btn.save_preview", t -> AppTooltip.install(saveBtn, t));
 
-		JLabel blurNameLabel = SettingsWidgetFactory.dimLabel("");
-		UpdatableRegistry.registerLang("preview.blur", blurNameLabel::setText);
+		FadingLabel blurNameLabel = SettingsWidgetFactory.buildFadingDimLabel("");
+		UpdatableRegistry.registerLangFading("preview.blur", blurNameLabel);
 
 		JPanel toolbar = new JPanel(new GridBagLayout());
 		toolbar.setOpaque(false);
@@ -251,82 +249,6 @@ class PreviewPanelBuilder {
 		column.add(toolbar, BorderLayout.SOUTH);
 
 		return column;
-	}
-
-	private static void openImageInWindow(ImagePreviewPanel preview, MainWindow w) {
-		BufferedImage image = preview.getImage();
-
-		if (image == null) {
-			return;
-		}
-
-		String title = preview.getTitle();
-		JDialog dialog = new JDialog(w, title, false);
-		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-
-		ImagePreviewPanel fullPreview = new ImagePreviewPanel(title);
-		fullPreview.setImage(image);
-		fullPreview.copyDisplayStateFrom(preview);
-
-		JButton saveBtn = new JButton("") {
-			@Override
-			protected void paintComponent(Graphics g) {
-				Graphics2D g2 = (Graphics2D) g.create();
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				g2.setColor(getBackground());
-				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-				g2.dispose();
-				Color fg = ContrastTextRenderer.contrastFor(getBackground());
-				setForeground(fg);
-				Object appIconProp = getClientProperty("appIcon");
-				if (appIconProp instanceof AppIcon ai) {
-					setIcon(ai.colored(fg));
-				}
-				super.paintComponent(g);
-			}
-		};
-
-		UpdatableRegistry.registerLang("btn.save_preview", saveBtn::setText);
-		saveBtn.putClientProperty("appIcon", AppIcon.IMAGE);
-		saveBtn.setBackground(MainWindow.ACCENT());
-		saveBtn.setForeground(ContrastTextRenderer.contrastFor(MainWindow.ACCENT()));
-		saveBtn.setFont(new Font("SansSerif", Font.BOLD, 13));
-		saveBtn.setFocusPainted(false);
-		saveBtn.setBorderPainted(false);
-		saveBtn.setContentAreaFilled(false);
-		saveBtn.setOpaque(false);
-		saveBtn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
-		saveBtn.addActionListener(e -> {
-			JFileChooser chooser = new JFileChooser();
-			chooser.setSelectedFile(new File("preview.png"));
-
-			if (chooser.showSaveDialog(dialog) != JFileChooser.APPROVE_OPTION) {
-				return;
-			}
-
-			try {
-				ImageIO.write(image, "png", chooser.getSelectedFile());
-			} catch (IOException ex) {
-				JOptionPane.showMessageDialog(
-					dialog,
-					ex.getMessage(),
-					UpdatableRegistry.translate("dialog.error_title"),
-					JOptionPane.ERROR_MESSAGE
-				);
-			}
-		});
-
-		JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
-		bottom.setBackground(MainWindow.BG());
-		bottom.add(saveBtn);
-
-		dialog.setLayout(new BorderLayout());
-		dialog.getContentPane().setBackground(MainWindow.BG());
-		dialog.add(fullPreview, BorderLayout.CENTER);
-		dialog.add(bottom, BorderLayout.SOUTH);
-		dialog.setSize(900, 700);
-		dialog.setLocationRelativeTo(w);
-		dialog.setVisible(true);
 	}
 
 	/**

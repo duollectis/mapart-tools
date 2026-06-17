@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -370,5 +371,37 @@ class MainWindowPreferences {
 			.filter(b -> !b.isNeedSupport())
 			.map(BlockData::getId)
 			.collect(Collectors.toSet());
+	}
+
+	/**
+	 * Парсит JSON палитры и группирует блоки по baseColorId и яркости.
+	 * Ключ — baseColorId (1–61), значение — карта Brightness → список блоков.
+	 *
+	 * @param version версия Minecraft
+	 * @return карта colorId → (brightness → список блоков)
+	 */
+	Map<Integer, Map<Brightness, List<BlockData>>> parsePaletteByColor(String version) {
+		try {
+			String paletteJson = w.actions.loadPaletteJson(version);
+			Map<Integer, List<BlockData>> raw = JsonHelper.GSON.fromJson(
+				paletteJson,
+				new TypeToken<Map<Integer, List<BlockData>>>() {}.getType()
+			);
+			Map<Integer, Map<Brightness, List<BlockData>>> result = new LinkedHashMap<>();
+			for (Map.Entry<Integer, List<BlockData>> entry : raw.entrySet()) {
+				int baseId = MapColorTable.resolveBaseId(entry.getKey());
+				if (baseId <= 0) {
+					continue;
+				}
+				Map<Brightness, List<BlockData>> byBrightness = new LinkedHashMap<>();
+				for (Brightness b : Brightness.values()) {
+					byBrightness.put(b, entry.getValue());
+				}
+				result.put(baseId, byBrightness);
+			}
+			return result;
+		} catch (Exception ignored) {
+			return Map.of();
+		}
 	}
 }

@@ -281,19 +281,20 @@ public class ImageConverter {
 
 		paletteMap.forEach((color, blocks) -> {
 			String baseId = blocks.getFirst().getId();
-			WeightedSelector<BlockData> baseSelector = blockSelectors.containsKey(baseId)
-				? blockSelectors.get(baseId)
-				: buildEqualSelector(blocks);
 
 			// Каждая разрешённая яркость получает независимую копию селектора — свои счётчики SEQUENTIAL
-				for (Brightness brightness : allowedBrightnesses) {
-					int scaledColor = RGBUtils.scaleRGB(color, brightness.getModifier());
-					// Формула байта карты: (baseColorId << 2) | brightness.ordinal()
-					// brightness.ordinal(): LOW=0, NORMAL=1, HIGH=2 — совпадает с MapColor.Brightness.id
-					int baseColorId = MapColorTable.resolveBaseId(color);
-					int mapColorId = baseColorId >= 0 ? (baseColorId << 2) | brightness.ordinal() : -1;
-					palette.add(new PaletteEntry(blocks, scaledColor, brightness, baseSelector.copy(), mapColorId));
-				}
+			for (Brightness brightness : allowedBrightnesses) {
+				String brightnessKey = baseId + "#" + brightness.name();
+				WeightedSelector<BlockData> selector = blockSelectors.containsKey(brightnessKey)
+					? blockSelectors.get(brightnessKey)
+					: blockSelectors.containsKey(baseId)
+						? blockSelectors.get(baseId)
+						: buildEqualSelector(blocks);
+				int scaledColor = RGBUtils.scaleRGB(color, brightness.getModifier());
+				int baseColorId = MapColorTable.resolveBaseId(color);
+				int mapColorId = baseColorId >= 0 ? (baseColorId << 2) | brightness.ordinal() : -1;
+				palette.add(new PaletteEntry(blocks, scaledColor, brightness, selector.copy(), mapColorId));
+			}
 
 			processed[0]++;
 			int percent = 2 + processed[0] * 2 / total;

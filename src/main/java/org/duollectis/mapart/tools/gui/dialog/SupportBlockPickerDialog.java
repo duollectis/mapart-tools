@@ -5,6 +5,7 @@ import org.duollectis.mapart.tools.converter.WeightedSelector;
 import org.duollectis.mapart.tools.gui.GuiApp;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.InertialScrollPane;
+import org.duollectis.mapart.tools.gui.widget.ThemedButton;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -14,7 +15,6 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
 import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 /**
@@ -179,7 +179,7 @@ public class SupportBlockPickerDialog extends JDialog {
 		));
 		idField.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
-		JButton addBtn = buildSmallButton(UpdatableRegistry.translate("support_picker.btn_add"));
+		ThemedButton addBtn = buildSmallButton(UpdatableRegistry.translate("support_picker.btn_add"));
 		addBtn.addActionListener(e -> {
 			String id = idField.getText().strip();
 
@@ -241,7 +241,7 @@ public class SupportBlockPickerDialog extends JDialog {
 		modePanel.add(randomRadio);
 		modePanel.add(sequentialRadio);
 
-		JButton saveBtn = buildPrimaryButton(UpdatableRegistry.translate("support_picker.btn_save"));
+		ThemedButton saveBtn = buildPrimaryButton(UpdatableRegistry.translate("support_picker.btn_save"));
 		saveBtn.addActionListener(e -> {
 			if (rows.isEmpty()) {
 				return;
@@ -251,7 +251,7 @@ public class SupportBlockPickerDialog extends JDialog {
 			dispose();
 		});
 
-		JButton cancelBtn = buildSmallButton(UpdatableRegistry.translate("support_picker.btn_cancel"));
+		ThemedButton cancelBtn = buildSmallButton(UpdatableRegistry.translate("support_picker.btn_cancel"));
 		cancelBtn.addActionListener(e -> dispose());
 
 		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -414,8 +414,8 @@ public class SupportBlockPickerDialog extends JDialog {
 
 	private final class DeleteButtonHandler extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
 
-		private final JButton renderBtn = buildDeleteButton();
-		private final JButton editBtn = buildDeleteButton();
+		private final ThemedButton renderBtn = buildDeleteButton();
+		private final ThemedButton editBtn = buildDeleteButton();
 		private final JTable table;
 		private int pendingRow = -1;
 
@@ -455,102 +455,21 @@ public class SupportBlockPickerDialog extends JDialog {
 			return null;
 		}
 
-		private JButton buildDeleteButton() {
-			JButton btn = new JButton(UpdatableRegistry.translate("blocklist.btn_remove")) {
-				@Override
-				protected void paintComponent(Graphics g) {
-					Graphics2D g2 = (Graphics2D) g.create();
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-					Color fill = getModel().isPressed()
-						? new Color(120, 40, 40)
-						: (getModel().isRollover() ? new Color(100, 30, 30) : new Color(70, 20, 20));
-
-					g2.setColor(fill);
-					g2.fillRoundRect(2, 4, getWidth() - 4, getHeight() - 8, 6, 6);
-					Color errorColor = GuiApp.theme.getError();
-					g2.setColor(new Color(errorColor.getRed(), errorColor.getGreen(), errorColor.getBlue(), 80));
-					g2.setStroke(new BasicStroke(1f));
-					g2.drawRoundRect(2, 4, getWidth() - 5, getHeight() - 9, 6, 6);
-					g2.dispose();
-					super.paintComponent(g);
-				}
-			};
-
-			btn.setForeground(GuiApp.theme.getError());
-			btn.setFont(new Font("SansSerif", Font.PLAIN, 11));
-			btn.setFocusPainted(false);
-			btn.setContentAreaFilled(false);
-			btn.setBorderPainted(false);
-			UiAnimator.applyHandCursor(btn);
-			btn.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
-			btn.setOpaque(false);
-
-			return btn;
+		private ThemedButton buildDeleteButton() {
+			return new ThemedButton(UpdatableRegistry.translate("blocklist.btn_remove"), ThemedButton.Style.DELETE, false);
 		}
 	}
 
 	// ── UI-фабрики ─────────────────────────────────────────────────────────────
 
-	private JButton buildPrimaryButton(String text) {
-		JButton btn = new JButton(text) {
-			@Override
-			protected void paintComponent(Graphics g) {
-				Graphics2D g2 = (Graphics2D) g.create();
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				Color base = getModel().isPressed()
-					? ACCENT.darker()
-					: (getModel().isRollover() ? ACCENT.brighter() : ACCENT);
-				g2.setColor(base);
-				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-				g2.dispose();
-				setForeground(ContrastTextRenderer.contrastFor(base));
-				super.paintComponent(g);
-			}
-		};
-	
-			btn.setForeground(ContrastTextRenderer.contrastFor(ACCENT));
-			btn.setFont(new Font("SansSerif", Font.BOLD, 12));
-			btn.setFocusPainted(false);
-			btn.setContentAreaFilled(false);
-			btn.setBorderPainted(false);
-			UiAnimator.applyHandCursor(btn);
-			btn.setBorder(BorderFactory.createEmptyBorder(7, 18, 7, 18));
 
-		return btn;
+	private ThemedButton buildPrimaryButton(String text) {
+		return new ThemedButton(text, ThemedButton.Style.PRIMARY, false);
 	}
 
-	private JButton buildSmallButton(String text) {
-		JButton btn = new JButton(text) {
-			@Override
-			protected void paintComponent(Graphics g) {
-				Graphics2D g2 = (Graphics2D) g.create();
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				Color base = getModel().isPressed()
-					? GuiApp.theme.getBtnHoverBg().darker()
-					: (getModel().isRollover() ? GuiApp.theme.getBtnHoverBg() : GuiApp.theme.getBgInput());
-				g2.setColor(base);
-				g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-				g2.setColor(BORDER);
-				g2.setStroke(new BasicStroke(1f));
-				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
-				g2.dispose();
-				setForeground(ContrastTextRenderer.contrastFor(base));
-				super.paintComponent(g);
-			}
-		};
-	
-			btn.setForeground(ContrastTextRenderer.contrastFor(GuiApp.theme.getBgInput()));
-			btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
-		btn.setFocusPainted(false);
-		btn.setContentAreaFilled(false);
-		btn.setBorderPainted(false);
-		UiAnimator.applyHandCursor(btn);
-		btn.setBorder(BorderFactory.createEmptyBorder(7, 14, 7, 14));
-
-		return btn;
+	private ThemedButton buildSmallButton(String text) {
+		return new ThemedButton(text, ThemedButton.Style.THEMED, false);
 	}
-
 	// ── Данные строки ──────────────────────────────────────────────────────────
 
 	private static final class EntryRow {

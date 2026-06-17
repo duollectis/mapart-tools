@@ -52,6 +52,11 @@ public enum KeyBindAction {
 		"keybind.action.delete_layer",
 		new KeyBind(KeyEvent.VK_DELETE, 0),
 		true
+	),
+	NAV_BACK(
+		"keybind.action.nav_back",
+		new KeyBind(KeyEvent.VK_ESCAPE, 0),
+		false
 	);
 
 	private final String langKey;

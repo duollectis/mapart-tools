@@ -1,6 +1,7 @@
 package org.duollectis.mapart.tools.gui.widget;
 
 import org.duollectis.mapart.tools.gui.GuiApp;
+import org.duollectis.mapart.tools.gui.widget.ThemedButton;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -208,7 +209,7 @@ public class ColorPickerPopup extends JPanel {
 		add(hexField);
 
 		y += PREVIEW_SIZE + 10;
-		JButton okBtn = buildOkButton();
+		ThemedButton okBtn = buildOkButton();
 		okBtn.setBounds(x, y, SB_SIZE, 30);
 		add(okBtn);
 	}
@@ -242,70 +243,10 @@ public class ColorPickerPopup extends JPanel {
 		return field;
 	}
 
-	private JButton buildOkButton() {
-		JButton btn = new JButton("OK") {
-			private float hover = 0f;
-			private Timer hoverTimer;
 
-			{
-				addMouseListener(new MouseAdapter() {
-					@Override
-					public void mouseEntered(MouseEvent e) {
-						animateHover(1f);
-					}
-
-					@Override
-					public void mouseExited(MouseEvent e) {
-						animateHover(0f);
-					}
-				});
-			}
-
-			private void animateHover(float to) {
-				if (hoverTimer != null) {
-					hoverTimer.stop();
-				}
-
-				float from = hover;
-				long start = System.currentTimeMillis();
-				hoverTimer = new Timer(16, ev -> {
-					float t = Math.min(1f, (System.currentTimeMillis() - start) / 120f);
-					hover = from + (to - from) * t;
-					repaint();
-
-					if (t >= 1f) {
-						((Timer) ev.getSource()).stop();
-					}
-				});
-				hoverTimer.start();
-			}
-
-			@Override
-			protected void paintComponent(Graphics g) {
-				Graphics2D g2 = (Graphics2D) g.create();
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-				Color bg = lerpColor(GuiApp.theme.getAccent(), GuiApp.theme.getAccentBright(), hover);
-				g2.setColor(bg);
-				g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 8, 8));
-
-				g2.setColor(GuiApp.theme.getTextOnAccent());
-				g2.setFont(getFont().deriveFont(Font.BOLD, 13f));
-				FontMetrics fm = g2.getFontMetrics();
-				int tx = (getWidth() - fm.stringWidth(getText())) / 2;
-				int ty = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
-				g2.drawString(getText(), tx, ty);
-				g2.dispose();
-			}
-		};
-
-		btn.setOpaque(false);
-		btn.setContentAreaFilled(false);
-		btn.setBorderPainted(false);
-		btn.setFocusPainted(false);
-		UiAnimator.applyHandCursor(btn);
+	private ThemedButton buildOkButton() {
+		ThemedButton btn = new ThemedButton("OK", ThemedButton.Style.PRIMARY, false);
 		btn.addActionListener(e -> confirm());
-
 		return btn;
 	}
 

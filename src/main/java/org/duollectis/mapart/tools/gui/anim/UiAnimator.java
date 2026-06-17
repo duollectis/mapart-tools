@@ -250,6 +250,28 @@ public class UiAnimator {
 		return (float) (1.0 - f * f * f);
 	}
 
+	public static float easeOutQuint(float t) {
+		double f = 1.0 - t;
+		return (float) (1.0 - f * f * f * f * f);
+	}
+
+	public static float easeOutExpo(float t) {
+		return t >= 1f ? 1f : (float) (1.0 - Math.pow(2.0, -10.0 * t));
+	}
+
+	public static float easeInOutQuart(float t) {
+		return t < 0.5f
+				? (float) (8.0 * t * t * t * t)
+				: (float) (1.0 - Math.pow(-2.0 * t + 2.0, 4) / 2.0);
+	}
+
+	public static float easeOutBack(float t) {
+		double c1 = 1.70158;
+		double c3 = c1 + 1.0;
+		double f = t - 1.0;
+		return (float) (1.0 + c3 * f * f * f + c1 * f * f);
+	}
+
 	private static double easeOutCubicD(double t) {
 		double f = 1.0 - t;
 		return 1.0 - f * f * f;
@@ -287,6 +309,36 @@ public class UiAnimator {
 		}
 	}
 
+
+	/**
+	 * Подписывает кнопку на hover-анимацию через {@link AnimatedFloat}.
+	 * Прогресс сохраняется в client property {@code "hoverProgress"} и используется
+	 * в {@code paintComponent} кнопок, которые читают это свойство.
+	 *
+	 * @param btn кнопка для подписки
+	 */
+	public static void addHoverEffect(JButton btn) {
+		AnimatedFloat hover = new AnimatedFloat(0f);
+		btn.putClientProperty("hoverProgress", hover);
+
+		btn.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				hover.animateTo(1f, 150, v -> {
+					btn.putClientProperty("hoverProgress", v);
+					btn.repaint();
+				});
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				hover.animateTo(0f, 150, v -> {
+					btn.putClientProperty("hoverProgress", v);
+					btn.repaint();
+				});
+			}
+		});
+	}
 
 	private static Color scaleBrightness(Color color, float factor) {
 		int r = Math.clamp((int) (color.getRed() * factor), 0, 255);

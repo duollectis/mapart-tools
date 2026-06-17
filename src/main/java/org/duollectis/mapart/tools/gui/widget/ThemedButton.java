@@ -21,7 +21,9 @@ public class ThemedButton extends JButton {
 		/** Акцентная рамка + полупрозрачная заливка, шрифт 12px, отступы 6/12, высота 36. */
 		ACCENT,
 		/** Заливка INPUT + рамка BORDER, шрифт 12px, отступы 6/12, высота 36. */
-		THEMED
+		THEMED,
+		DELETE,
+		KEYBIND
 	}
 
 	private static final int CORNER_RADIUS = 10;
@@ -32,10 +34,12 @@ public class ThemedButton extends JButton {
 	private static final float HOVER_DARKEN = 0.88f;
 
 	private final Style style;
+	private final boolean constrainSize;
 
-	public ThemedButton(String text, Style style, MainWindow w) {
+	public ThemedButton(String text, Style style, boolean constrainSize) {
 		super(text);
 		this.style = style;
+		this.constrainSize = constrainSize;
 
 		applyStaticProperties();
 		applyThemeColors();
@@ -45,7 +49,23 @@ public class ThemedButton extends JButton {
 			repaint();
 		});
 
-		w.addHoverEffect(this);
+		UiAnimator.addHoverEffect(this);
+	}
+
+	public ThemedButton(String text, Style style) {
+		super(text);
+		this.style = style;
+		this.constrainSize = true;
+
+		applyStaticProperties();
+		applyThemeColors();
+
+		UpdatableRegistry.onThemeAnimFrame(() -> {
+			applyThemeColors();
+			repaint();
+		});
+
+		UiAnimator.addHoverEffect(this);
 	}
 
 	@Override
@@ -73,10 +93,25 @@ public class ThemedButton extends JButton {
 				paintThemed(g2);
 				setForeground(ContrastTextRenderer.contrastLerp(base, hovered, t));
 			}
+			case DELETE -> {
+				paintThemed(g2);
+				setForeground(UiAnimator.lerp(MainWindow.TEXT_DIM(), MainWindow.ERROR(), t));
+			}
+			case KEYBIND -> paintKeybind(g2);
 		}
 
 		g2.dispose();
 		super.paintComponent(g);
+	}
+
+
+	private void paintKeybind(Graphics2D g2) {
+		Color bg = getBackground() != null ? getBackground() : MainWindow.INPUT();
+		g2.setColor(bg);
+		g2.fillRoundRect(0, 0, getWidth(), getHeight(), CORNER_RADIUS, CORNER_RADIUS);
+		g2.setColor(MainWindow.BORDER());
+		g2.setStroke(new BasicStroke(1f));
+		g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, CORNER_RADIUS, CORNER_RADIUS);
 	}
 
 	private Color paintPrimary(Graphics2D g2) {
@@ -126,11 +161,15 @@ public class ThemedButton extends JButton {
 		if (style == Style.PRIMARY) {
 			setFont(new Font("SansSerif", Font.BOLD, 13));
 			setMargin(new Insets(8, 16, 8, 16));
-			setMaximumSize(new Dimension(Integer.MAX_VALUE, PRIMARY_MAX_HEIGHT));
+			if (constrainSize) {
+				setMaximumSize(new Dimension(Integer.MAX_VALUE, PRIMARY_MAX_HEIGHT));
+			}
 		} else {
 			setFont(new Font("SansSerif", Font.PLAIN, 12));
 			setMargin(new Insets(6, 12, 6, 12));
-			setMaximumSize(new Dimension(Integer.MAX_VALUE, SECONDARY_MAX_HEIGHT));
+			if (constrainSize) {
+				setMaximumSize(new Dimension(Integer.MAX_VALUE, SECONDARY_MAX_HEIGHT));
+			}
 		}
 	}
 
@@ -162,7 +201,8 @@ public class ThemedButton extends JButton {
 		Color fg = switch (style) {
 			case PRIMARY -> MainWindow.TEXT_ON_ACCENT();
 			case ACCENT -> MainWindow.ACCENT();
-			case THEMED -> MainWindow.TEXT();
+			case THEMED, KEYBIND -> MainWindow.TEXT();
+			case DELETE -> MainWindow.TEXT_DIM();
 		};
 		setForeground(fg);
 	}

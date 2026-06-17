@@ -3,6 +3,7 @@ package org.duollectis.mapart.tools.gui.theme;
 import lombok.experimental.UtilityClass;
 import org.duollectis.mapart.tools.app.AppPreferences;
 import org.duollectis.mapart.tools.gui.GuiApp;
+import org.duollectis.mapart.tools.gui.anim.LangTransition;
 import org.duollectis.mapart.tools.gui.anim.ThemeTransition;
 import org.duollectis.mapart.tools.gui.i18n.AppLocale;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
@@ -53,7 +54,7 @@ public class AppState {
 		currentLocale = actual;
 		AppPreferences.saveLocale(actual.getCode());
 		window.setTitle(UpdatableRegistry.translate("app.title"));
-		UpdatableRegistry.fireLang(window);
+		LangTransition.apply(window);
 	}
 
 	/**

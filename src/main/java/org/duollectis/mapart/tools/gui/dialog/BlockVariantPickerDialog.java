@@ -7,6 +7,7 @@ import org.duollectis.mapart.tools.gui.GuiApp;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.util.AppIcon;
 import org.duollectis.mapart.tools.gui.widget.InertialScrollPane;
+import org.duollectis.mapart.tools.gui.widget.ThemedButton;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
@@ -19,7 +20,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
-import org.duollectis.mapart.tools.gui.util.ContrastTextRenderer;
 import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 
 /**
@@ -444,17 +444,17 @@ public class BlockVariantPickerDialog extends JDialog {
 		modePanel.add(randomRadio);
 		modePanel.add(sequentialRadio);
 
-		JButton equalBtn = buildSmallButton(UpdatableRegistry.translate("variant_picker.btn_equal"));
+		ThemedButton equalBtn = buildSmallButton(UpdatableRegistry.translate("variant_picker.btn_equal"));
 		equalBtn.setIcon(AppIcon.BALANCE.colored(TEXT));
 		equalBtn.addActionListener(e -> resetToEqual());
 
-		JButton saveBtn = buildPrimaryButton(UpdatableRegistry.translate("support_picker.btn_save"));
+		ThemedButton saveBtn = buildPrimaryButton(UpdatableRegistry.translate("support_picker.btn_save"));
 		saveBtn.addActionListener(e -> {
 			confirmed = true;
 			dispose();
 		});
 
-		JButton cancelBtn = buildSmallButton(UpdatableRegistry.translate("support_picker.btn_cancel"));
+		ThemedButton cancelBtn = buildSmallButton(UpdatableRegistry.translate("support_picker.btn_cancel"));
 		cancelBtn.addActionListener(e -> dispose());
 
 		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -791,63 +791,12 @@ public class BlockVariantPickerDialog extends JDialog {
 	
 		// ── UI-фабрики ─────────────────────────────────────────────────────────────
 	
-		private JButton buildPrimaryButton(String text) {
-			JButton btn = new JButton(text) {
-				@Override
-				protected void paintComponent(Graphics g) {
-					Graphics2D g2 = (Graphics2D) g.create();
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					Color base = getModel().isPressed()
-						? accent.darker()
-						: (getModel().isRollover() ? accent.brighter() : accent);
-					g2.setColor(base);
-					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-					g2.dispose();
-					setForeground(ContrastTextRenderer.contrastFor(base));
-					super.paintComponent(g);
-				}
-			};
-		
-			btn.setForeground(ContrastTextRenderer.contrastFor(accent));
-			btn.setFont(new Font("SansSerif", Font.BOLD, 12));
-			btn.setFocusPainted(false);
-			btn.setContentAreaFilled(false);
-			btn.setBorderPainted(false);
-			UiAnimator.applyHandCursor(btn);
-			btn.setBorder(BorderFactory.createEmptyBorder(7, 18, 7, 18));
-	
-			return btn;
+		private ThemedButton buildPrimaryButton(String text) {
+			return new ThemedButton(text, ThemedButton.Style.PRIMARY, false);
 		}
-	
-		private JButton buildSmallButton(String text) {
-			JButton btn = new JButton(text) {
-				@Override
-				protected void paintComponent(Graphics g) {
-					Graphics2D g2 = (Graphics2D) g.create();
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					Color base = getModel().isPressed()
-						? GuiApp.theme.getBtnHoverBg().darker()
-						: (getModel().isRollover() ? GuiApp.theme.getBtnHoverBg() : GuiApp.theme.getBgInput());
-					g2.setColor(base);
-					g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-					g2.setColor(BORDER);
-					g2.setStroke(new BasicStroke(1f));
-					g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
-					g2.dispose();
-					setForeground(ContrastTextRenderer.contrastFor(base));
-					super.paintComponent(g);
-				}
-			};
-		
-			btn.setForeground(ContrastTextRenderer.contrastFor(GuiApp.theme.getBgInput()));
-			btn.setFont(new Font("SansSerif", Font.PLAIN, 12));
-			btn.setFocusPainted(false);
-			btn.setContentAreaFilled(false);
-			btn.setBorderPainted(false);
-			UiAnimator.applyHandCursor(btn);
-			btn.setBorder(BorderFactory.createEmptyBorder(7, 14, 7, 14));
-	
-			return btn;
+
+		private ThemedButton buildSmallButton(String text) {
+			return new ThemedButton(text, ThemedButton.Style.THEMED, false);
 		}
 	
 		// ── Данные строки ──────────────────────────────────────────────────────────

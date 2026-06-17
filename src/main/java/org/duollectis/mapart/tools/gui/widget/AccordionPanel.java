@@ -224,9 +224,14 @@ public class AccordionPanel extends JPanel {
 	}
 
 	public void collapseAnimated() {
-		if (expanded) {
-			collapse();
+		if (!expanded) {
+			return;
 		}
+
+		expanded = false;
+		pcs.firePropertyChange("expanded", true, false);
+		arrowProgress.animateTo(0f, ARROW_DURATION_MS, v -> header.repaint());
+		animateCollapse();
 	}
 
 	public void addAccordionListener(PropertyChangeListener listener) {
@@ -340,10 +345,11 @@ public class AccordionPanel extends JPanel {
 
 		header.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseClicked(MouseEvent e) {
-				toggle();
+			public void mouseReleased(MouseEvent e) {
+				if (header.contains(e.getPoint())) {
+					toggle();
+				}
 			}
-
 
 			@Override
 			public void mouseEntered(MouseEvent e) {

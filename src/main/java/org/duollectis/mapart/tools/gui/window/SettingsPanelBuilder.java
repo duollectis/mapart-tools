@@ -1,6 +1,8 @@
 package org.duollectis.mapart.tools.gui.window;
 
+import org.duollectis.mapart.tools.gui.anim.UiAnimator;
 import org.duollectis.mapart.tools.gui.util.AppIcon;
+import org.duollectis.mapart.tools.gui.util.AppTooltip;
 import org.duollectis.mapart.tools.gui.util.UpdatableRegistry;
 import org.duollectis.mapart.tools.gui.widget.AccordionPanel;
 import org.duollectis.mapart.tools.gui.widget.InertialScrollPane;
@@ -89,6 +91,7 @@ class SettingsPanelBuilder {
 		bar.add(buildCollapseButton(accordions, w), BorderLayout.EAST);
 		return bar;
 	}
+
 
 	private static RippleButton buildCollapseButton(List<AccordionPanel> accordions, MainWindow w) {
 		RippleButton btn = new RippleButton(AppIcon.CROSS, new Insets(5, 5, 5, 5), w);

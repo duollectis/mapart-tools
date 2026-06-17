@@ -61,7 +61,8 @@ public enum AppIcon {
 	IMAGE("image"),
 	FOLDER_OPEN("folder_open"),
 	TXT_FILE("txt_file"),
-	CHEVRON_RIGHT("chevron_right");
+	CHEVRON_RIGHT("chevron_right"),
+	WEIGHTS("weights");
 
 	private static final int DEFAULT_SIZE = 16;
 	private static final ConcurrentMap<Long, Icon> CACHE = new ConcurrentHashMap<>();

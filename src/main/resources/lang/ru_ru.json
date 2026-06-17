@@ -13,6 +13,7 @@
   "keybind.action.save_preview": "Сохранить превью",
   "keybind.action.merge_layers": "Склеить слои",
   "keybind.action.delete_layer": "Удалить слой",
+  "keybind.action.nav_back": "Назад",
   "app.title": "MapArt Tools",
   "app.subtitle": "Конвертер изображений в схематики Minecraft",
 
@@ -190,6 +191,11 @@
   "picker.colors_configured": "{0} из {1} цветов настроено",
   "picker.tab_palette": "Палитра",
   "picker.tab_support": "Опора",
+  "picker.title_short": "Выбор блоков",
+  "picker.configure_support": "Настроить веса опоры...",
+  "picker.group_enabled": "Включённые",
+  "picker.group_disabled": "Отключённые",
+  "picker.weights_tooltip": "Настроить веса блоков для этого цвета",
 
   "settings.title": "Настройки",
   "settings.language": "Язык интерфейса",
@@ -388,6 +394,11 @@
   "picker.view_toggle_tooltip": "Переключить вид: иконки / названия",
   "picker.needs_support": "требует опору",
   "picker.separator_inactive": "--- неактивные ---",
+  "picker.brightness.low": "Тёмный",
+  "picker.brightness.normal": "Нормальный",
+  "picker.brightness.high": "Светлый",
+  "picker.filter_placeholder": "Фильтр блоков...",
+  "picker.split_brightness_tooltip": "Разделить яркости: показывать каждую яркость отдельно",
 
   "blocklist.export_section_shulkers": "=== Шалкеры ===",
   "blocklist.export_section_remainders": "=== Остатки ===",
